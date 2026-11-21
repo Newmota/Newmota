@@ -1,0 +1,11 @@
+{
+  "chip": "bk7231n",
+  "flash": {
+    "size_kb": 4096
+  },
+  "gpio": {
+    "source": "https://developer.tuya.com/en/docs/iot/cb2s-module-datasheet?id=Kafgfsa2aaypq",
+    "exposed": [6, 7, 8, 10, 11, 23, 24, 26]
+  },
+  "profile_default": "Standard"
+}

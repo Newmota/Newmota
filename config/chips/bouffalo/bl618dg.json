@@ -1,0 +1,6 @@
+{
+  "sdk_target": "bl618dg",
+  "capability_overrides": {
+    "wifi": true
+  }
+}

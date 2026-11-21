@@ -1,0 +1,6 @@
+# config/env/beken/application/cb3s.yaml — Compact 2 MB environment for CB3S
+name: cb3s
+board: cb3s
+role: application
+profile: Compact
+language: en_GB

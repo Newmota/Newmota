@@ -1,0 +1,27 @@
+schema = 2
+flash_bytes = 0x400000
+erase_size = 0x1000
+
+# BK7231N builds select the BDK's 2 MiB table at compile time
+# (CFG_FLASH_SELECTION_TYPE), so modules with 4 MiB use the same logical regions;
+# capacity above 2 MiB stays unused without native proof.
+[native]
+partition_source = "func/user_driver/BkFlashPartition.h"
+table = "2M"
+
+[filesystem]
+offset = 0x1E2000
+size = 0xE000
+
+# OpenBeken-style image policy. The raw linker output is not flashable; the
+# Newmota packager creates the CRC-wrapped app image and the RBL OTA image.
+[image]
+factory_format = "app-rbl"
+application_address = 0x10000
+application_container_size = 0x108700
+application_coefficients = "00000000000000000000000000000000"
+ota_format = "rbl"
+ota_compression = "gzip"
+ota_encryption = "aes256"
+ota_key = "0123456789ABCDEF0123456789ABCDEF"
+ota_iv = "0123456789ABCDEF"

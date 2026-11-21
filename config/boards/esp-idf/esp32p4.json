@@ -1,0 +1,16 @@
+{
+  "chip": "esp32p4",
+  "flash": {
+    "size_kb": 16384,
+    "mode": "qio",
+    "frequency_mhz": 80
+  },
+  "psram": {
+    "size_kb": 16384,
+    "mode": "hex",
+    "frequency_mhz": 200
+  },
+  "console": "usb-serial-jtag",
+  "profile_default": "Large",
+  "revision": 0
+}

@@ -1,0 +1,15 @@
+{
+  "chip": "esp32s3",
+  "flash": {
+    "size_kb": 8192,
+    "mode": "qio",
+    "frequency_mhz": 80
+  },
+  "psram": {
+    "size_kb": 8192,
+    "mode": "octal",
+    "frequency_mhz": 80
+  },
+  "console": "usb-serial-jtag",
+  "profile_default": "Large"
+}

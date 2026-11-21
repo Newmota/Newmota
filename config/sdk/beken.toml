@@ -1,0 +1,8 @@
+name = "framework-beken-bdk"
+version = "3.0.78"
+revision = "2d886cd8b1a76efb511e1c22e749f5b403e4a8c9"
+source = "beken-bdk"
+programmer = "bk7231tools"
+programmer_version = "2.1.2"
+programmer_status = "active"
+programmer_sha256 = "c0409978ffa11c0f11d0a362eceb5aaad8c0fb77d7f369b85f1043cf4a5fae62"

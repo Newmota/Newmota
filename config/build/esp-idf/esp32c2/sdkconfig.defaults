@@ -1,0 +1,2 @@
+# ESP32-C2-specific defaults are currently supplied by the board layer.
+CONFIG_IDF_TARGET="esp32c2"

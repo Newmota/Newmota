@@ -1,0 +1,6 @@
+{
+  "sdk_target": "bl602",
+  "capability_overrides": {
+    "wifi": true
+  }
+}

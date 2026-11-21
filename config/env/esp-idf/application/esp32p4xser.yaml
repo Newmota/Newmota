@@ -1,0 +1,6 @@
+name: esp32p4xser
+board: esp32p4xser
+role: application
+profile: Large
+safeboot: esp32p4xser-safeboot
+language: en_GB

@@ -1,0 +1,71 @@
+# Newmota BL602 2 MiB partition table.
+#
+# Origin: BouffaloSDK `bsp/board/bl602dk/config/partition_cfg_2M.toml`.
+# This file is the Newmota storage/recovery decision, not a copy of the vendor
+# discovery input.  The native TOML syntax is preserved so the SDK post
+# processor (`bflb_fw_post_proc --ptfile`) still generates `partition.bin`
+# from this exact file.
+#
+# Boot model (verified in `components/utils/partition/partition.c` and
+# `examples/boot2_isp/main.c`): boot2 selects the partition-table copy with
+# the higher `age` (CRC-protected, at 0xE000/0xF000), then boots the `FW`
+# slot selected by that entry's `active_index`.  Newmota assigns the two
+# native `FW` slots asymmetrically, mirroring the ESP/AmebaD Safeboot split:
+# slot 0 (0x14C000 bytes) is the application, slot 1 (0x94000 bytes) is Safeboot.
+# `Restart 3` flips `active_index` through the CRC-protected inactive-table
+# update, which is safe across interruption: a torn write fails its CRC and
+# the previous table remains authoritative.
+#
+# This Compact layout deliberately contains only the regions Newmota owns:
+# Boot2, the redundant native partition tables, the asymmetric FW pair, and a
+# dedicated LittleFS region.  The BL602 runtime obtains its RF/MAC data from
+# the linked RFTLV/efuse path, and no Newmota code consumes the SDK's mfg,
+# media, PSM, KEY, DATA, or factory regions.  Omitting those unused vendor
+# regions gives the application the contiguous space behind Safeboot while
+# retaining the update-preserved LittleFS tail.
+#
+# The Safeboot slot includes the bounded HTTP URL updater and raw TCP adapter.
+# Its budget is rounded to 16 KiB with one additional 16 KiB block for growth;
+# SDK logging is disabled for BL602 Safeboot. Space is taken from the normal
+# application slot, which must still pass the native slot-size check. This is a layout
+# identity change, not an application-only migration.  A device carrying an
+# earlier table must receive a complete factory/recovery migration package
+# before application updates are accepted.
+[pt_table]
+#partition table is 4K in size
+address0 = 0xE000
+address1 = 0xF000
+
+[[pt_entry]]
+type = 16
+name = "Boot2"
+device = 0
+address0 = 0
+size0 = 0xE000
+address1 = 0
+size1 = 0
+len = 0
+header = 1
+security = 1
+
+[[pt_entry]]
+type = 0
+name = "FW"
+device = 0
+# slot 0: Newmota application image (ends immediately before Safeboot)
+address0 = 0x10000
+size0 = 0x14C000
+# slot 1: Newmota Safeboot recovery image
+address1 = 0x15C000
+size1 = 0x94000
+len = 0
+
+[[pt_entry]]
+type = 9
+name = "lfs"
+device = 0
+address0 = 0x1F0000
+size0 = 0x10000
+address1 = 0
+size1 = 0
+len = 0

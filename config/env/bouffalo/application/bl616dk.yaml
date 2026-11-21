@@ -1,0 +1,6 @@
+name: bl616dk
+board: bl616dk
+role: application
+profile: Standard
+safeboot: bl616dk-safeboot
+language: en_GB

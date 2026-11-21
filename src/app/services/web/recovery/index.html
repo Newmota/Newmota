@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Newmota recovery</title>
+<style>
+:root{font:16px system-ui,sans-serif;color-scheme:dark light}body{max-width:34rem;margin:2rem auto;padding:0 1rem}h1{font-size:1.5rem}section{border:1px solid #8888;border-radius:.7rem;padding:1rem;margin:1rem 0}label{display:block;margin:.7rem 0}input,button{font:inherit}input[type=password],input[type=file]{box-sizing:border-box;width:100%;padding:.6rem}button{padding:.6rem 1rem}progress{width:100%;height:1.2rem}#status{min-height:1.5rem;overflow-wrap:anywhere}.muted{opacity:.75}
+</style>
+</head>
+<body>
+<h1>Newmota recovery</h1>
+<p class="muted">Upload the firmware package built for this exact device and layout. Keep the device powered until it restarts.</p>
+<p id="status" role="status" aria-live="polite"></p>
+<section id="login" hidden>
+<h2>Login</h2>
+<form id="loginForm"><label for="password">Web password</label><input id="password" type="password" autocomplete="current-password" required><button>Sign in</button></form>
+</section>
+<section id="upload" hidden>
+<h2>Firmware update</h2>
+<label for="firmware">Firmware file</label><input id="firmware" type="file" required>
+<button id="start">Upload and install</button>
+<button id="cancel" type="button" hidden>Cancel update</button>
+<progress id="progress" max="1" value="0"></progress>
+</section>
+<script>
+let csrf="", busy=false, cancelRequested=false;
+const byId=id=>document.getElementById(id);
+const say=text=>{byId("status").textContent=text};
+async function send(path,method="GET",body=null,extra={}){
+ const headers={...extra};
+ if(method==="POST")headers["X-Newmota-CSRF"]=csrf;
+ const response=await fetch(path,{method,body,headers,credentials:"same-origin",cache:"no-store"});
+ let data={};try{data=await response.json()}catch{}
+ if(!response.ok){const error=new Error(data.error||`Request failed (${response.status})`);error.status=response.status;throw error}
+ return data;
+}
+async function connect(){
+ try{const bootstrap=await send("/api/bootstrap");if(!bootstrap.auth_required){byId("login").hidden=true;byId("upload").hidden=true;say("Browser recovery requires a configured WebPassword. Use serial or physical recovery to set one.");return}const session=await send("/api/session");csrf=session.csrf||"";byId("login").hidden=true;byId("upload").hidden=false;const caps=await send("/api/update/capabilities");if(!caps.available)say("Recovery writer unavailable for this layout.");else say(`Ready. Maximum image size: ${caps.max_image_size} bytes.`)}
+ catch(error){if(error.message.includes("401")||error.message==="Login required"){byId("login").hidden=false;byId("upload").hidden=true;say("")}else say(error.message)}
+}
+byId("loginForm").addEventListener("submit",async event=>{event.preventDefault();try{const response=await fetch("/api/login",{method:"POST",headers:{"Content-Type":"text/plain","X-Newmota-CSRF":"login"},body:byId("password").value,credentials:"same-origin",cache:"no-store"});const data=await response.json();if(!response.ok)throw new Error(data.error||"Login failed");csrf=data.csrf;byId("password").value="";await connect()}catch(error){say(error.message)}});
+byId("start").addEventListener("click",async()=>{
+ const file=byId("firmware").files[0];if(!file){say("Choose a firmware file first.");return}if(busy)return;
+ busy=true;cancelRequested=false;byId("start").disabled=true;byId("cancel").hidden=false;let begun=false;
+ try{
+  const caps=await send("/api/update/capabilities");
+  if(!caps.available)throw new Error("Recovery writer unavailable for this layout.");
+  if(file.size<caps.minimum_initial_chunk||file.size>caps.max_image_size)throw new Error("This file size is not supported by the recovery writer.");
+  await send("/api/update/begin","POST",String(file.size),{"Content-Type":"text/plain"});
+  begun=true;
+  // A lost packet or reply leaves the session receiving: ask where it stands and go on from there.
+  const transient=error=>error instanceof TypeError||[408,503,504].includes(error.status);
+  for(let offset=0,failures=0;offset<file.size;){
+   if(cancelRequested)throw new Error("Update cancelled.");
+   try{
+    if(offset<0){
+     const state=await send("/api/update/capabilities");
+     if(state.state!=="receiving")throw new Error("The update session ended; start again.");
+     offset=state.received_bytes;continue;
+    }
+    const end=Math.min(offset+caps.chunk_size,file.size),chunk=file.slice(offset,end);
+    await send("/api/update/chunk","POST",chunk,{"Content-Type":"application/octet-stream","Content-Range":`bytes ${offset}-${end-1}/${file.size}`});
+    offset=end;failures=0;byId("progress").value=offset/file.size;say(`Uploading ${offset} of ${file.size} bytes`);
+   }catch(error){
+    if(!transient(error)||++failures>3)throw error;
+    say(`Connection interrupted, resuming (${failures}/3)…`);
+    await new Promise(resolve=>setTimeout(resolve,1000));offset=-1;
+   }
+  }
+  if(cancelRequested)throw new Error("Update cancelled.");
+  await send("/api/update/finish","POST","",{"Content-Type":"text/plain"});
+  say("Image verified. Activating and restarting…");
+  if(cancelRequested)throw new Error("Update cancelled.");
+  await send("/api/update/activate","POST","",{"Content-Type":"text/plain"});
+  begun=false;
+ }catch(error){say(error.message);if(begun)try{await send("/api/update/abort","POST","",{"Content-Type":"text/plain"})}catch{}}
+ finally{busy=false;byId("start").disabled=false;byId("cancel").hidden=true}
+});
+byId("cancel").addEventListener("click",()=>{cancelRequested=true;say("Cancelling after the current chunk…")});
+connect();
+</script>
+</body>
+</html>

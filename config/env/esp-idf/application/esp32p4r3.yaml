@@ -1,0 +1,6 @@
+name: esp32p4r3
+board: esp32p4r3
+role: application
+profile: Large
+safeboot: esp32p4r3-safeboot
+language: en_GB

@@ -1,0 +1,7 @@
+# config/env/beken/application/generic-bk7231n-qfn32-tuya.yaml — Compact 2 MB environment for any
+# BK7231N module with the Tuya layout (CB2L, CBLC, CB2S, ...); the template names the pins.
+name: generic-bk7231n-qfn32-tuya
+board: generic-bk7231n-qfn32-tuya
+role: application
+profile: Compact
+language: en_GB

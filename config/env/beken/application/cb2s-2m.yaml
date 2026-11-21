@@ -1,0 +1,7 @@
+# config/env/beken/application/cb2s-2m.yaml — Compact 2 MB environment for CB2S
+name: cb2s-2m
+board: cb2s-2m
+policy: true
+role: application
+profile: Compact
+language: en_GB

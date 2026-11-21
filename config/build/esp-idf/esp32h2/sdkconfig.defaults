@@ -1,0 +1,2 @@
+# ESP32-H2 target identity.
+CONFIG_IDF_TARGET="esp32h2"

@@ -1,0 +1,6 @@
+# Fast native cross-platform test matrix used by `make test`.
+esp32c2-2m
+bl602-2m
+cb2s-2m
+bw16-2m
+pico2-w

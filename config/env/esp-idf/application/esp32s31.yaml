@@ -1,0 +1,6 @@
+name: esp32s31
+board: esp32s31
+role: application
+profile: Large
+safeboot: esp32s31-safeboot
+language: en_GB

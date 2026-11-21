@@ -1,0 +1,40 @@
+/*
+  btstack_config.h - Optional Pico BLE host limits
+
+  Copyright (C) 2026 Christian Baars and Newmota contributors
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+*/
+/** @file btstack_config.h
+ * @brief One native BLE link, bounded RAM bonds and dynamic GATT database.
+ */
+#pragma once
+#define ENABLE_LE_CENTRAL
+#define ENABLE_LE_PERIPHERAL
+#define ENABLE_LE_SECURE_CONNECTIONS
+#define ENABLE_SOFTWARE_AES128
+#define ENABLE_MICRO_ECC_FOR_LE_SECURE_CONNECTIONS
+#define HAVE_EMBEDDED_TIME_MS
+#define ENABLE_PRINTF_HEXDUMP
+#define HAVE_ASSERT
+#define HCI_OUTGOING_PRE_BUFFER_SIZE 4
+#define HCI_ACL_PAYLOAD_SIZE (512 + 4)
+#define HCI_ACL_CHUNK_SIZE_ALIGNMENT 4
+#define MAX_NR_HCI_CONNECTIONS 1
+#define MAX_NR_GATT_CLIENTS 1
+#define MAX_NR_L2CAP_CHANNELS 2
+#define MAX_NR_L2CAP_SERVICES 2
+#define MAX_NR_SM_LOOKUP_ENTRIES 4
+#define MAX_NR_WHITELIST_ENTRIES 1
+#define MAX_NR_LE_DEVICE_DB_ENTRIES 4
+#define MAX_NR_CONTROLLER_ACL_BUFFERS 3
+#define ENABLE_HCI_CONTROLLER_TO_HOST_FLOW_CONTROL
+#define HCI_HOST_ACL_PACKET_LEN 512
+#define HCI_HOST_ACL_PACKET_NUM 3
+#define HCI_HOST_SCO_PACKET_LEN 120
+#define HCI_HOST_SCO_PACKET_NUM 0
+#define MAX_ATT_DB_SIZE 2048
+#define HCI_RESET_RESEND_TIMEOUT_MS 1000

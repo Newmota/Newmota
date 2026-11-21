@@ -1,0 +1,159 @@
+schema = 1
+
+[source]
+project = "ESP-IDF"
+paths = [
+  "components/soc/esp32s2/include/soc/soc_caps.h",
+  "components/esp_hal_gpspi/esp32s2/include/soc/spi_pins.h",
+  "components/soc/esp32s2/include/soc/uart_pins.h",
+  "components/soc/esp32s2/include/soc/usb_pins.h",
+]
+
+[compatibility]
+project = "Tasmota"
+revision = "37fed605bade755234b04e1076afbc31a7699eef"
+path = "tasmota/include/tasmota_template.h"
+
+[architecture]
+pin_count = 47
+template_slots = [
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+  11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+  33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46,
+]
+numbering = "gpio"
+default_capabilities = ["input", "output", "pull-up", "pull-down", "interrupt"]
+
+[[pin]]
+id = 0
+cautions = ["strapping"]
+
+[[pin]]
+id = 22
+present = false
+
+[[pin]]
+id = 23
+present = false
+
+[[pin]]
+id = 24
+present = false
+
+[[pin]]
+id = 25
+present = false
+
+[[pin]]
+id = 45
+cautions = ["strapping"]
+
+[[pin]]
+id = 46
+capabilities = ["input", "interrupt"]
+cautions = ["strapping"]
+
+[[reservation]]
+owner = "flash"
+pins = [29, 30, 31, 32]
+flash_modes = ["dio"]
+
+[[reservation]]
+owner = "flash"
+pins = [27, 28, 29, 30, 31, 32]
+flash_modes = ["qio"]
+
+[[reservation]]
+owner = "psram"
+pins = [26, 27, 28, 29, 30, 31, 32]
+psram_modes = ["quad"]
+
+[[reservation]]
+owner = "console-uart0"
+pins = [43, 44]
+consoles = ["uart0", "usb-cdc"]
+
+[[reservation]]
+owner = "console-usb-cdc"
+pins = [19, 20]
+consoles = ["usb-cdc"]
+
+[[pin]]
+id = 1
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 2
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 3
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 4
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 5
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 6
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 7
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 8
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 9
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 10
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 11
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 12
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 13
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 14
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 15
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 16
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 17
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 18
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 19
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 20
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]

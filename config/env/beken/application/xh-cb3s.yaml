@@ -1,0 +1,6 @@
+# config/env/beken/application/xh-cb3s.yaml — BK7238 XH-CB3S environment
+name: xh-cb3s
+board: xh-cb3s
+role: application
+profile: Compact
+language: en_GB

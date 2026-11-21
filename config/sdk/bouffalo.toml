@@ -1,0 +1,6 @@
+name = "BouffaloSDK"
+version = "2.3.34"
+revision = "1b1e9df9844ad360a402e8e84420b53a098d0406"
+programmer = "blflashcommand"
+programmer_version = "0.1.0"
+programmer_status = "active"

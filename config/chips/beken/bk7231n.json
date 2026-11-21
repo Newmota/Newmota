@@ -1,0 +1,6 @@
+{
+  "sdk_target": "bk7231n",
+  "capability_overrides": {
+    "wifi": true
+  }
+}

@@ -1,0 +1,5 @@
+name: esp32s31ser-safeboot
+board: esp32s31ser
+role: safeboot
+profile: Safeboot
+language: en_GB

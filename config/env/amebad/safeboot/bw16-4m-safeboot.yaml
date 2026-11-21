@@ -1,0 +1,5 @@
+name: bw16-4m-safeboot
+board: bw16-4m
+role: safeboot
+profile: Safeboot
+language: en_GB

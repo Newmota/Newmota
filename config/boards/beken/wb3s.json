@@ -1,0 +1,8 @@
+{
+  "chip": "bk7231t",
+  "flash": {
+    "size_kb": 2048
+  },
+  "flash_layout": "tuya",
+  "profile_default": "Compact"
+}

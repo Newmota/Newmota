@@ -1,0 +1,28 @@
+schema = 2
+flash_bytes = 0x200000
+erase_size = 0x1000
+
+# Beken SDK layout for BK7238 (bootloader 1.0.14, RF calibration at 0x1E0000).
+# It shares the BK7231N 2 MiB BDK table, parsed from the pinned framework.
+# Tuya T1 modules (bootloader 2.0.0, diff2ya updates) use another layout.
+[native]
+partition_source = "func/user_driver/BkFlashPartition.h"
+
+# LittleFS sits in the tail the SDK leaves unused without its own Matter port
+# (0x1E2000-0x1EE000) and AT service (0x1EE000-0x1F0000), so updates keep it.
+[filesystem]
+offset = 0x1E2000
+size = 0xE000
+
+# OpenBeken-style image policy. The raw linker output is not flashable; the
+# Newmota packager creates the CRC-wrapped app image and the RBL OTA image.
+[image]
+factory_format = "app-rbl"
+application_address = 0x10000
+application_container_size = 0x108700
+application_coefficients = "00000000000000000000000000000000"
+ota_format = "rbl"
+ota_compression = "gzip"
+ota_encryption = "aes256"
+ota_key = "0123456789ABCDEF0123456789ABCDEF"
+ota_iv = "0123456789ABCDEF"

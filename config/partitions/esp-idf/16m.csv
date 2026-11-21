@@ -1,0 +1,8 @@
+# Tasmota: esp32_partition_app3904k_fs11584k.csv
+# Source: https://github.com/arendst/Tasmota/tree/development/partitions
+# Name,   Type, SubType, Offset,  Size, Flags
+nvs,      data, nvs,     0x9000,  0x5000,
+otadata,  data, ota,     0xe000,  0x2000,
+safeboot, app,  factory, 0x10000, 0xD0000,
+app0,     app,  ota_0,   0xE0000, 0x3D0000,
+spiffs,   data, spiffs,  0x4B0000,0xB50000,

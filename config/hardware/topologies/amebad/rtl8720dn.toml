@@ -1,0 +1,54 @@
+schema = 1
+
+[source]
+project = "Realtek AmebaD SDK"
+paths = [
+  "component/common/mbed/targets/hal/rtl8721d/PinNames.h",
+  "component/soc/realtek/amebad/fwlib/usrcfg/rtl8721dlp_pinmapcfg.c",
+]
+
+[architecture]
+pin_count = 64
+template_slots = [
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+  10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+  20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+  30, 31, 32, 33, 34, 35, 36, 37, 38, 39,
+  40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
+  50, 51, 52, 53, 54, 55, 56, 57, 58, 59,
+  60, 61, 62, 63,
+]
+numbering = "amebad-port"
+default_capabilities = ["input", "output", "pull-up", "pull-down", "interrupt"]
+
+[[reservation]]
+owner = "console-loguart"
+pins = [7, 8]
+
+[[pin]]
+id = 33
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 34
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 35
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 36
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 37
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 38
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 39
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]

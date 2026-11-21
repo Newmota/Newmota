@@ -1,0 +1,6 @@
+{
+  "sdk_target": "rp2040",
+  "capability_overrides": {
+    "usb-otg": true
+  }
+}

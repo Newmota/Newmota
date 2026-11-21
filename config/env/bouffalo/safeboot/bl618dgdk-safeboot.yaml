@@ -1,0 +1,7 @@
+name: bl618dgdk-safeboot
+board: bl618dgdk
+role: safeboot
+profile: Safeboot
+language: en_GB
+native:
+  CONFIG_WIFI6_WPS: false

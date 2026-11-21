@@ -1,0 +1,6 @@
+{
+  "sdk_target": "bk7252n",
+  "capability_overrides": {
+    "wifi": true
+  }
+}

@@ -1,0 +1,7 @@
+name = "ESP-IDF"
+version = "v5.5.5"
+revision = "b774170ff46c393eeb5e495ea37936038d3f4f4f"
+programmer = "esptool"
+programmer_version = "4.12.0"
+programmer_status = "active"
+source = "esp-idf-v5.5"

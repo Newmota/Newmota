@@ -1,0 +1,43 @@
+# Newmota BL602 4 MiB partition table.
+#
+# This target-specific map keeps the boot2 and redundant table locations from
+# the BL602 native layout, expands the normal application and Safeboot slots
+# into the 4 MiB flash, and reserves the final 320 KiB for LittleFS.
+[pt_table]
+#partition table is 4K in size
+address0 = 0xE000
+address1 = 0xF000
+
+[[pt_entry]]
+type = 16
+name = "Boot2"
+device = 0
+address0 = 0
+size0 = 0xE000
+address1 = 0
+size1 = 0
+len = 0
+header = 1
+security = 1
+
+[[pt_entry]]
+type = 0
+name = "FW"
+device = 0
+# Slot 0: Standard application image.
+address0 = 0x10000
+size0 = 0x2A0000
+# Slot 1: Safeboot recovery image.
+address1 = 0x2B0000
+size1 = 0x100000
+len = 0
+
+[[pt_entry]]
+type = 9
+name = "lfs"
+device = 0
+address0 = 0x3B0000
+size0 = 0x50000
+address1 = 0
+size1 = 0
+len = 0

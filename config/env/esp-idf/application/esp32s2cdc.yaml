@@ -1,0 +1,6 @@
+name: esp32s2cdc
+board: esp32s2cdc
+role: application
+profile: Standard
+safeboot: esp32s2cdc-safeboot
+language: en_GB

@@ -1,0 +1,5 @@
+name: esp32s3-opi-opi-safeboot
+board: esp32s3-opi-opi
+role: safeboot
+profile: Safeboot
+language: en_GB

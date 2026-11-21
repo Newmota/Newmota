@@ -1,0 +1,8 @@
+# ESP32-S2 target identity.
+CONFIG_IDF_TARGET="esp32s2"
+
+# S2 shares instruction and data RAM. Keep Wi-Fi and non-ISR FreeRTOS code in
+# flash so application and recovery state fit; this trades throughput for RAM.
+CONFIG_ESP_WIFI_IRAM_OPT=n
+CONFIG_ESP_WIFI_RX_IRAM_OPT=n
+CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH=y

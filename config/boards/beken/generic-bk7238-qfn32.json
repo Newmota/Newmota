@@ -1,0 +1,7 @@
+{
+  "chip": "bk7238",
+  "flash": {
+    "size_kb": 2048
+  },
+  "profile_default": "Compact"
+}

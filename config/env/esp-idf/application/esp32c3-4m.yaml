@@ -1,0 +1,6 @@
+name: esp32c3-4m
+board: esp32c3-4m
+role: application
+profile: Standard
+safeboot: esp32c3-4m-safeboot
+language: en_GB

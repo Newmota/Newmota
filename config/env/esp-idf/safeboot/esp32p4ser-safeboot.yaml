@@ -1,0 +1,5 @@
+name: esp32p4ser-safeboot
+board: esp32p4ser
+role: safeboot
+profile: Safeboot
+language: en_GB

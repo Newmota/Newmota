@@ -1,0 +1,7 @@
+# BW16/RTL8720DN fitted with at least 4 MiB flash.
+name: bw16-4m
+board: bw16-4m
+role: application
+profile: Standard
+safeboot: bw16-4m-safeboot
+language: en_GB

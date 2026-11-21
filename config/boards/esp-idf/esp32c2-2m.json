@@ -1,0 +1,10 @@
+{
+  "chip": "esp32c2",
+  "flash": {
+    "size_kb": 2048,
+    "mode": "qio",
+    "frequency_mhz": 60
+  },
+  "console": "uart0",
+  "profile_default": "Compact"
+}

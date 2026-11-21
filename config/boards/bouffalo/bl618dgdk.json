@@ -1,0 +1,8 @@
+{
+  "chip": "bl618dg",
+  "flash": {
+    "size_kb": 4096
+  },
+  "sdk_board": "bl618dgdk",
+  "profile_default": "Standard"
+}

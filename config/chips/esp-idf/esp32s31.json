@@ -1,0 +1,4 @@
+{
+  "sdk_target": "esp32s31",
+  "idf_version": "6.1"
+}

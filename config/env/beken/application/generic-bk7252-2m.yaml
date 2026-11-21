@@ -1,0 +1,7 @@
+# Compact 2 MiB environment for any BK7252 module with the Beken SDK bootloader;
+# the template names the pins.
+name: generic-bk7252-2m
+board: generic-bk7252-2m
+role: application
+profile: Compact
+language: en_GB

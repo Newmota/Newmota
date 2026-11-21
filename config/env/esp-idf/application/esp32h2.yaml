@@ -1,0 +1,6 @@
+name: esp32h2
+board: esp32h2
+role: application
+profile: Compact
+safeboot: esp32h2-safeboot
+language: en_GB

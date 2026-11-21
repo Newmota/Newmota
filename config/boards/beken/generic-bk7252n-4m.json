@@ -1,0 +1,7 @@
+{
+  "chip": "bk7252n",
+  "flash": {
+    "size_kb": 4096
+  },
+  "profile_default": "Standard"
+}

@@ -1,0 +1,5 @@
+name: esp32s3-qio-opi-safeboot
+board: esp32s3-qio-opi
+role: safeboot
+profile: Safeboot
+language: en_GB

@@ -1,0 +1,6 @@
+# Raspberry Pi Pico W / RP2040 recovery image
+name: pico-w-safeboot
+board: pico-w
+role: safeboot
+profile: Safeboot
+language: en_GB

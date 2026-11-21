@@ -1,0 +1,11 @@
+# Newmota supplements ESP-IDF v5.5's upstream constraints.
+#
+# The upstream ranges currently allow versions which conflict with transitive
+# packages installed in the same ESP-IDF environment:
+#   esp-secure-cert-tool 2.3.6 requires setuptools==71.0.0
+#   esp-matter-mfg-tool 1.0.23 requires click==8.1.7 and cryptography==44.0.1
+# The flashing CLI uses ESP-IDF 5.5's underscore command interface, so esptool is exact.
+setuptools==71.0.0
+click==8.1.7
+cryptography==44.0.1
+esptool==4.12.0

@@ -1,0 +1,6 @@
+# config/env/bouffalo/safeboot/bl602-4m-safeboot.yaml — BL602 4 MB recovery image
+name: bl602-4m-safeboot
+board: bl602-4m
+role: safeboot
+profile: Safeboot
+language: en_GB

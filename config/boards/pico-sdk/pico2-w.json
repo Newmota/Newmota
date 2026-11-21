@@ -1,0 +1,24 @@
+{
+  "chip": "rp2350",
+  "flash": {
+    "size_kb": 4096
+  },
+  "console": "usb-cdc",
+  "sdk_board": "pico2_w",
+  "profile_default": "Standard",
+  "gpio": {
+    "source": "https://datasheets.raspberrypi.com/picow/pico-2-w-datasheet.pdf",
+    "exposed": [
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+      10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+      20, 21, 22, 26, 27, 28
+    ],
+    "reserved": {
+      "radio": [23, 24, 25, 29]
+    }
+  },
+  "capability_overrides": {
+    "wifi": true,
+    "ble": true
+  }
+}

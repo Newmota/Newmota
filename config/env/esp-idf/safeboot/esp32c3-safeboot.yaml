@@ -1,0 +1,5 @@
+name: esp32c3-safeboot
+board: esp32c3
+role: safeboot
+profile: Safeboot
+language: en_GB

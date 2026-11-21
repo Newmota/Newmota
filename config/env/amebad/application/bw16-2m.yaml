@@ -1,0 +1,7 @@
+# config/env/amebad/application/bw16-2m.yaml — Compact 2 MB environment for BW16/RTL8720DN
+name: bw16-2m
+board: bw16-2m
+role: application
+profile: Compact
+safeboot: bw16-2m-safeboot
+language: en_GB

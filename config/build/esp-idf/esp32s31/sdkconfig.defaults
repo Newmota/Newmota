@@ -1,0 +1,4 @@
+# ESP32-S31 IDF 6.1 preview target.
+CONFIG_IDF_TARGET="esp32s31"
+# IDF 6.1 selects bring-up mode for S31; its bootloader bypasses invalid image SHA-256 hashes.
+CONFIG_ESPTOOLPY_NO_STUB=n

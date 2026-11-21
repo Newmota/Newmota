@@ -1,0 +1,6 @@
+{
+  "sdk_target": "rp2350-arm-s",
+  "capability_overrides": {
+    "usb-otg": true
+  }
+}

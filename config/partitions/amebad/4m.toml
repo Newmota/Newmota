@@ -1,0 +1,19 @@
+schema = 1
+flash_bytes = 0x400000
+
+# Match the 4 MiB ESP allocation while retaining AmebaD's boot/system area and
+# native OTA1/OTA2 image chains. The generated boot config selects these native
+# physical slot starts; no ESP partition table or OTA metadata is used.
+[ota1]
+offset = 0x010000
+size = 0x0D0000
+
+[ota2]
+offset = 0x0E0000
+size = 0x2D0000
+
+[filesystem]
+type = "littlefs"
+offset = 0x3B0000
+size = 0x050000
+block_size = 0x1000

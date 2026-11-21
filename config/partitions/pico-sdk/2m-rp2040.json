@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "chip": "rp2040",
+  "flash_bytes": 2097152,
+  "regions": [
+    {"name": "safeboot", "role": "safeboot", "offset": 0, "size": 786432},
+    {"name": "application", "role": "application", "offset": 786432, "size": 1241088},
+    {"name": "boot-marker", "role": "reserved", "offset": 2027520, "size": 4096},
+    {"name": "littlefs", "role": "littlefs", "offset": 2031616, "size": 65536}
+  ]
+}

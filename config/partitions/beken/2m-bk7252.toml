@@ -1,0 +1,29 @@
+schema = 2
+flash_bytes = 0x200000
+erase_size = 0x1000
+
+# Beken SDK layout for BK7252. The BDK builds it as SOC_BK7221U, whose 2 MiB
+# table keeps RF calibration at 0x1E0000 and moves NET info to 0x1FF000.
+[native]
+partition_source = "func/user_driver/BkFlashPartition.h"
+
+# LittleFS sits in the tail the SDK leaves unused without its own Matter port
+# (0x1E2000-0x1EE000) and AT service (0x1EE000-0x1F0000), so updates keep it.
+[filesystem]
+offset = 0x1E2000
+size = 0xE000
+
+# OpenBeken-style image policy. The raw linker output is not flashable; the
+# Newmota packager creates the CRC-wrapped app image and the RBL OTA image.
+# Modules with the Beken SDK bootloader use the all-zero key; Tuya modules with
+# the Tuya key need their own layout.
+[image]
+factory_format = "app-rbl"
+application_address = 0x10000
+application_container_size = 0x108700
+application_coefficients = "00000000000000000000000000000000"
+ota_format = "rbl"
+ota_compression = "gzip"
+ota_encryption = "aes256"
+ota_key = "0123456789ABCDEF0123456789ABCDEF"
+ota_iv = "0123456789ABCDEF"

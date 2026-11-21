@@ -1,0 +1,154 @@
+/*
+  boot_counter.cpp - host tests for Newmota's persistent boot counter
+
+  Copyright (C) 2026 Christian Baars and Newmota contributors
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+*/
+
+#include "core/storage/filesystem.h"
+#include "core/system/boot_counter.h"
+
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <string_view>
+
+namespace {
+
+constexpr std::size_t kRecordCapacity = 32U;
+
+struct FileSlot final {
+    std::array<std::uint8_t, kRecordCapacity> bytes{};
+    std::size_t size{};
+    bool present{};
+};
+
+std::array<FileSlot, 3> files{};
+
+/** @brief Finds one boot-counter fixture path. */
+[[nodiscard]] FileSlot* file_for(const std::string_view path) {
+    if (path == "/.newmota/boot.bin")
+        return &files[0];
+    if (path == "/.newmota/boot.prev")
+        return &files[1];
+    if (path == "/.newmota/boot.tmp")
+        return &files[2];
+    return nullptr;
+}
+
+/** @brief Clears the fixed filesystem fixture. */
+void clear_files() {
+    files = {};
+}
+
+/** @brief Records one failed expectation. */
+void expect(const bool condition, const char* const message, int& failures) {
+    if (!condition) {
+        std::fprintf(stderr, "boot counter: %s\n", message);
+        ++failures;
+    }
+}
+
+} // namespace
+
+namespace newmota::filesystem {
+
+bool is_mounted(Volume) {
+    return true;
+}
+
+MutationResult ensure_directory(const std::string_view path) {
+    return path == "/.newmota" ? MutationResult::succeeded : MutationResult::invalid_path;
+}
+
+ReadResult read_file(
+    const std::string_view path, void* const data, const std::size_t capacity, std::size_t& size) {
+    size = 0U;
+    const FileSlot* const file = file_for(path);
+    if (file == nullptr)
+        return ReadResult::invalid_path;
+    if (!file->present)
+        return ReadResult::not_found;
+    if (file->size > capacity)
+        return ReadResult::too_large;
+    std::memcpy(data, file->bytes.data(), file->size);
+    size = file->size;
+    return ReadResult::succeeded;
+}
+
+MutationResult write_file(
+    const std::string_view path, const void* const data, const std::size_t size) {
+    FileSlot* const file = file_for(path);
+    if (file == nullptr || size > file->bytes.size()) {
+        return MutationResult::invalid_path;
+    }
+    std::memcpy(file->bytes.data(), data, size);
+    file->size = size;
+    file->present = true;
+    return MutationResult::succeeded;
+}
+
+MutationResult remove_if_exists(const std::string_view path) {
+    FileSlot* const file = file_for(path);
+    if (file == nullptr)
+        return MutationResult::invalid_path;
+    *file = {};
+    return MutationResult::succeeded;
+}
+
+MutationResult rename(const std::string_view source, const std::string_view destination) {
+    FileSlot* const source_file = file_for(source);
+    FileSlot* const destination_file = file_for(destination);
+    if (source_file == nullptr || destination_file == nullptr || !source_file->present ||
+        destination_file->present) {
+        return MutationResult::failed;
+    }
+    *destination_file = *source_file;
+    *source_file = {};
+    return MutationResult::succeeded;
+}
+
+} // namespace newmota::filesystem
+
+int main() {
+    using namespace newmota;
+    int failures = 0;
+
+    clear_files();
+    BootCounter first;
+    expect(first.initialize() && first.status().available && first.status().count == 1U,
+        "first boot creates count one", failures);
+
+    BootCounter second;
+    expect(second.initialize() && second.status().count == 2U,
+        "second boot rotates and increments the record", failures);
+
+    BootCounter third;
+    expect(third.initialize() && third.status().count == 3U, "previous record remains recoverable",
+        failures);
+
+    expect(third.reset() && third.status().available && third.status().count == 0U,
+        "explicit reset persists zero", failures);
+    BootCounter after_reset;
+    expect(after_reset.initialize() && after_reset.status().count == 1U,
+        "next boot starts at one after reset", failures);
+
+    clear_files();
+    BootCounter corrupted;
+    expect(corrupted.initialize(), "corruption fixture has an initial record", failures);
+    files[0].bytes[0] ^= 0x01U;
+    BootCounter rejected;
+    expect(!rejected.initialize() && !rejected.status().available,
+        "corrupt sole record is rejected without inventing a count", failures);
+
+    if (failures == 0) {
+        std::puts("Boot counter tests passed");
+    }
+    return failures == 0 ? 0 : 1;
+}

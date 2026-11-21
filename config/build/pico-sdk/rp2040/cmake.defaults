@@ -1,0 +1,2 @@
+# RP2040 Arm/Cortex-M0+ baseline.
+PICO_PLATFORM=rp2040

@@ -1,0 +1,20 @@
+schema = 1
+flash_bytes = 0x200000
+
+# The fixed AmebaD boot/system area occupies the beginning of flash. The first
+# selectable image therefore starts at 0x10000. OTA1 reserves the larger image
+# space required by MQTT-capable Safeboot. LittleFS stays fixed at the end of
+# flash.
+[ota1]
+offset = 0x010000
+size = 0x0C8000
+
+[ota2]
+offset = 0x0D8000
+size = 0x118000
+
+[filesystem]
+type = "littlefs"
+offset = 0x1F0000
+size = 0x010000
+block_size = 0x1000

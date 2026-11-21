@@ -1,0 +1,6 @@
+# Compact 2 MiB Tuya WB2S module with BK7231T.
+name: wb2s
+board: wb2s
+role: application
+profile: Compact
+language: en_GB

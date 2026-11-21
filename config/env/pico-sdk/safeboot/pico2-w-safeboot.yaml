@@ -1,0 +1,6 @@
+# config/env/pico-sdk/safeboot/pico2-w-safeboot.yaml — Pico 2 W recovery image
+name: pico2-w-safeboot
+board: pico2-w
+role: safeboot
+profile: Safeboot
+language: en_GB

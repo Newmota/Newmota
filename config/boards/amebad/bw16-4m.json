@@ -1,0 +1,12 @@
+{
+  "chip": "rtl8720dn",
+  "flash": {
+    "size_kb": 4096
+  },
+  "gpio": {
+    "source": "https://files.seeedstudio.com/products/102110419/Basic%20documents/bw16_product_specification_en.pdf",
+    "exposed": [7, 8, 12, 13, 14, 15, 25, 26, 27, 30, 33, 34, 35]
+  },
+  "sdk_board": "realtek_amebaD_va0_example",
+  "profile_default": "Standard"
+}

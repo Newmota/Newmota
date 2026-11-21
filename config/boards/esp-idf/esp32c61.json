@@ -1,0 +1,15 @@
+{
+  "chip": "esp32c61",
+  "flash": {
+    "size_kb": 4096,
+    "mode": "qio",
+    "frequency_mhz": 80
+  },
+  "psram": {
+    "size_kb": 2048,
+    "mode": "quad",
+    "frequency_mhz": 40
+  },
+  "console": "usb-serial-jtag",
+  "profile_default": "Standard"
+}

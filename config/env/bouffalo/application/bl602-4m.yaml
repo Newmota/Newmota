@@ -1,0 +1,7 @@
+# config/env/bouffalo/application/bl602-4m.yaml — Standard 4 MB environment for BL602
+name: bl602-4m
+board: bl602-4m
+role: application
+profile: Standard
+safeboot: bl602-4m-safeboot
+language: en_GB

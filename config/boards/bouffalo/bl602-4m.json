@@ -1,0 +1,8 @@
+{
+  "chip": "bl602",
+  "flash": {
+    "size_kb": 4096
+  },
+  "sdk_board": "bl602dk",
+  "profile_default": "Standard"
+}

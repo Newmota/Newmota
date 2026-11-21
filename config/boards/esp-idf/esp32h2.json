@@ -1,0 +1,10 @@
+{
+  "chip": "esp32h2",
+  "flash": {
+    "size_kb": 4096,
+    "mode": "dio",
+    "frequency_mhz": 64
+  },
+  "console": "uart0",
+  "profile_default": "Compact"
+}

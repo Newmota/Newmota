@@ -1,0 +1,2824 @@
+schema = 1
+
+[source]
+project = "Tasmota"
+repository = "https://github.com/arendst/Tasmota.git"
+revision = "37fed605bade755234b04e1076afbc31a7699eef"
+path = "tasmota/include/tasmota_template.h"
+defines = ["ESP32", "USE_MODBUS_RELAY"]
+enum_sha256 = "9d3b4aaade3cdd9ae24a972887799c0cc8311ae2281e9a92ad4ff591e115ad9d"
+
+[encoding]
+shift = 5
+instance_mask = 31
+sensor_end = 389
+fixed_start = 2046
+user_base = 2047
+template_user_value = 1
+
+[[id]]
+base = 0
+symbol = "GPIO_NONE"
+
+[[id]]
+base = 1
+symbol = "GPIO_KEY1"
+
+[[id]]
+base = 2
+symbol = "GPIO_KEY1_NP"
+
+[[id]]
+base = 3
+symbol = "GPIO_KEY1_INV"
+
+[[id]]
+base = 4
+symbol = "GPIO_KEY1_INV_NP"
+
+[[id]]
+base = 5
+symbol = "GPIO_SWT1"
+
+[[id]]
+base = 6
+symbol = "GPIO_SWT1_NP"
+
+[[id]]
+base = 7
+symbol = "GPIO_REL1"
+
+[[id]]
+base = 8
+symbol = "GPIO_REL1_INV"
+
+[[id]]
+base = 9
+symbol = "GPIO_LED1"
+
+[[id]]
+base = 10
+symbol = "GPIO_LED1_INV"
+
+[[id]]
+base = 11
+symbol = "GPIO_CNTR1"
+
+[[id]]
+base = 12
+symbol = "GPIO_CNTR1_NP"
+
+[[id]]
+base = 13
+symbol = "GPIO_PWM1"
+
+[[id]]
+base = 14
+symbol = "GPIO_PWM1_INV"
+
+[[id]]
+base = 15
+symbol = "GPIO_BUZZER"
+
+[[id]]
+base = 16
+symbol = "GPIO_BUZZER_INV"
+
+[[id]]
+base = 17
+symbol = "GPIO_LEDLNK"
+
+[[id]]
+base = 18
+symbol = "GPIO_LEDLNK_INV"
+
+[[id]]
+base = 19
+symbol = "GPIO_I2C_SCL"
+
+[[id]]
+base = 20
+symbol = "GPIO_I2C_SDA"
+
+[[id]]
+base = 21
+symbol = "GPIO_SPI_MISO"
+
+[[id]]
+base = 22
+symbol = "GPIO_SPI_MOSI"
+
+[[id]]
+base = 23
+symbol = "GPIO_SPI_CLK"
+
+[[id]]
+base = 24
+symbol = "GPIO_SPI_CS"
+
+[[id]]
+base = 25
+symbol = "GPIO_SPI_DC"
+
+[[id]]
+base = 26
+symbol = "GPIO_SSPI_MISO"
+
+[[id]]
+base = 27
+symbol = "GPIO_SSPI_MOSI"
+
+[[id]]
+base = 28
+symbol = "GPIO_SSPI_SCLK"
+
+[[id]]
+base = 29
+symbol = "GPIO_SSPI_CS"
+
+[[id]]
+base = 30
+symbol = "GPIO_SSPI_DC"
+
+[[id]]
+base = 31
+symbol = "GPIO_BACKLIGHT"
+
+[[id]]
+base = 32
+symbol = "GPIO_DISPLAY_RESET"
+
+[[id]]
+base = 33
+symbol = "GPIO_IRSEND"
+
+[[id]]
+base = 34
+symbol = "GPIO_IRRECV"
+
+[[id]]
+base = 35
+symbol = "GPIO_RFSEND"
+
+[[id]]
+base = 36
+symbol = "GPIO_RFRECV"
+
+[[id]]
+base = 37
+symbol = "GPIO_DHT11"
+
+[[id]]
+base = 38
+symbol = "GPIO_DHT22"
+
+[[id]]
+base = 39
+symbol = "GPIO_SI7021"
+
+[[id]]
+base = 40
+symbol = "GPIO_DHT11_OUT"
+
+[[id]]
+base = 41
+symbol = "GPIO_DSB"
+
+[[id]]
+base = 42
+symbol = "GPIO_DSB_OUT"
+
+[[id]]
+base = 43
+symbol = "GPIO_WS2812"
+
+[[id]]
+base = 44
+symbol = "GPIO_MHZ_TXD"
+
+[[id]]
+base = 45
+symbol = "GPIO_MHZ_RXD"
+
+[[id]]
+base = 46
+symbol = "GPIO_PZEM0XX_TX"
+
+[[id]]
+base = 47
+symbol = "GPIO_PZEM004_RX"
+
+[[id]]
+base = 48
+symbol = "GPIO_PZEM016_RX"
+
+[[id]]
+base = 49
+symbol = "GPIO_PZEM017_RX"
+
+[[id]]
+base = 50
+symbol = "GPIO_SAIR_TX"
+
+[[id]]
+base = 51
+symbol = "GPIO_SAIR_RX"
+
+[[id]]
+base = 52
+symbol = "GPIO_PMS5003_TX"
+
+[[id]]
+base = 53
+symbol = "GPIO_PMS5003_RX"
+
+[[id]]
+base = 54
+symbol = "GPIO_SDS0X1_TX"
+
+[[id]]
+base = 55
+symbol = "GPIO_SDS0X1_RX"
+
+[[id]]
+base = 56
+symbol = "GPIO_SBR_TX"
+
+[[id]]
+base = 57
+symbol = "GPIO_SBR_RX"
+
+[[id]]
+base = 58
+symbol = "GPIO_SR04_TRIG"
+
+[[id]]
+base = 59
+symbol = "GPIO_SR04_ECHO"
+
+[[id]]
+base = 60
+symbol = "GPIO_SDM120_TX"
+
+[[id]]
+base = 61
+symbol = "GPIO_SDM120_RX"
+
+[[id]]
+base = 62
+symbol = "GPIO_SDM630_TX"
+
+[[id]]
+base = 63
+symbol = "GPIO_SDM630_RX"
+
+[[id]]
+base = 64
+symbol = "GPIO_TM1638CLK"
+
+[[id]]
+base = 65
+symbol = "GPIO_TM1638DIO"
+
+[[id]]
+base = 66
+symbol = "GPIO_TM1638STB"
+
+[[id]]
+base = 67
+symbol = "GPIO_MP3_DFR562"
+
+[[id]]
+base = 68
+symbol = "GPIO_HX711_SCK"
+
+[[id]]
+base = 69
+symbol = "GPIO_HX711_DAT"
+
+[[id]]
+base = 70
+symbol = "GPIO_TX2X_TXD_BLACK"
+
+[[id]]
+base = 71
+symbol = "GPIO_TUYA_TX"
+
+[[id]]
+base = 72
+symbol = "GPIO_TUYA_RX"
+
+[[id]]
+base = 73
+symbol = "GPIO_MGC3130_XFER"
+
+[[id]]
+base = 74
+symbol = "GPIO_MGC3130_RESET"
+
+[[id]]
+base = 75
+symbol = "GPIO_RF_SENSOR"
+
+[[id]]
+base = 76
+symbol = "GPIO_AZ_TXD"
+
+[[id]]
+base = 77
+symbol = "GPIO_AZ_RXD"
+
+[[id]]
+base = 78
+symbol = "GPIO_MAX31855CS"
+
+[[id]]
+base = 79
+symbol = "GPIO_MAX31855CLK"
+
+[[id]]
+base = 80
+symbol = "GPIO_MAX31855DO"
+
+[[id]]
+base = 81
+symbol = "GPIO_NRG_SEL"
+
+[[id]]
+base = 82
+symbol = "GPIO_NRG_SEL_INV"
+
+[[id]]
+base = 83
+symbol = "GPIO_NRG_CF1"
+
+[[id]]
+base = 84
+symbol = "GPIO_HLW_CF"
+
+[[id]]
+base = 85
+symbol = "GPIO_HJL_CF"
+
+[[id]]
+base = 86
+symbol = "GPIO_MCP39F5_TX"
+
+[[id]]
+base = 87
+symbol = "GPIO_MCP39F5_RX"
+
+[[id]]
+base = 88
+symbol = "GPIO_MCP39F5_RST"
+
+[[id]]
+base = 89
+symbol = "GPIO_PN532_TXD"
+
+[[id]]
+base = 90
+symbol = "GPIO_PN532_RXD"
+
+[[id]]
+base = 91
+symbol = "GPIO_SM16716_CLK"
+
+[[id]]
+base = 92
+symbol = "GPIO_SM16716_DAT"
+
+[[id]]
+base = 93
+symbol = "GPIO_SM16716_SEL"
+
+[[id]]
+base = 94
+symbol = "GPIO_DI"
+
+[[id]]
+base = 95
+symbol = "GPIO_DCKI"
+
+[[id]]
+base = 96
+symbol = "GPIO_CSE7766_TX"
+
+[[id]]
+base = 97
+symbol = "GPIO_CSE7766_RX"
+
+[[id]]
+base = 98
+symbol = "GPIO_ARIRFRCV"
+
+[[id]]
+base = 99
+symbol = "GPIO_ARIRFSEL"
+
+[[id]]
+base = 100
+symbol = "GPIO_TXD"
+
+[[id]]
+base = 101
+symbol = "GPIO_RXD"
+
+[[id]]
+base = 102
+symbol = "GPIO_ROT1A"
+
+[[id]]
+base = 103
+symbol = "GPIO_ROT1B"
+
+[[id]]
+base = 104
+symbol = "GPIO_ADC_JOY"
+
+[[id]]
+base = 105
+symbol = "GPIO_SSPI_MAX31865_CS1"
+
+[[id]]
+base = 106
+symbol = "GPIO_HRE_CLOCK"
+
+[[id]]
+base = 107
+symbol = "GPIO_HRE_DATA"
+
+[[id]]
+base = 108
+symbol = "GPIO_ADE7953_IRQ"
+
+[[id]]
+base = 109
+symbol = "GPIO_SOLAXX1_TX"
+
+[[id]]
+base = 110
+symbol = "GPIO_SOLAXX1_RX"
+
+[[id]]
+base = 111
+symbol = "GPIO_ZIGBEE_TX"
+
+[[id]]
+base = 112
+symbol = "GPIO_ZIGBEE_RX"
+
+[[id]]
+base = 113
+symbol = "GPIO_RDM6300_RX"
+
+[[id]]
+base = 114
+symbol = "GPIO_IBEACON_TX"
+
+[[id]]
+base = 115
+symbol = "GPIO_IBEACON_RX"
+
+[[id]]
+base = 116
+symbol = "GPIO_A4988_DIR"
+
+[[id]]
+base = 117
+symbol = "GPIO_A4988_STP"
+
+[[id]]
+base = 118
+symbol = "GPIO_A4988_ENA"
+
+[[id]]
+base = 119
+symbol = "GPIO_A4988_MS1"
+
+[[id]]
+base = 120
+symbol = "GPIO_OUTPUT_HI"
+
+[[id]]
+base = 121
+symbol = "GPIO_OUTPUT_LO"
+
+[[id]]
+base = 122
+symbol = "GPIO_DDS2382_TX"
+
+[[id]]
+base = 123
+symbol = "GPIO_DDS2382_RX"
+
+[[id]]
+base = 124
+symbol = "GPIO_DDSU666_TX"
+
+[[id]]
+base = 125
+symbol = "GPIO_DDSU666_RX"
+
+[[id]]
+base = 126
+symbol = "GPIO_SM2135_CLK"
+
+[[id]]
+base = 127
+symbol = "GPIO_SM2135_DAT"
+
+[[id]]
+base = 128
+symbol = "GPIO_DEEPSLEEP"
+
+[[id]]
+base = 129
+symbol = "GPIO_EXS_ENABLE"
+
+[[id]]
+base = 130
+symbol = "GPIO_TASMOTACLIENT_TXD"
+
+[[id]]
+base = 131
+symbol = "GPIO_TASMOTACLIENT_RXD"
+
+[[id]]
+base = 132
+symbol = "GPIO_TASMOTACLIENT_RST"
+
+[[id]]
+base = 133
+symbol = "GPIO_TASMOTACLIENT_RST_INV"
+
+[[id]]
+base = 134
+symbol = "GPIO_HPMA_RX"
+
+[[id]]
+base = 135
+symbol = "GPIO_HPMA_TX"
+
+[[id]]
+base = 136
+symbol = "GPIO_GPS_RX"
+
+[[id]]
+base = 137
+symbol = "GPIO_GPS_TX"
+
+[[id]]
+base = 138
+symbol = "GPIO_HM10_RX"
+
+[[id]]
+base = 139
+symbol = "GPIO_HM10_TX"
+
+[[id]]
+base = 140
+symbol = "GPIO_LE01MR_RX"
+
+[[id]]
+base = 141
+symbol = "GPIO_LE01MR_TX"
+
+[[id]]
+base = 142
+symbol = "GPIO_CC1101_GDO0"
+
+[[id]]
+base = 143
+symbol = "GPIO_CC1101_GDO2"
+
+[[id]]
+base = 144
+symbol = "GPIO_HRXL_RX"
+
+[[id]]
+base = 145
+symbol = "GPIO_ELECTRIQ_MOODL_TX"
+
+[[id]]
+base = 146
+symbol = "GPIO_AS3935"
+
+[[id]]
+base = 147
+symbol = "GPIO_ADC_INPUT"
+
+[[id]]
+base = 148
+symbol = "GPIO_ADC_TEMP"
+
+[[id]]
+base = 149
+symbol = "GPIO_ADC_LIGHT"
+
+[[id]]
+base = 150
+symbol = "GPIO_ADC_BUTTON"
+
+[[id]]
+base = 151
+symbol = "GPIO_ADC_BUTTON_INV"
+
+[[id]]
+base = 152
+symbol = "GPIO_ADC_RANGE"
+
+[[id]]
+base = 153
+symbol = "GPIO_ADC_CT_POWER"
+
+[[id]]
+base = 154
+symbol = "GPIO_WEBCAM_PWDN"
+
+[[id]]
+base = 155
+symbol = "GPIO_WEBCAM_RESET"
+
+[[id]]
+base = 156
+symbol = "GPIO_WEBCAM_XCLK"
+
+[[id]]
+base = 157
+symbol = "GPIO_WEBCAM_SIOD"
+
+[[id]]
+base = 158
+symbol = "GPIO_WEBCAM_SIOC"
+
+[[id]]
+base = 159
+symbol = "GPIO_WEBCAM_DATA"
+
+[[id]]
+base = 160
+symbol = "GPIO_WEBCAM_VSYNC"
+
+[[id]]
+base = 161
+symbol = "GPIO_WEBCAM_HREF"
+
+[[id]]
+base = 162
+symbol = "GPIO_WEBCAM_PCLK"
+
+[[id]]
+base = 163
+symbol = "GPIO_WEBCAM_PSCLK"
+
+[[id]]
+base = 164
+symbol = "GPIO_WEBCAM_HSD"
+
+[[id]]
+base = 165
+symbol = "GPIO_WEBCAM_PSRCS"
+
+[[id]]
+base = 166
+symbol = "GPIO_BOILER_OT_RX"
+
+[[id]]
+base = 167
+symbol = "GPIO_BOILER_OT_TX"
+
+[[id]]
+base = 168
+symbol = "GPIO_WINDMETER_SPEED"
+
+[[id]]
+base = 169
+symbol = "GPIO_KEY1_TC"
+
+[[id]]
+base = 170
+symbol = "GPIO_BL0940_RX"
+
+[[id]]
+base = 171
+symbol = "GPIO_TCP_TX"
+
+[[id]]
+base = 172
+symbol = "GPIO_TCP_RX"
+
+[[id]]
+base = 173
+symbol = "GPIO_ETH_PHY_POWER"
+
+[[id]]
+base = 174
+symbol = "GPIO_ETH_PHY_MDC"
+
+[[id]]
+base = 175
+symbol = "GPIO_ETH_PHY_MDIO"
+
+[[id]]
+base = 176
+symbol = "GPIO_TELEINFO_RX"
+
+[[id]]
+base = 177
+symbol = "GPIO_TELEINFO_ENABLE"
+
+[[id]]
+base = 178
+symbol = "GPIO_LMT01"
+
+[[id]]
+base = 179
+symbol = "GPIO_IEM3000_TX"
+
+[[id]]
+base = 180
+symbol = "GPIO_IEM3000_RX"
+
+[[id]]
+base = 181
+symbol = "GPIO_ZIGBEE_RST"
+
+[[id]]
+base = 182
+symbol = "GPIO_DYP_RX"
+
+[[id]]
+base = 183
+symbol = "GPIO_MIEL_HVAC_TX"
+
+[[id]]
+base = 184
+symbol = "GPIO_MIEL_HVAC_RX"
+
+[[id]]
+base = 185
+symbol = "GPIO_WE517_TX"
+
+[[id]]
+base = 186
+symbol = "GPIO_WE517_RX"
+
+[[id]]
+base = 187
+symbol = "GPIO_AS608_TX"
+
+[[id]]
+base = 188
+symbol = "GPIO_AS608_RX"
+
+[[id]]
+base = 189
+symbol = "GPIO_SHELLY_DIMMER_BOOT0"
+
+[[id]]
+base = 190
+symbol = "GPIO_SHELLY_DIMMER_RST_INV"
+
+[[id]]
+base = 191
+symbol = "GPIO_RC522_RST"
+
+[[id]]
+base = 192
+symbol = "GPIO_P9813_CLK"
+
+[[id]]
+base = 193
+symbol = "GPIO_P9813_DAT"
+
+[[id]]
+base = 194
+symbol = "GPIO_OPTION_A"
+
+[[id]]
+base = 195
+symbol = "GPIO_FTC532"
+
+[[id]]
+base = 196
+symbol = "GPIO_RC522_CS"
+
+[[id]]
+base = 197
+symbol = "GPIO_NRF24_CS"
+
+[[id]]
+base = 198
+symbol = "GPIO_NRF24_DC"
+
+[[id]]
+base = 199
+symbol = "GPIO_ILI9341_CS"
+
+[[id]]
+base = 200
+symbol = "GPIO_ILI9341_DC"
+
+[[id]]
+base = 201
+symbol = "GPIO_ILI9488_CS"
+
+[[id]]
+base = 202
+symbol = "GPIO_EPAPER29_CS"
+
+[[id]]
+base = 203
+symbol = "GPIO_EPAPER42_CS"
+
+[[id]]
+base = 204
+symbol = "GPIO_SSD1351_CS"
+
+[[id]]
+base = 205
+symbol = "GPIO_RA8876_CS"
+
+[[id]]
+base = 206
+symbol = "GPIO_ST7789_CS"
+
+[[id]]
+base = 207
+symbol = "GPIO_ST7789_DC"
+
+[[id]]
+base = 208
+symbol = "GPIO_SSD1331_CS"
+
+[[id]]
+base = 209
+symbol = "GPIO_SSD1331_DC"
+
+[[id]]
+base = 210
+symbol = "GPIO_SDCARD_CS"
+
+[[id]]
+base = 211
+symbol = "GPIO_ROT1A_NP"
+
+[[id]]
+base = 212
+symbol = "GPIO_ROT1B_NP"
+
+[[id]]
+base = 213
+symbol = "GPIO_ADC_PH"
+
+[[id]]
+base = 214
+symbol = "GPIO_BS814_CLK"
+
+[[id]]
+base = 215
+symbol = "GPIO_BS814_DAT"
+
+[[id]]
+base = 216
+symbol = "GPIO_WIEGAND_D0"
+
+[[id]]
+base = 217
+symbol = "GPIO_WIEGAND_D1"
+
+[[id]]
+base = 218
+symbol = "GPIO_NEOPOOL_TX"
+
+[[id]]
+base = 219
+symbol = "GPIO_NEOPOOL_RX"
+
+[[id]]
+base = 220
+symbol = "GPIO_SDM72_TX"
+
+[[id]]
+base = 221
+symbol = "GPIO_SDM72_RX"
+
+[[id]]
+base = 222
+symbol = "GPIO_TM1637CLK"
+
+[[id]]
+base = 223
+symbol = "GPIO_TM1637DIO"
+
+[[id]]
+base = 224
+symbol = "GPIO_PROJECTOR_CTRL_TX"
+
+[[id]]
+base = 225
+symbol = "GPIO_PROJECTOR_CTRL_RX"
+
+[[id]]
+base = 226
+symbol = "GPIO_SSD1351_DC"
+
+[[id]]
+base = 227
+symbol = "GPIO_XPT2046_CS"
+
+[[id]]
+base = 228
+symbol = "GPIO_CSE7761_TX"
+
+[[id]]
+base = 229
+symbol = "GPIO_CSE7761_RX"
+
+[[id]]
+base = 230
+symbol = "GPIO_VL53LXX_XSHUT1"
+
+[[id]]
+base = 231
+symbol = "GPIO_MAX7219CLK"
+
+[[id]]
+base = 232
+symbol = "GPIO_MAX7219DIN"
+
+[[id]]
+base = 233
+symbol = "GPIO_MAX7219CS"
+
+[[id]]
+base = 234
+symbol = "GPIO_TFMINIPLUS_TX"
+
+[[id]]
+base = 235
+symbol = "GPIO_TFMINIPLUS_RX"
+
+[[id]]
+base = 236
+symbol = "GPIO_ZEROCROSS"
+
+[[id]]
+base = 237
+symbol = "GPIO_HALLEFFECT"
+
+[[id]]
+base = 238
+symbol = "GPIO_EPD_DATA"
+
+[[id]]
+base = 239
+symbol = "GPIO_INPUT"
+
+[[id]]
+base = 240
+symbol = "GPIO_KEY1_PD"
+
+[[id]]
+base = 241
+symbol = "GPIO_KEY1_INV_PD"
+
+[[id]]
+base = 242
+symbol = "GPIO_SWT1_PD"
+
+[[id]]
+base = 243
+symbol = "GPIO_I2S_DOUT"
+
+[[id]]
+base = 244
+symbol = "GPIO_I2S_BCLK"
+
+[[id]]
+base = 245
+symbol = "GPIO_I2S_WS"
+
+[[id]]
+base = 246
+symbol = "GPIO_I2S_DIN"
+
+[[id]]
+base = 247
+symbol = "GPIO_I2S_BCLK_IN"
+
+[[id]]
+base = 248
+symbol = "GPIO_I2S_WS_IN"
+
+[[id]]
+base = 249
+symbol = "GPIO_INTERRUPT"
+
+[[id]]
+base = 250
+symbol = "GPIO_MCP2515_CS"
+
+[[id]]
+base = 251
+symbol = "GPIO_HRG15_TX"
+
+[[id]]
+base = 252
+symbol = "GPIO_HRG15_RX"
+
+[[id]]
+base = 253
+symbol = "GPIO_VINDRIKTNING_RX"
+
+[[id]]
+base = 254
+symbol = "GPIO_BL0939_RX"
+
+[[id]]
+base = 255
+symbol = "GPIO_BL0942_RX"
+
+[[id]]
+base = 256
+symbol = "GPIO_HM330X_SET"
+
+[[id]]
+base = 257
+symbol = "GPIO_HEARTBEAT"
+
+[[id]]
+base = 258
+symbol = "GPIO_HEARTBEAT_INV"
+
+[[id]]
+base = 259
+symbol = "GPIO_SHIFT595_SRCLK"
+
+[[id]]
+base = 260
+symbol = "GPIO_SHIFT595_RCLK"
+
+[[id]]
+base = 261
+symbol = "GPIO_SHIFT595_OE"
+
+[[id]]
+base = 262
+symbol = "GPIO_SHIFT595_SER"
+
+[[id]]
+base = 263
+symbol = "GPIO_SOLAXX1_RTS"
+
+[[id]]
+base = 264
+symbol = "GPIO_OPTION_E"
+
+[[id]]
+base = 265
+symbol = "GPIO_SDM230_TX"
+
+[[id]]
+base = 266
+symbol = "GPIO_SDM230_RX"
+
+[[id]]
+base = 267
+symbol = "GPIO_ADC_MQ"
+
+[[id]]
+base = 268
+symbol = "GPIO_CM11_TXD"
+
+[[id]]
+base = 269
+symbol = "GPIO_CM11_RXD"
+
+[[id]]
+base = 270
+symbol = "GPIO_BL6523_TX"
+
+[[id]]
+base = 271
+symbol = "GPIO_BL6523_RX"
+
+[[id]]
+base = 272
+symbol = "GPIO_ADE7880_IRQ"
+
+[[id]]
+base = 273
+symbol = "GPIO_RESET"
+
+[[id]]
+base = 274
+symbol = "GPIO_MS01"
+
+[[id]]
+base = 275
+symbol = "GPIO_SDIO_CMD"
+
+[[id]]
+base = 276
+symbol = "GPIO_SDIO_CLK"
+
+[[id]]
+base = 277
+symbol = "GPIO_SDIO_D0"
+
+[[id]]
+base = 278
+symbol = "GPIO_SDIO_D1"
+
+[[id]]
+base = 279
+symbol = "GPIO_SDIO_D2"
+
+[[id]]
+base = 280
+symbol = "GPIO_SDIO_D3"
+
+[[id]]
+base = 281
+symbol = "GPIO_FLOWRATEMETER_IN"
+
+[[id]]
+base = 282
+symbol = "GPIO_BP5758D_CLK"
+
+[[id]]
+base = 283
+symbol = "GPIO_BP5758D_DAT"
+
+[[id]]
+base = 284
+symbol = "GPIO_SM2335_CLK"
+
+[[id]]
+base = 285
+symbol = "GPIO_SM2335_DAT"
+
+[[id]]
+base = 286
+symbol = "GPIO_MP3_DFR562_BUSY"
+
+[[id]]
+base = 287
+symbol = "GPIO_TM1621_CS"
+
+[[id]]
+base = 288
+symbol = "GPIO_TM1621_WR"
+
+[[id]]
+base = 289
+symbol = "GPIO_TM1621_RD"
+
+[[id]]
+base = 290
+symbol = "GPIO_TM1621_DAT"
+
+[[id]]
+base = 291
+symbol = "GPIO_REL1_BI"
+
+[[id]]
+base = 292
+symbol = "GPIO_REL1_BI_INV"
+
+[[id]]
+base = 293
+symbol = "GPIO_I2S_MCLK"
+
+[[id]]
+base = 294
+symbol = "GPIO_MBR_TX"
+
+[[id]]
+base = 295
+symbol = "GPIO_MBR_RX"
+
+[[id]]
+base = 296
+symbol = "GPIO_ADE7953_RST"
+
+[[id]]
+base = 297
+symbol = "GPIO_NRG_MBS_TX"
+
+[[id]]
+base = 298
+symbol = "GPIO_NRG_MBS_RX"
+
+[[id]]
+base = 299
+symbol = "GPIO_ADE7953_CS"
+
+[[id]]
+base = 300
+symbol = "GPIO_DALI_RX"
+
+[[id]]
+base = 301
+symbol = "GPIO_DALI_TX"
+
+[[id]]
+base = 302
+symbol = "GPIO_BP1658CJ_CLK"
+
+[[id]]
+base = 303
+symbol = "GPIO_BP1658CJ_DAT"
+
+[[id]]
+base = 304
+symbol = "GPIO_DINGTIAN_CLK"
+
+[[id]]
+base = 305
+symbol = "GPIO_DINGTIAN_SDI"
+
+[[id]]
+base = 306
+symbol = "GPIO_DINGTIAN_Q7"
+
+[[id]]
+base = 307
+symbol = "GPIO_DINGTIAN_PL"
+
+[[id]]
+base = 308
+symbol = "GPIO_DINGTIAN_RCK"
+
+[[id]]
+base = 309
+symbol = "GPIO_LD2410_TX"
+
+[[id]]
+base = 310
+symbol = "GPIO_LD2410_RX"
+
+[[id]]
+base = 311
+symbol = "GPIO_MBR_TX_ENA"
+
+[[id]]
+base = 312
+symbol = "GPIO_NRG_MBS_TX_ENA"
+
+[[id]]
+base = 313
+symbol = "GPIO_ME007_TRIG"
+
+[[id]]
+base = 314
+symbol = "GPIO_ME007_RX"
+
+[[id]]
+base = 315
+symbol = "GPIO_TUYAMCUBR_TX"
+
+[[id]]
+base = 316
+symbol = "GPIO_TUYAMCUBR_RX"
+
+[[id]]
+base = 317
+symbol = "GPIO_BIOPDU_PZEM0XX_TX"
+
+[[id]]
+base = 318
+symbol = "GPIO_BIOPDU_PZEM016_RX"
+
+[[id]]
+base = 319
+symbol = "GPIO_BIOPDU_BIT"
+
+[[id]]
+base = 320
+symbol = "GPIO_MCP23XXX_INT"
+
+[[id]]
+base = 321
+symbol = "GPIO_MCP23SXX_CS"
+
+[[id]]
+base = 322
+symbol = "GPIO_PCF8574_INT"
+
+[[id]]
+base = 323
+symbol = "GPIO_LOX_O2_RX"
+
+[[id]]
+base = 324
+symbol = "GPIO_GM861_TX"
+
+[[id]]
+base = 325
+symbol = "GPIO_GM861_RX"
+
+[[id]]
+base = 326
+symbol = "GPIO_DINGTIAN_OE"
+
+[[id]]
+base = 327
+symbol = "GPIO_HDMI_CEC"
+
+[[id]]
+base = 328
+symbol = "GPIO_HC8_RXD"
+
+[[id]]
+base = 329
+symbol = "GPIO_I2S_DAC"
+
+[[id]]
+base = 330
+symbol = "GPIO_MAGIC_SWITCH"
+
+[[id]]
+base = 331
+symbol = "GPIO_PIPSOLAR_TX"
+
+[[id]]
+base = 332
+symbol = "GPIO_PIPSOLAR_RX"
+
+[[id]]
+base = 333
+symbol = "GPIO_LORA_CS"
+
+[[id]]
+base = 334
+symbol = "GPIO_LORA_RST"
+
+[[id]]
+base = 335
+symbol = "GPIO_LORA_BUSY"
+
+[[id]]
+base = 336
+symbol = "GPIO_LORA_DI0"
+
+[[id]]
+base = 337
+symbol = "GPIO_LORA_DI1"
+
+[[id]]
+base = 338
+symbol = "GPIO_LORA_DI2"
+
+[[id]]
+base = 339
+symbol = "GPIO_LORA_DI3"
+
+[[id]]
+base = 340
+symbol = "GPIO_LORA_DI4"
+
+[[id]]
+base = 341
+symbol = "GPIO_LORA_DI5"
+
+[[id]]
+base = 342
+symbol = "GPIO_TS_SPI_CS"
+
+[[id]]
+base = 343
+symbol = "GPIO_TS_RST"
+
+[[id]]
+base = 344
+symbol = "GPIO_TS_IRQ"
+
+[[id]]
+base = 345
+symbol = "GPIO_RN2XX3_TX"
+
+[[id]]
+base = 346
+symbol = "GPIO_RN2XX3_RX"
+
+[[id]]
+base = 347
+symbol = "GPIO_RN2XX3_RST"
+
+[[id]]
+base = 348
+symbol = "GPIO_TCP_TX_EN"
+
+[[id]]
+base = 349
+symbol = "GPIO_ASR650X_TX"
+
+[[id]]
+base = 350
+symbol = "GPIO_ASR650X_RX"
+
+[[id]]
+base = 351
+symbol = "GPIO_WOOLIIS_RX"
+
+[[id]]
+base = 352
+symbol = "GPIO_ADC_VOLTAGE"
+
+[[id]]
+base = 353
+symbol = "GPIO_ADC_CURRENT"
+
+[[id]]
+base = 354
+symbol = "GPIO_BL0906_RX"
+
+[[id]]
+base = 355
+symbol = "GPIO_DALI_RX_INV"
+
+[[id]]
+base = 356
+symbol = "GPIO_DALI_TX_INV"
+
+[[id]]
+base = 357
+symbol = "GPIO_LD2410S_TX"
+
+[[id]]
+base = 358
+symbol = "GPIO_LD2410S_RX"
+
+[[id]]
+base = 359
+symbol = "GPIO_I2C_SER_TX"
+
+[[id]]
+base = 360
+symbol = "GPIO_I2C_SER_RX"
+
+[[id]]
+base = 361
+symbol = "GPIO_TM1640CLK"
+
+[[id]]
+base = 362
+symbol = "GPIO_TM1640DIN"
+
+[[id]]
+base = 363
+symbol = "GPIO_TWAI_TX"
+
+[[id]]
+base = 364
+symbol = "GPIO_TWAI_RX"
+
+[[id]]
+base = 365
+symbol = "GPIO_TWAI_BO"
+
+[[id]]
+base = 366
+symbol = "GPIO_TWAI_CLK"
+
+[[id]]
+base = 367
+symbol = "GPIO_C8_CO2_5K_TX"
+
+[[id]]
+base = 368
+symbol = "GPIO_C8_CO2_5K_RX"
+
+[[id]]
+base = 369
+symbol = "GPIO_V9240_TX"
+
+[[id]]
+base = 370
+symbol = "GPIO_V9240_RX"
+
+[[id]]
+base = 371
+symbol = "GPIO_LD2402_TX"
+
+[[id]]
+base = 372
+symbol = "GPIO_LD2402_RX"
+
+[[id]]
+base = 373
+symbol = "GPIO_HSDIO_CMD"
+
+[[id]]
+base = 374
+symbol = "GPIO_HSDIO_CLK"
+
+[[id]]
+base = 375
+symbol = "GPIO_HSDIO_RST"
+
+[[id]]
+base = 376
+symbol = "GPIO_HSDIO_D0"
+
+[[id]]
+base = 377
+symbol = "GPIO_HSDIO_D1"
+
+[[id]]
+base = 378
+symbol = "GPIO_HSDIO_D2"
+
+[[id]]
+base = 379
+symbol = "GPIO_HSDIO_D3"
+
+[[id]]
+base = 380
+symbol = "GPIO_VID6608_F"
+
+[[id]]
+base = 381
+symbol = "GPIO_VID6608_CW"
+
+[[id]]
+base = 382
+symbol = "GPIO_MKSKYBLU_TX"
+
+[[id]]
+base = 383
+symbol = "GPIO_MKSKYBLU_RX"
+
+[[id]]
+base = 384
+symbol = "GPIO_MBS_RX_ENA"
+
+[[id]]
+base = 385
+symbol = "GPIO_MODBUSRELAY_TX"
+
+[[id]]
+base = 386
+symbol = "GPIO_MODBUSRELAY_TX_ENA"
+
+[[id]]
+base = 387
+symbol = "GPIO_MODBUSRELAY_RX"
+
+[[id]]
+base = 388
+symbol = "GPIO_MODBUSRELAY_RX_ENA"
+
+[[function]]
+symbol = "GPIO_NONE"
+display = "None"
+instances = 1
+owner = "core"
+requires = []
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_KEY1"
+display = "Button"
+instances = 32
+owner = "core"
+requires = ["input", "pull-up"]
+canonical = "button"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_KEY1_NP"
+display = "Button_n"
+instances = 32
+owner = "core"
+requires = ["input"]
+canonical = "button"
+modifiers = ["no-pull"]
+
+[[function]]
+symbol = "GPIO_KEY1_INV"
+display = "Button_i"
+instances = 32
+owner = "core"
+requires = ["input", "pull-up"]
+canonical = "button"
+modifiers = ["inverted"]
+
+[[function]]
+symbol = "GPIO_KEY1_INV_NP"
+display = "Button_in"
+instances = 32
+owner = "core"
+requires = ["input"]
+canonical = "button"
+modifiers = ["inverted", "no-pull"]
+
+[[function]]
+symbol = "GPIO_SWT1"
+display = "Switch"
+instances = 32
+owner = "USE_SWITCHES"
+requires = ["input", "pull-up"]
+canonical = "switch"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SWT1_NP"
+display = "Switch_n"
+instances = 32
+owner = "USE_SWITCHES"
+requires = ["input"]
+canonical = "switch"
+modifiers = ["no-pull"]
+
+[[function]]
+symbol = "GPIO_REL1"
+display = "Relay"
+instances = 32
+owner = "core"
+requires = ["output"]
+canonical = "relay"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_REL1_INV"
+display = "Relay_i"
+instances = 32
+owner = "core"
+requires = ["output"]
+canonical = "relay"
+modifiers = ["inverted"]
+
+[[function]]
+symbol = "GPIO_LED1"
+display = "Led"
+instances = 4
+owner = "core"
+requires = ["output"]
+canonical = "status-led"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_LED1_INV"
+display = "Led_i"
+instances = 4
+owner = "core"
+requires = ["output"]
+canonical = "status-led"
+modifiers = ["inverted"]
+
+[[function]]
+symbol = "GPIO_PWM1"
+display = "PWM"
+instances = 16
+owner = "USE_PWM"
+requires = ["output"]
+canonical = "pwm"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_PWM1_INV"
+display = "PWM_i"
+instances = 16
+owner = "USE_PWM"
+requires = ["output"]
+canonical = "pwm"
+modifiers = ["inverted"]
+
+[[function]]
+symbol = "GPIO_BUZZER"
+display = "Buzzer"
+instances = 1
+owner = "USE_BERRY_GPIO"
+requires = ["output"]
+canonical = "buzzer"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_BUZZER_INV"
+display = "Buzzer_i"
+instances = 1
+owner = "USE_BERRY_GPIO"
+requires = ["output"]
+canonical = "buzzer"
+modifiers = ["inverted"]
+
+[[function]]
+symbol = "GPIO_LEDLNK"
+display = "LedLink"
+instances = 1
+owner = "core"
+requires = ["output"]
+canonical = "link-led"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_LEDLNK_INV"
+display = "LedLink_i"
+instances = 1
+owner = "core"
+requires = ["output"]
+canonical = "link-led"
+modifiers = ["inverted"]
+
+[[function]]
+symbol = "GPIO_I2C_SCL"
+display = "I2C SCL"
+instances = 2
+owner = "USE_I2C"
+requires = ["input", "output"]
+canonical = "i2c-scl"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_I2C_SDA"
+display = "I2C SDA"
+instances = 2
+owner = "USE_I2C"
+requires = ["input", "output"]
+canonical = "i2c-sda"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SPI_MISO"
+display = "SPI MISO"
+instances = 2
+owner = "USE_DISPLAY|USE_DEVICE_SPI|USE_ETHERNET|USE_SDCARD"
+requires = ["input"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SPI_MOSI"
+display = "SPI MOSI"
+instances = 2
+owner = "USE_DISPLAY|USE_DEVICE_SPI|USE_ETHERNET|USE_SDCARD"
+requires = ["output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SPI_CLK"
+display = "SPI clock"
+instances = 2
+owner = "USE_DISPLAY|USE_DEVICE_SPI|USE_ETHERNET|USE_SDCARD"
+requires = ["output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SPI_CS"
+display = "SPI CS"
+instances = 2
+owner = "USE_DISPLAY"
+requires = ["output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SPI_DC"
+display = "SPI DC"
+instances = 2
+owner = "USE_DISPLAY"
+requires = ["output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SSPI_MISO"
+display = "Software SPI MISO"
+instances = 1
+owner = "USE_DISPLAY"
+requires = ["input"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SSPI_MOSI"
+display = "Software SPI MOSI"
+instances = 1
+owner = "USE_DISPLAY"
+requires = ["output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SSPI_SCLK"
+display = "Software SPI clock"
+instances = 1
+owner = "USE_DISPLAY"
+requires = ["output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SSPI_CS"
+display = "Software SPI CS"
+instances = 1
+owner = "USE_DISPLAY"
+requires = ["output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SSPI_DC"
+display = "Software SPI DC"
+instances = 1
+owner = "USE_DISPLAY"
+requires = ["output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_BACKLIGHT"
+display = "Backlight"
+instances = 1
+owner = "USE_DISPLAY"
+requires = ["output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_DISPLAY_RESET"
+display = "Display reset"
+instances = 1
+owner = "USE_DISPLAY"
+requires = ["output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_DHT11"
+display = "DHT11"
+instances = 1
+owner = "USE_DHT"
+requires = ["input", "output"]
+canonical = "dht11"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_DHT22"
+display = "DHT22"
+instances = 1
+owner = "USE_DHT"
+requires = ["input", "output"]
+canonical = "dht22"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SI7021"
+display = "SI7021"
+instances = 1
+owner = "USE_DHT"
+requires = ["input", "output"]
+canonical = "si7021"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_WS2812"
+display = "WS2812"
+instances = 1
+owner = "USE_WS2812"
+requires = ["output"]
+canonical = "led-strip"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_PZEM0XX_TX"
+display = "PZEM0XX TX"
+instances = 1
+owner = "USE_ENERGY"
+requires = ["output"]
+canonical = "energy-tx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_PZEM004_RX"
+display = "PZEM004 RX"
+instances = 1
+owner = "USE_PZEM004T"
+requires = ["input"]
+canonical = "energy-rx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_PZEM016_RX"
+display = "PZEM016 RX"
+instances = 1
+owner = "USE_PZEM_AC"
+requires = ["input"]
+canonical = "energy-rx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_PZEM017_RX"
+display = "PZEM017 RX"
+instances = 1
+owner = "USE_PZEM_DC"
+requires = ["input"]
+canonical = "energy-rx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SDM120_TX"
+display = "SDM120 TX"
+instances = 1
+owner = "USE_ENERGY"
+requires = ["output"]
+canonical = "energy-tx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SDM120_RX"
+display = "SDM120 RX"
+instances = 1
+owner = "USE_SDM120"
+requires = ["input"]
+canonical = "energy-rx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SDM630_TX"
+display = "SDM630 TX"
+instances = 1
+owner = "USE_ENERGY"
+requires = ["output"]
+canonical = "energy-tx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SDM630_RX"
+display = "SDM630 RX"
+instances = 1
+owner = "USE_SDM630"
+requires = ["input"]
+canonical = "energy-rx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_TUYA_TX"
+display = "Tuya Tx"
+instances = 1
+owner = "USE_TUYA_MCU"
+requires = ["output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_TUYA_RX"
+display = "Tuya Rx"
+instances = 1
+owner = "USE_TUYA_MCU"
+requires = ["input"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_NRG_SEL"
+display = "NRG SEL"
+instances = 1
+owner = "USE_HLW8012|USE_BL0937"
+requires = ["output"]
+canonical = "energy-sel"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_NRG_SEL_INV"
+display = "NRG SEL INV"
+instances = 1
+owner = "USE_HLW8012|USE_BL0937"
+requires = ["output"]
+canonical = "energy-sel"
+modifiers = ["inverted"]
+
+[[function]]
+symbol = "GPIO_NRG_CF1"
+display = "NRG CF1"
+instances = 1
+owner = "USE_HLW8012|USE_BL0937"
+requires = ["input", "interrupt"]
+canonical = "energy-cf1"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_HLW_CF"
+display = "HLW CF"
+instances = 1
+owner = "USE_HLW8012"
+requires = ["input", "interrupt"]
+canonical = "energy-cf"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_HJL_CF"
+display = "HJL CF"
+instances = 1
+owner = "USE_BL0937"
+requires = ["input", "interrupt"]
+canonical = "energy-cf"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_MCP39F5_TX"
+display = "MCP39F5 TX"
+instances = 1
+owner = "USE_ENERGY"
+requires = ["output"]
+canonical = "energy-tx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_MCP39F5_RX"
+display = "MCP39F5 RX"
+instances = 1
+owner = "USE_MCP39F501"
+requires = ["input"]
+canonical = "energy-rx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_MCP39F5_RST"
+display = "MCP39F5 RST"
+instances = 1
+owner = "USE_MCP39F501"
+requires = ["output"]
+canonical = "energy-reset"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_CSE7766_TX"
+display = "CSE7766 TX"
+instances = 1
+owner = "USE_ENERGY"
+requires = ["output"]
+canonical = "energy-tx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_CSE7766_RX"
+display = "CSE7766 RX"
+instances = 1
+owner = "USE_CSE7766"
+requires = ["input"]
+canonical = "energy-rx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_TXD"
+display = "TXD"
+instances = 1
+owner = "USE_ENERGY"
+requires = ["output"]
+canonical = "energy-tx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_ADE7953_IRQ"
+display = "ADE7953 IRQ"
+instances = 6
+owner = "USE_ADE7953_EM|USE_ADE7953_PLUS2PM|USE_ADE7953_PRO1PM|USE_ADE7953_PRO2PM|USE_ADE7953_PRO4PM"
+requires = ["input", "interrupt"]
+canonical = "energy-irq"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_OUTPUT_HI"
+display = "Output Hi"
+instances = 1
+owner = "core"
+requires = ["output"]
+canonical = "fixed-output"
+modifiers = ["fixed", "initial-high"]
+
+[[function]]
+symbol = "GPIO_OUTPUT_LO"
+display = "Output Low"
+instances = 1
+owner = "core"
+requires = ["output"]
+canonical = "fixed-output"
+modifiers = ["fixed", "initial-low"]
+
+[[function]]
+symbol = "GPIO_DDS2382_TX"
+display = "DDS2382 TX"
+instances = 1
+owner = "USE_ENERGY"
+requires = ["output"]
+canonical = "energy-tx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_DDS2382_RX"
+display = "DDS2382 RX"
+instances = 1
+owner = "USE_DDS2382"
+requires = ["input"]
+canonical = "energy-rx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_DDSU666_TX"
+display = "DDSU666 TX"
+instances = 1
+owner = "USE_ENERGY"
+requires = ["output"]
+canonical = "energy-tx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_DDSU666_RX"
+display = "DDSU666 RX"
+instances = 1
+owner = "USE_DDSU666"
+requires = ["input"]
+canonical = "energy-rx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SM2135_CLK"
+display = "SM2135 CLK"
+instances = 1
+owner = "USE_SM2135"
+requires = ["input", "output", "pull-up"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SM2135_DAT"
+display = "SM2135 DAT"
+instances = 10
+owner = "USE_SM2135"
+requires = ["input", "output", "pull-up"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_DEEPSLEEP"
+display = "DeepSleep"
+instances = 1
+owner = "USE_DEEPSLEEP"
+requires = ["input", "pull-up"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_GPS_RX"
+display = "GPS RX"
+instances = 3
+owner = "USE_GPS"
+requires = ["input"]
+canonical = "gps-rx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_GPS_TX"
+display = "GPS TX"
+instances = 1
+owner = "USE_GPS"
+requires = ["output"]
+canonical = "gps-tx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_LE01MR_RX"
+display = "LE01MR RX"
+instances = 1
+owner = "USE_FIF_LE01MR"
+requires = ["input"]
+canonical = "energy-rx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_LE01MR_TX"
+display = "LE01MR TX"
+instances = 1
+owner = "USE_ENERGY"
+requires = ["output"]
+canonical = "energy-tx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_WEBCAM_PWDN"
+display = "Webcam power-down"
+instances = 1
+owner = "USE_WEBCAM"
+requires = ["output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_WEBCAM_RESET"
+display = "Webcam reset"
+instances = 1
+owner = "USE_WEBCAM"
+requires = ["output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_WEBCAM_XCLK"
+display = "Webcam XCLK"
+instances = 1
+owner = "USE_WEBCAM"
+requires = ["output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_WEBCAM_SIOD"
+display = "Webcam SIOD"
+instances = 1
+owner = "USE_WEBCAM"
+requires = ["input", "output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_WEBCAM_SIOC"
+display = "Webcam SIOC"
+instances = 1
+owner = "USE_WEBCAM"
+requires = ["input", "output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_WEBCAM_DATA"
+display = "Webcam data"
+instances = 8
+owner = "USE_WEBCAM"
+requires = ["input"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_WEBCAM_VSYNC"
+display = "Webcam VSYNC"
+instances = 1
+owner = "USE_WEBCAM"
+requires = ["input"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_WEBCAM_HREF"
+display = "Webcam HREF"
+instances = 1
+owner = "USE_WEBCAM"
+requires = ["input"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_WEBCAM_PCLK"
+display = "Webcam PCLK"
+instances = 1
+owner = "USE_WEBCAM"
+requires = ["input"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_BL0940_RX"
+display = "BL0940 RX"
+instances = 1
+owner = "USE_BL0940"
+requires = ["input"]
+canonical = "energy-rx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_ETH_PHY_POWER"
+display = "ETH power"
+instances = 1
+owner = "USE_ETHERNET"
+requires = ["output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_ETH_PHY_MDC"
+display = "ETH MDC"
+instances = 2
+owner = "USE_ETHERNET"
+requires = ["output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_ETH_PHY_MDIO"
+display = "ETH MDIO"
+instances = 1
+owner = "USE_ETHERNET"
+requires = ["input", "output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_IEM3000_TX"
+display = "IEM3000 TX"
+instances = 1
+owner = "USE_ENERGY"
+requires = ["output"]
+canonical = "energy-tx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_IEM3000_RX"
+display = "IEM3000 RX"
+instances = 1
+owner = "USE_IEM3000"
+requires = ["input"]
+canonical = "energy-rx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_WE517_TX"
+display = "WE517 TX"
+instances = 1
+owner = "USE_ENERGY"
+requires = ["output"]
+canonical = "energy-tx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_WE517_RX"
+display = "WE517 RX"
+instances = 1
+owner = "USE_ORNO_WE517"
+requires = ["input"]
+canonical = "energy-rx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_OPTION_A"
+display = "Option A"
+instances = 32
+owner = "USE_ENERGY"
+requires = []
+canonical = "energy-option"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SDCARD_CS"
+display = "SDCard CS"
+instances = 2
+owner = "USE_SDCARD"
+requires = ["output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SDM72_TX"
+display = "SDM72 TX"
+instances = 1
+owner = "USE_ENERGY"
+requires = ["output"]
+canonical = "energy-tx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SDM72_RX"
+display = "SDM72 RX"
+instances = 1
+owner = "USE_SDM72"
+requires = ["input"]
+canonical = "energy-rx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_CSE7761_TX"
+display = "CSE7761 TX"
+instances = 1
+owner = "USE_CSE7761|USE_CSE7761_POWCT"
+requires = ["output"]
+canonical = "energy-tx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_CSE7761_RX"
+display = "CSE7761 RX"
+instances = 2
+owner = "USE_CSE7761|USE_CSE7761_POWCT"
+requires = ["input"]
+canonical = "energy-rx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_INPUT"
+display = "Input"
+instances = 32
+owner = "core"
+requires = ["input"]
+canonical = "input"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_KEY1_PD"
+display = "Button_pd"
+instances = 32
+owner = "core"
+requires = ["input", "pull-down"]
+canonical = "button"
+modifiers = ["pull-down"]
+
+[[function]]
+symbol = "GPIO_KEY1_INV_PD"
+display = "Button_ipd"
+instances = 32
+owner = "core"
+requires = ["input", "pull-down"]
+canonical = "button"
+modifiers = ["inverted", "pull-down"]
+
+[[function]]
+symbol = "GPIO_SWT1_PD"
+display = "Switch_pd"
+instances = 32
+owner = "USE_SWITCHES"
+requires = ["input", "pull-down"]
+canonical = "switch"
+modifiers = ["pull-down"]
+
+[[function]]
+symbol = "GPIO_I2S_DOUT"
+display = "I2S DOUT"
+instances = 4
+owner = "USE_I2S"
+requires = ["output"]
+canonical = "i2s-dout"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_I2S_BCLK"
+display = "I2S BCLK"
+instances = 4
+owner = "USE_I2S"
+requires = ["input"]
+canonical = "i2s-bclk"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_I2S_WS"
+display = "I2S WS"
+instances = 4
+owner = "USE_I2S"
+requires = ["input"]
+canonical = "i2s-ws"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_I2S_DIN"
+display = "I2S DIN"
+instances = 4
+owner = "USE_I2S"
+requires = ["input"]
+canonical = "i2s-din"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_BL0939_RX"
+display = "BL0939 RX"
+instances = 1
+owner = "USE_BL0939"
+requires = ["input"]
+canonical = "energy-rx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_BL0942_RX"
+display = "BL0942 RX"
+instances = 8
+owner = "USE_BL0942"
+requires = ["input"]
+canonical = "energy-rx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SDM230_TX"
+display = "SDM230 TX"
+instances = 1
+owner = "USE_ENERGY"
+requires = ["output"]
+canonical = "energy-tx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SDM230_RX"
+display = "SDM230 RX"
+instances = 1
+owner = "USE_SDM230"
+requires = ["input"]
+canonical = "energy-rx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_ADE7880_IRQ"
+display = "ADE7880 IRQ"
+instances = 2
+owner = "USE_ADE7880"
+requires = ["input", "interrupt"]
+canonical = "energy-irq"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_RESET"
+display = "Meter Reset"
+instances = 1
+owner = "USE_ADE7880"
+requires = ["output"]
+canonical = "energy-reset"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SDIO_CMD"
+display = "SDIO CMD"
+instances = 1
+owner = "USE_SDCARD"
+requires = ["input", "output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SDIO_CLK"
+display = "SDIO CLK"
+instances = 1
+owner = "USE_SDCARD"
+requires = ["output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SDIO_D0"
+display = "SDIO D0"
+instances = 1
+owner = "USE_SDCARD"
+requires = ["input", "output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SDIO_D1"
+display = "SDIO D1"
+instances = 1
+owner = "USE_SDCARD"
+requires = ["input", "output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SDIO_D2"
+display = "SDIO D2"
+instances = 1
+owner = "USE_SDCARD"
+requires = ["input", "output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SDIO_D3"
+display = "SDIO D3"
+instances = 1
+owner = "USE_SDCARD"
+requires = ["input", "output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_BP5758D_CLK"
+display = "BP5758D CLK"
+instances = 1
+owner = "USE_BP5758D"
+requires = ["input", "output", "pull-up"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_BP5758D_DAT"
+display = "BP5758D DAT"
+instances = 1
+owner = "USE_BP5758D"
+requires = ["input", "output", "pull-up"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SM2335_CLK"
+display = "SM2335 CLK"
+instances = 1
+owner = "USE_SM2335"
+requires = ["input", "output", "pull-up"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_SM2335_DAT"
+display = "SM2335 DAT"
+instances = 16
+owner = "USE_SM2335"
+requires = ["input", "output", "pull-up"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_I2S_MCLK"
+display = "I2S MCLK"
+instances = 4
+owner = "USE_I2S"
+requires = ["output"]
+canonical = "i2s-mclk"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_ADE7953_RST"
+display = "ADE7953 RST"
+instances = 1
+owner = "USE_ADE7953_EM|USE_ADE7953_PLUS2PM|USE_ADE7953_PRO1PM|USE_ADE7953_PRO2PM|USE_ADE7953_PRO4PM"
+requires = ["output"]
+canonical = "energy-reset"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_NRG_MBS_TX"
+display = "NRG MBS TX"
+instances = 1
+owner = "USE_ENERGY"
+requires = ["output"]
+canonical = "energy-tx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_NRG_MBS_RX"
+display = "NRG MBS RX"
+instances = 1
+owner = "USE_MODBUS_ENERGY"
+requires = ["input"]
+canonical = "energy-rx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_ADE7953_CS"
+display = "ADE7953 CS"
+instances = 2
+owner = "USE_ADE7953_EM|USE_ADE7953_PLUS2PM|USE_ADE7953_PRO1PM|USE_ADE7953_PRO2PM|USE_ADE7953_PRO4PM"
+requires = ["output"]
+canonical = "energy-cs"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_BP1658CJ_CLK"
+display = "BP1658CJ CLK"
+instances = 1
+owner = "USE_BP1658CJ"
+requires = ["input", "output", "pull-up"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_BP1658CJ_DAT"
+display = "BP1658CJ DAT"
+instances = 16
+owner = "USE_BP1658CJ"
+requires = ["input", "output", "pull-up"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_NRG_MBS_TX_ENA"
+display = "NRG MBS TX ENA"
+instances = 1
+owner = "USE_ENERGY"
+requires = ["output"]
+canonical = "energy-sel"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_TS_RST"
+display = "Touch reset"
+instances = 1
+owner = "USE_UNIVERSAL_TOUCH"
+requires = ["output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_TS_IRQ"
+display = "Touch IRQ"
+instances = 1
+owner = "USE_UNIVERSAL_TOUCH"
+requires = ["input"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_ADC_VOLTAGE"
+display = "ADC VOLTAGE"
+instances = 7
+owner = "USE_ENERGY_ANALOG"
+requires = ["analog"]
+canonical = "energy-voltage"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_ADC_CURRENT"
+display = "ADC CURRENT"
+instances = 7
+owner = "USE_ENERGY_ANALOG"
+requires = ["analog"]
+canonical = "energy-current"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_BL0906_RX"
+display = "BL0906 RX"
+instances = 1
+owner = "USE_BL0906"
+requires = ["input"]
+canonical = "energy-rx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_V9240_TX"
+display = "V9240 TX"
+instances = 1
+owner = "USE_ENERGY"
+requires = ["output"]
+canonical = "energy-tx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_V9240_RX"
+display = "V9240 RX"
+instances = 1
+owner = "USE_V9240"
+requires = ["input"]
+canonical = "energy-rx"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_HSDIO_CMD"
+display = "Hosted SDIO CMD"
+instances = 1
+owner = "USE_ESP_HOSTED"
+requires = ["input", "output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_HSDIO_CLK"
+display = "Hosted SDIO CLK"
+instances = 1
+owner = "USE_ESP_HOSTED"
+requires = ["output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_HSDIO_RST"
+display = "Hosted reset"
+instances = 1
+owner = "USE_ESP_HOSTED"
+requires = ["output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_HSDIO_D0"
+display = "Hosted SDIO D0"
+instances = 1
+owner = "USE_ESP_HOSTED"
+requires = ["input", "output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_HSDIO_D1"
+display = "Hosted SDIO D1"
+instances = 1
+owner = "USE_ESP_HOSTED"
+requires = ["input", "output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_HSDIO_D2"
+display = "Hosted SDIO D2"
+instances = 1
+owner = "USE_ESP_HOSTED"
+requires = ["input", "output"]
+canonical = "none"
+modifiers = []
+
+[[function]]
+symbol = "GPIO_HSDIO_D3"
+display = "Hosted SDIO D3"
+instances = 1
+owner = "USE_ESP_HOSTED"
+requires = ["input", "output"]
+canonical = "none"
+modifiers = []

@@ -1,0 +1,41 @@
+schema = 2
+flash_bytes = 0x200000
+erase_size = 0x1000
+
+# Tuya layout for BK7231N modules (CB2S, CB3S, CBU): the Tuya bootloader
+# installs updates from 0x12A000 and the factory RF calibration is at 0x1D0000.
+# Taken from LibreTiny's beken-7231n-tuya board and OpenBeken's BK7231N LittleFS
+# bounds; not yet confirmed on a device. The build generates the runtime BDK
+# table from these regions, so firmware and bootloader agree.
+[native.regions]
+bootloader = [0x000000, 0x00F000]
+application = [0x011000, 0x119000]
+ota = [0x12A000, 0x0A6000]
+rf = [0x1D0000, 0x001000]
+ble-bonding = [0x1D1000, 0x001000]
+# Tuya's userdata area starts at 0x1DB000; NET and LittleFS take its first
+# sectors. Tuya's key-value store and its own data stay untouched, so the
+# stock firmware can still be restored. Tuya's own table puts NET at 0x1D1000;
+# NET is firmware data, so this firmware's generated table decides where it lives.
+net = [0x1DB000, 0x001000]
+
+[vendor]
+tuya-kvs = [0x1D3000, 0x008000]
+tuya-data = [0x1ED000, 0x013000]
+
+[filesystem]
+offset = 0x1DC000
+size = 0x11000
+
+# OpenBeken-style image policy. The raw linker output is not flashable; the
+# Newmota packager creates the CRC-wrapped app image and the RBL OTA image.
+[image]
+factory_format = "app-rbl"
+application_address = 0x10000
+application_container_size = 0x108700
+application_coefficients = "00000000000000000000000000000000"
+ota_format = "rbl"
+ota_compression = "gzip"
+ota_encryption = "aes256"
+ota_key = "0123456789ABCDEF0123456789ABCDEF"
+ota_iv = "0123456789ABCDEF"

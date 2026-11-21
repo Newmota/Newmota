@@ -1,0 +1,8 @@
+# config/env/bouffalo/application/bl602-2m.yaml — Compact 2 MB environment for BL602
+name: bl602-2m
+board: bl602-2m
+role: application
+policy: true
+profile: Compact
+safeboot: bl602-2m-safeboot
+language: en_GB

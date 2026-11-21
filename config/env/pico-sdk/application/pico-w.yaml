@@ -1,0 +1,7 @@
+# Raspberry Pi Pico W / RP2040 2 MiB Compact environment
+name: pico-w
+board: pico-w
+role: application
+profile: Compact
+safeboot: pico-w-safeboot
+language: en_GB

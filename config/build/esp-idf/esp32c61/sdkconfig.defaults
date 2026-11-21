@@ -1,0 +1,2 @@
+# ESP32-C61 target identity.
+CONFIG_IDF_TARGET="esp32c61"

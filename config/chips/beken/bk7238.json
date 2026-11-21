@@ -1,0 +1,7 @@
+{
+  "sdk_target": "bk7238",
+  "build_status": "native",
+  "capability_overrides": {
+    "wifi": true
+  }
+}

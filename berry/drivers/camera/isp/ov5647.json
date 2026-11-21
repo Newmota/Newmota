@@ -1,0 +1,71 @@
+{
+  "OV5647": {
+    "default_gain": 1,
+    "awb": {
+      "sample_point": 0,
+      "min_red_gain_step": 0.03,
+      "min_blue_gain_step": 0.03,
+      "gain_update_ratio": 0.20,
+      "max_gain_step": 0.05,
+      "min_counted": 1000,
+      "range": {
+        "green": { "min": 32, "max": 220 },
+        "rg": { "min": 0.5, "max": 2.0 },
+        "bg": { "min": 0.5, "max": 2.0 }
+      }
+    },
+    "acc": {
+      "ccm": {
+        "table": [
+          {
+            "color_temp": 6500,
+            "matrix": [1.6277, -0.4128, -0.2149, -0.4500, 1.6500, -0.2000, -0.1500, -0.6500, 1.8000]
+          }
+        ]
+      }
+    },
+    "adn": {
+      "bf": [
+        {
+          "gain": 1,
+          "param": {
+            "level": 5,
+            "matrix": [1, 2, 1, 2, 4, 2, 1, 2, 1]
+          }
+        }
+      ]
+    },
+    "aen": {
+      "gamma": {
+        "table": [
+          {
+            "luma": 50,
+            "y": [0, 62, 88, 108, 126, 141, 154, 166, 177, 188, 198, 208, 217, 226, 235, 245]
+          }
+        ]
+      },
+      "sharpen": [
+        {
+          "gain": 1,
+          "param": {
+            "h_thresh": 56,
+            "l_thresh": 10,
+            "h_coeff": 0.425,
+            "m_coeff": 0.625,
+            "matrix": [1, 2, 1, 2, 4, 2, 1, 2, 1]
+          }
+        }
+      ],
+      "contrast": [
+        {
+          "gain": 1,
+          "value": 128
+        }
+      ]
+    },
+    "ext": {
+      "hue": 0,
+      "brightness": 0
+    }
+  }
+}

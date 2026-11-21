@@ -1,0 +1,7 @@
+# Standard 4 MiB environment for any BK7252N module with the Beken SDK bootloader;
+# the template names the pins.
+name: generic-bk7252n-4m
+board: generic-bk7252n-4m
+role: application
+profile: Standard
+language: en_GB

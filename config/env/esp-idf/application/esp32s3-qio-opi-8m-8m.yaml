@@ -1,0 +1,6 @@
+name: esp32s3-qio-opi-8m-8m
+board: esp32s3-qio-opi-8m-8m
+role: application
+profile: Large
+safeboot: esp32s3-qio-opi-8m-8m-safeboot
+language: en_GB

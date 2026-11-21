@@ -1,0 +1,7 @@
+{
+  "sdk_target": "esp32p4",
+  "idf_version": "6.1",
+  "capability_overrides": {
+    "wifi-hosted": true
+  }
+}

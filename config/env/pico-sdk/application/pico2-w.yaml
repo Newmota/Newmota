@@ -1,0 +1,7 @@
+# Raspberry Pi Pico 2 W / RP2350 test environment
+name: pico2-w
+board: pico2-w
+role: application
+profile: Standard
+safeboot: pico2-w-safeboot
+language: en_GB

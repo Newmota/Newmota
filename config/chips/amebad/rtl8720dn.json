@@ -1,0 +1,6 @@
+{
+  "sdk_target": "rtl8721d",
+  "capability_overrides": {
+    "wifi": true
+  }
+}

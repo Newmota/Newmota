@@ -1,0 +1,8 @@
+{
+  "chip": "bl702",
+  "flash": {
+    "size_kb": 2048
+  },
+  "sdk_board": "bl702dk",
+  "profile_default": "Compact"
+}

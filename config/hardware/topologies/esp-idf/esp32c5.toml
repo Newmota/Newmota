@@ -1,0 +1,81 @@
+schema = 1
+
+[source]
+project = "ESP-IDF"
+paths = [
+  "components/soc/esp32c5/include/soc/soc_caps.h",
+  "components/esp_hal_gpspi/esp32c5/include/soc/spi_pins.h",
+  "components/soc/esp32c5/include/soc/uart_pins.h",
+  "components/soc/esp32c5/register/soc/io_mux_reg.h",
+]
+
+[compatibility]
+project = "Tasmota"
+revision = "37fed605bade755234b04e1076afbc31a7699eef"
+path = "tasmota/include/tasmota_template.h"
+
+[architecture]
+pin_count = 29
+template_slots = [
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+  10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+  20, 21, 22, 23, 24, 25, 26, 27, 28,
+]
+numbering = "gpio"
+default_capabilities = ["input", "output", "pull-up", "pull-down", "interrupt"]
+
+[[pin]]
+id = 2
+cautions = ["strapping"]
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 7
+cautions = ["strapping"]
+
+[[pin]]
+id = 25
+cautions = ["strapping"]
+
+[[pin]]
+id = 27
+cautions = ["strapping"]
+
+[[pin]]
+id = 28
+cautions = ["strapping"]
+
+[[reservation]]
+owner = "flash"
+pins = [16, 17, 18, 19, 20, 21, 22]
+flash_modes = ["qio"]
+
+[[reservation]]
+owner = "console-uart0"
+pins = [11, 12]
+consoles = ["uart0", "usb-serial-jtag"]
+
+[[reservation]]
+owner = "console-usb-serial-jtag"
+pins = [13, 14]
+consoles = ["usb-serial-jtag"]
+
+[[pin]]
+id = 1
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 3
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 4
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 5
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 6
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]

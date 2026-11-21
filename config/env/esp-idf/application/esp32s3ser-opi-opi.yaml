@@ -1,0 +1,6 @@
+name: esp32s3ser-opi-opi
+board: esp32s3ser-opi-opi
+role: application
+profile: Standard
+safeboot: esp32s3ser-opi-opi-safeboot
+language: en_GB

@@ -1,0 +1,1110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Newmota · Beken</title>
+<style>
+:root{--bg:#10151b;--raised:#161d24;--panel:#1a222b;--border:#2b3541;--text:#e8edf2;--dim:#8b97a3;--accent:#38d996;--on:#062318;--danger:#e5555f;font:14px system-ui,sans-serif;color-scheme:dark}
+:root[data-theme=light]{--bg:#eef1f4;--raised:#fff;--panel:#fff;--border:#d8dee4;--text:#10151b;--dim:#57626d;--accent:#1a9e68;--on:#fff;--danger:#c93b45;color-scheme:light}
+:root[data-theme=slate]{--bg:#252525;--raised:#1f1f1f;--panel:#4f4f4f;--border:#777;--text:#eaeaea;--dim:#bbb;--accent:#1fa3ec;--on:#fff;--danger:#f06b75}
+:root[data-theme=warm]{--bg:#191610;--raised:#211c14;--panel:#292219;--border:#443a2b;--text:#f3eadb;--dim:#b2a38b;--accent:#f2a93b;--on:#2b1d06;--danger:#ff7777}
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:var(--bg);color:var(--text)}h1{font-size:1.65rem;margin:0 0 .5rem}h2{font-size:1.1rem;margin:0 0 1rem}h3{font-size:1rem;margin:.2rem 0 .6rem}p{line-height:1.6}button,input,textarea,select{font:inherit}button{background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:.6rem 1rem;cursor:pointer}button:hover{border-color:var(--accent)}button:disabled{opacity:.5;cursor:default}input[type=text],input[type=password],input[type=number],input[type=time],input[type=file],select,textarea{width:100%;padding:.7rem;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px}input:focus,textarea:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}label{display:block;margin:.7rem 0}.primary{background:var(--accent);color:var(--on);border-color:var(--accent)}.muted{color:var(--dim)}.row{display:flex;align-items:center;justify-content:space-between;gap:.7rem;flex-wrap:wrap}.sidebar{width:252px;position:fixed;inset:0 auto 0 0;background:var(--raised);border-right:1px solid var(--border);padding:1.5rem 1rem;display:flex;flex-direction:column;gap:1.5rem}.device-name{font-size:1.1rem;font-weight:650}.device-name:before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);margin-right:.7rem}.device-sub{padding:.5rem 0 0 1.2rem;color:var(--dim);font-size:.85rem}nav{display:grid;gap:.3rem}nav button{text-align:left;background:transparent;border-color:transparent}nav button[aria-current=page]{background:var(--panel);border-color:var(--border);color:var(--accent)}nav button:before{content:"";display:inline-block;width:6px;height:6px;border:1px solid currentColor;border-radius:50%;margin-right:.8rem}.sidebar-foot{margin-top:auto;color:var(--dim);font-size:.85rem}.content{margin-left:252px}.topbar{min-height:64px;padding:1rem 2rem;border-bottom:1px solid var(--border);background:var(--raised);display:flex;gap:1rem;justify-content:flex-end;align-items:center}.topbar select{width:auto;padding:.4rem}.workspace{max-width:1200px;margin:auto;padding:2rem}section{border:1px solid var(--border);border-radius:10px;padding:1.25rem;background:var(--panel);margin:1rem 0}.screen{max-width:440px;margin:10vh auto;padding:1.5rem}.console-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}.console-grid>section{min-width:0;margin:.5rem 0}.console-grid form{display:flex;align-items:center;gap:.5rem}.console-grid input,.console-grid textarea{min-width:0;flex:1}.console-grid textarea{min-height:7.5em;resize:vertical;font-family:ui-monospace,monospace}.console-grid form button{flex:none}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#0b0f13;color:#d7dee4;border:1px solid #232c36;padding:.8rem;border-radius:6px;max-height:22rem;min-height:12rem;overflow:auto;margin:.6rem 0;font:12px/1.6 ui-monospace,monospace}.terminal-line{white-space:pre-wrap;overflow-wrap:anywhere}#berryStatus,#fsStatus{min-height:1.3em}#status{min-height:1.5rem;overflow-wrap:anywhere;color:var(--dim);padding:0 1rem}.warning{border-left:3px solid #f2a93b}progress{width:100%;height:1rem;margin-top:1rem;accent-color:var(--accent)}.fs-controls{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}.fs-controls strong{flex:1 1 10rem;font-family:monospace;overflow-wrap:anywhere}.file-table{width:100%;border-collapse:collapse}.file-table th,.file-table td{text-align:left;padding:.7rem .4rem;border-bottom:1px solid var(--border);overflow-wrap:anywhere}.file-table th{font-size:.8rem;color:var(--dim)}.file-link{border:0;background:transparent;color:var(--accent);text-align:left;padding:.1rem}#menu{display:none}
+@media(max-width:900px){.sidebar{width:210px}.content{margin-left:210px}.workspace{padding:1.25rem}.console-grid{grid-template-columns:1fr}}
+@media(max-width:600px){.sidebar{display:none;z-index:2;top:64px;width:252px}.sidebar.open{display:flex}.content{margin-left:0}.topbar{position:sticky;top:0;z-index:3;padding:.75rem 1rem;min-height:64px}#menu{display:block;margin-right:auto}.workspace{padding:1rem}.screen{margin:2rem 1rem}.console-grid form{flex-wrap:wrap}.file-table{font-size:.85rem}}
+.fs-icon-btn{width:2.1rem;height:2.1rem;padding:0;display:inline-flex;align-items:center;justify-content:center;font-size:1rem}.fs-icon-btn.danger:hover{border-color:var(--danger);color:var(--danger)}
+:root[data-theme=light] pre{background:#f8fafb;color:#10151b;border-color:#d8dee4}
+.kv-row{display:flex;justify-content:space-between;align-items:start;gap:1rem;padding:.35rem 0;border-bottom:1px solid var(--border)}.kv-row:last-child{border:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:0 1rem}.cards h3{display:flex;justify-content:space-between;align-items:center}.cards input{accent-color:var(--accent)}.cards input[type=range]{width:100%}.cards label{display:flex;justify-content:space-between;margin:.6rem 0 .2rem}.cards .muted{margin:.4rem 0 0;font-size:.85rem}.lm{margin-top:.8rem}.lw{display:block;width:150px;height:150px;margin:0 auto .4rem;border-radius:50%;touch-action:none}.lw:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.tm td{font-family:ui-monospace,monospace;padding:.3rem .4rem}.tm button{padding:.2rem .7rem}#mqtt-status{display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:0 2rem}#mqtt-status .kv-row:last-child{border-bottom:1px solid var(--border)}.tm tr.off td{color:var(--dim)}.tm-days{border:0;padding:0;margin:.7rem 0}.tm-days label{display:inline-flex;gap:.3rem;margin:0 .8rem 0 0}.tm-days input,#tmEnabled,#tmEnable,#tmRepeat{width:auto}#tmSign{width:auto}#tmEditor{border:1px solid var(--border);border-radius:8px;padding:1rem;margin:.7rem 0}
+.gpio td:last-child{display:flex;gap:.4rem}.gpio select{width:auto;flex:1}.gpio select+select{flex:0 0 4.5rem}.gpio tr.dup select{border-color:var(--danger)}.gpio tr.off td{color:var(--dim)}#tplActivate{width:auto;margin-right:.4rem}
+.kv-key{color:var(--dim);overflow-wrap:anywhere}.kv-val{max-width:65%;text-align:right;overflow-wrap:anywhere}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 1rem}.form-grid label{margin:.7rem 0 .3rem}.checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(17rem,1fr));gap:0 1rem}.check-row{display:flex;align-items:center;gap:.5rem;margin:.45rem 0}.check-row input{margin:0}.check-row label{margin:0}.field-hint{color:var(--dim);font-size:.85rem;margin:.4rem 0}summary{cursor:pointer;color:var(--accent);margin:1rem 0 .3rem}.actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem}
+.tabs{display:flex;flex-wrap:wrap;gap:.25rem;border-bottom:1px solid var(--border)}.tabs button{background:transparent;border-color:transparent;border-radius:6px 6px 0 0;margin-bottom:-1px}.tabs [aria-selected=true]{background:var(--panel);border-color:var(--border);border-bottom-color:var(--panel);color:var(--accent)}[data-panel=configuration] section{max-width:56rem;margin-top:0;border-top-left-radius:0}
+.sw{appearance:none;flex:none;width:2.5rem;height:1.4rem;margin:0;border-radius:1rem;background:var(--border);position:relative;cursor:pointer}.sw:before{content:"";position:absolute;top:.2rem;left:.2rem;width:1rem;height:1rem;border-radius:50%;background:#fff;transition:left .15s}.sw:checked{background:var(--accent)}.sw:checked:before{left:1.3rem}.sw:disabled{opacity:.5}
+#fsUsage{margin:0 0 1rem}#fsUsage progress{margin:.3rem 0 0;height:.5rem}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<section id="login" class="screen" hidden>
+<h1>Newmota</h1><p class="muted">Sign in to your device.</p>
+<h2>Login</h2>
+<form id="loginForm"><label for="password">Web password</label><input id="password" type="password" autocomplete="current-password" required><button>Sign in</button></form><p id="loginStatus" role="status" aria-live="polite"></p>
+</section>
+<section id="onboarding" class="screen" hidden>
+<h1>Wi-Fi setup</h1><p id="setupIntro" class="muted">Connect this device to Wi-Fi.</p>
+<form id="setupForm"><label for="setupNetworks">Nearby Wi-Fi networks</label><select id="setupNetworks"><option value="">Scan to list networks</option></select><button id="setupScan" type="button">Scan Wi-Fi</button><label for="setupSsid">Wi-Fi SSID</label><input id="setupSsid" type="text" maxlength="32" required><label for="setupPassword">Wi-Fi password</label><input id="setupPassword" type="password" maxlength="64" autocomplete="new-password"><label for="setupWebPassword">Web password (optional)</label><input id="setupWebPassword" type="password" maxlength="64" autocomplete="new-password"><p class="muted">Leave empty to keep browser access open. Otherwise use 8–64 bytes.</p><button id="setupApply" class="primary">Test and apply</button></form><p id="setupStatus" role="status" aria-live="polite"></p>
+</section>
+<main id="app" hidden>
+<aside class="sidebar" id="sidebar"><div><div class="device-name" id="deviceName">Newmota</div><div class="device-sub" id="deviceSub">Beken · Connecting…</div></div><nav aria-label="Main navigation"><button type="button" data-page="home" aria-current="page">Home</button><button type="button" data-page="configuration">Configuration</button><button type="button" data-page="information">Information</button><!--#if USE_BEKEN_UPDATE_WEB--><button type="button" data-page="firmware">Firmware update</button><!--#endif--><!--#if USE_WEB_CONSOLE--><button type="button" data-page="console">Console</button><!--#endif--><!--#if USE_WEB_FILESYSTEM--><button type="button" data-page="tools">Tools</button><!--#endif--></nav><div class="sidebar-foot"><p>IP <span id="netIp">—</span></p><p>Uptime <span id="netUptime">—</span></p><span>Newmota · Beken</span></div></aside>
+<div class="content"><header class="topbar"><button id="menu" type="button" aria-label="Open menu" aria-expanded="false">☰</button><span id="status" role="status" aria-live="polite"></span><label for="theme" class="muted">Theme</label><select id="theme"><option value="dark">Dark mint</option><option value="slate">Tasmota dark</option><option value="warm">Warm amber</option><option value="light">Light</option></select><button id="logout" type="button">Sign out</button></header><div class="workspace"><h1 id="pageTitle">Home</h1>
+<div data-panel="home"><div id="light-grid" class="cards"></div><div id="relay-grid" class="cards"></div><!--#if USE_SENSORS--><div id="sensor-grid" class="cards"></div><!--#endif--><!--#if USE_BERRY--><div id="widget-grid" class="cards"></div><!--#endif--></div>
+<div data-panel="configuration" hidden><div class="tabs" role="tablist"><button type="button" role="tab" id="tab-wifi" data-sub="wifi" aria-selected="true">Wi-Fi</button><!--#if USE_MQTT--><button type="button" role="tab" id="tab-mqtt" data-sub="mqtt" aria-selected="false">MQTT</button><!--#endif--><!--#if USE_WEB_GPIO--><button type="button" role="tab" id="tab-module" data-sub="module" aria-selected="false">Module</button><!--#endif--><!--#if USE_WEB_GPIO--><button type="button" role="tab" id="tab-template" data-sub="template" aria-selected="false">Template</button><!--#endif--><!--#if USE_TIMERS--><button type="button" role="tab" id="tab-timers" data-sub="timers" aria-selected="false">Timers</button><!--#endif--></div><section role="tabpanel" data-sub="wifi" aria-labelledby="tab-wifi"><form id="wifiForm"><div class="form-grid"><div><label for="wifiSsid1">Wi-Fi SSID 1</label><input id="wifiSsid1" type="text" maxlength="32"></div><div><label for="wifiPassword1">Wi-Fi password 1</label><input id="wifiPassword1" type="password" maxlength="64" autocomplete="new-password" placeholder="Leave blank to keep current"></div><div><label for="wifiSsid2">Wi-Fi SSID 2</label><input id="wifiSsid2" type="text" maxlength="32"></div><div><label for="wifiPassword2">Wi-Fi password 2</label><input id="wifiPassword2" type="password" maxlength="64" autocomplete="new-password" placeholder="Leave blank to keep current"></div></div><div class="actions"><button class="primary">Save Wi-Fi</button></div></form><p class="field-hint">Restart the device after saving to use the new network.</p></section><!--#if USE_MQTT--><section role="tabpanel" data-sub="mqtt" aria-labelledby="tab-mqtt" hidden>
+<form id="mqtt-form">
+<div class="check-row"><input type="checkbox" id="mqtt-enabled"><label for="mqtt-enabled">Enable MQTT</label></div>
+<div class="form-grid">
+<div><label for="mqtt-host">Broker host</label><input id="mqtt-host" type="text" maxlength="127"></div>
+<div><label for="mqtt-port">Port</label><input id="mqtt-port" type="number"></div>
+<div><label for="mqtt-client">Client ID</label><input id="mqtt-client" type="text" maxlength="63"></div>
+<div><label for="mqtt-user">Username</label><input id="mqtt-user" type="text" maxlength="63"></div>
+<div><label for="mqtt-topic">Topic</label><input id="mqtt-topic" type="text" maxlength="63"></div>
+<div><label for="mqtt-fulltopic">Full topic pattern</label><input id="mqtt-fulltopic" type="text" maxlength="100"></div>
+<div><label for="mqtt-password-action">Password action</label><select id="mqtt-password-action"><option value="preserve">Keep current password</option><option value="replace">Replace password</option><option value="clear">Clear password</option></select></div>
+<div><label for="mqtt-password">Password</label><input id="mqtt-password" type="password" maxlength="63"></div>
+</div>
+<p id="mqtt-password-state" class="field-hint"></p>
+<details><summary>Advanced settings</summary><div class="form-grid">
+<div><label for="mqtt-prefix1">Prefix1</label><input id="mqtt-prefix1" type="text" maxlength="31"></div>
+<div><label for="mqtt-prefix2">Prefix2</label><input id="mqtt-prefix2" type="text" maxlength="31"></div>
+<div><label for="mqtt-prefix3">Prefix3</label><input id="mqtt-prefix3" type="text" maxlength="31"></div>
+<div><label for="mqtt-group1">GroupTopic1</label><input id="mqtt-group1" type="text" maxlength="63"></div>
+<div><label for="mqtt-group2">GroupTopic2</label><input id="mqtt-group2" type="text" maxlength="63"></div>
+<div><label for="mqtt-group3">GroupTopic3</label><input id="mqtt-group3" type="text" maxlength="63"></div>
+<div><label for="mqtt-group4">GroupTopic4</label><input id="mqtt-group4" type="text" maxlength="63"></div>
+</div>
+<p class="field-hint">Timing in seconds</p><div class="form-grid">
+<div><label for="mqtt-keep_alive">MqttKeepAlive</label><input id="mqtt-keep_alive" type="number"></div>
+<div><label for="mqtt-retry">MqttRetry</label><input id="mqtt-retry" type="number"></div>
+<div><label for="mqtt-timeout">MqttTimeout</label><input id="mqtt-timeout" type="number"></div>
+<div><label for="mqtt-tele_period">TelePeriod</label><input id="mqtt-tele_period" type="number"></div>
+</div>
+<div class="checks"><div class="check-row"><input id="mqtt-power_index" type="checkbox"><label for="mqtt-power_index">Always number POWER topics (SetOption26)</label></div>
+<div class="check-row"><input id="mqtt-response_topic" type="checkbox"><label for="mqtt-response_topic">Reply on command topic (SetOption4)</label></div>
+<div class="check-row"><input id="mqtt-offline_lwt" type="checkbox"><label for="mqtt-offline_lwt">Mark previous topic Offline (SetOption10)</label></div>
+<div class="check-row"><input id="mqtt-group_topic_mode" type="checkbox"><label for="mqtt-group_topic_mode">Use simple group topics (SetOption75)</label></div>
+<div class="check-row"><input id="mqtt-only_json" type="checkbox"><label for="mqtt-only_json">Publish only JSON power results (SetOption90)</label></div>
+<div class="check-row"><input id="mqtt-no_retain" type="checkbox"><label for="mqtt-no_retain">Disable retained publications (SetOption104)</label></div>
+<div class="check-row"><input id="mqtt-power_retain" type="checkbox"><label for="mqtt-power_retain">Retain POWER</label></div>
+<div class="check-row"><input id="mqtt-info_retain" type="checkbox"><label for="mqtt-info_retain">Retain INFO</label></div>
+<div class="check-row"><input id="mqtt-state_retain" type="checkbox"><label for="mqtt-state_retain">Retain STATE</label></div>
+<div class="check-row"><input id="mqtt-status_retain" type="checkbox"><label for="mqtt-status_retain">Retain STATUS</label></div></div>
+</details>
+<p class="field-hint">TLS is unavailable in this image.</p>
+<div class="actions"><button class="primary" id="mqtt-save" type="submit">Save MQTT</button><button id="mqtt-preview" type="button">Preview topics</button><button id="mqtt-reload" type="button">Reload</button></div>
+</form>
+<p id="mqtt-message" role="status" aria-live="polite"></p><div id="mqtt-topics"></div>
+<h3>Connection</h3><div id="mqtt-status"></div>
+<div class="actions"><button id="mqtt-test" type="button">Test saved broker</button></div><p class="field-hint">Tests the saved broker and subscriptions. MQTT command delivery pauses during the test.</p>
+</section>
+<!--#endif-->
+<!--#if USE_WEB_GPIO-->
+<section role="tabpanel" data-sub="module" aria-labelledby="tab-module" hidden><label for="gpioModule">Module</label><select id="gpioModule"></select><p id="gpioHint" class="muted">Pins marked User in the selected template can be assigned here.</p><table class="file-table gpio"><thead><tr><th>GPIO</th><th>Function</th></tr></thead><tbody id="gpioRows"></tbody></table><p id="gpioMsg" role="status" aria-live="polite"></p><div class="actions"><button id="gpioSaveRestart" class="primary" type="button">Save and restart</button><button id="gpioSave" type="button">Save</button><button id="gpioReload" type="button">Reload</button></div></section>
+<section role="tabpanel" data-sub="template" aria-labelledby="tab-template" hidden><p class="field-hint">The template describes the product: give each pin a function, or User to assign it under Module.</p><div class="form-grid"><div><label for="tplName">Name</label><input id="tplName" type="text" maxlength="32"></div><div><label for="tplBase">Base module</label><select id="tplBase"></select></div><div><label for="tplFlag">Flag</label><input id="tplFlag" type="text" inputmode="numeric"></div></div><table class="file-table gpio"><thead><tr><th>GPIO</th><th>Function</th></tr></thead><tbody id="tplRows"></tbody></table><label><input id="tplActivate" type="checkbox"> Activate this template (Module 0)</label><label for="tplJson">Template JSON</label><textarea id="tplJson" rows="3" spellcheck="false"></textarea><p id="tplMsg" role="status" aria-live="polite"></p><div class="actions"><button id="tplSaveRestart" class="primary" type="button">Save and restart</button><button id="tplSave" type="button">Save</button><button id="tplApply" type="button">Load JSON into editor</button><button id="tplReload" type="button">Reload</button></div></section>
+<!--#endif-->
+<!--#if USE_TIMERS--><section role="tabpanel" data-sub="timers" aria-labelledby="tab-timers" hidden><label><input id="tmEnabled" type="checkbox"> Timers enabled</label><p id="tmClock" class="warning muted" role="status" hidden>The device clock is not synchronized yet. Timers fire only once it has a valid time (NTP).</p><div id="tmEditor" hidden><h3 id="tmTitle"></h3><label><input id="tmEnable" type="checkbox"> Active</label><div class="form-grid"><div><label for="tmMode">Mode</label><select id="tmMode"><option value="0">Time of day</option><option value="1">Sunrise ± offset</option><option value="2">Sunset ± offset</option></select></div><div><label for="tmTime">Time</label><div class="row"><select id="tmSign" aria-label="Offset direction"><option value="+">+</option><option value="-">−</option></select><input id="tmTime" type="time"></div></div><div><label for="tmWindow">Random window (± minutes)</label><input id="tmWindow" type="number" min="0" max="15"></div><div><label for="tmOutput">Output</label><select id="tmOutput"></select></div><div><label for="tmAction">Action</label><select id="tmAction"><option value="0">Off</option><option value="1">On</option><option value="2">Toggle</option><option value="3">Berry callback</option></select></div></div><fieldset class="tm-days"><legend>Days</legend><span id="tmDays"></span></fieldset><label><input id="tmRepeat" type="checkbox"> Repeat every week</label><p id="tmMsg" role="status" aria-live="polite"></p><div class="actions"><button id="tmSave" class="primary" type="button">Save</button><button id="tmClear" type="button">Clear</button><button id="tmClose" type="button">Close</button></div></div><table class="file-table tm"><thead><tr><th>#</th><th>Active</th><th>Time</th><th>Days</th><th>Output</th><th>Action</th><th></th></tr></thead><tbody id="tmRows"></tbody></table><div id="tmSolar" hidden><h3>Location for sunrise and sunset</h3><div class="form-grid"><div><label for="tmLat">Latitude</label><input id="tmLat" type="text" inputmode="decimal"></div><div><label for="tmLon">Longitude</label><input id="tmLon" type="text" inputmode="decimal"></div><div><label for="tmTwilight">Sunrise and sunset definition</label><select id="tmTwilight"><option value="0">Normal</option><option value="1">Civil twilight</option><option value="2">Nautical twilight</option><option value="3">Astronomical twilight</option></select></div></div><p id="tmSolarMsg" role="status" aria-live="polite"></p><div class="actions"><button id="tmSolarSave" type="button">Save location</button></div></div></section><!--#endif--></div>
+<div data-panel="information" hidden><section>
+<div class="row"><h2>Device</h2><button id="refresh" type="button">Refresh</button></div>
+<div id="info">Loading…</div>
+</section></div>
+<!--#if USE_WEB_FILESYSTEM-->
+<div data-panel="tools" hidden><section>
+
+<h2>Filesystem</h2>
+<div id="fsUsage" class="muted"><span id="fsUsageText">—</span><progress id="fsUsageBar" max="1" value="0" aria-label="Filesystem usage"></progress></div>
+<div class="fs-controls" id="fs-transfer-controls"><button id="fsUp" type="button" disabled aria-label="Parent directory">..</button><strong id="fsPath">/</strong>
+<button id="fs-upload" type="button">Upload</button>
+<input id="fs-files" type="file" multiple hidden>
+<button id="fs-new" type="button">New file</button></div>
+<div id="fs-drop"><table class="file-table"><thead><tr><th>Name</th><th>Type</th><th>Size</th><th>Actions</th></tr></thead><tbody id="fileList"><tr><td colspan="4">—</td></tr></tbody></table></div>
+<p id="fsStatus" class="muted" role="status" aria-live="polite"></p>
+<p id="fs-drop-hint">Drop files or folders here. Empty folders are not transferred.</p><progress id="fs-transfer-progress" max="1" value="0" aria-label="Upload progress"></progress>
+<button id="fs-cancel" type="button" hidden>Cancel transfer</button>
+<div id="fs-editor" hidden>
+<label for="fs-filename">File path</label><input id="fs-filename" type="text" style="width:100%">
+<label for="fs-text">File contents</label><textarea id="fs-text" wrap="off" spellcheck="false" style="width:100%;height:50vh;font-family:monospace;white-space:pre;overflow:auto"></textarea>
+<button id="fs-save" type="button">Save</button><button id="fs-back" type="button">Back / Cancel</button>
+</div>
+</section></div>
+<!--#endif-->
+<!--#if USE_WEB_CONSOLE-->
+<div data-panel="console" hidden><section>
+<h2>Console</h2>
+<div class="console-grid">
+<section>
+<h3>Web Console</h3>
+<pre id="webConsole" role="log" aria-live="polite"></pre>
+<form id="commandForm"><input id="command" type="text" maxlength="512" autocomplete="off" aria-label="Command" placeholder="Enter command" required><button>Send</button></form>
+</section>
+<section id="berryConsole">
+<h3>Berry Console</h3>
+<pre id="berryOutput" role="log" aria-live="polite"></pre>
+<form id="berryForm"><textarea id="berrySource" rows="4" autocomplete="off" aria-label="Berry source" placeholder="Enter Berry source" disabled></textarea><button id="berryRun" disabled>Run</button></form>
+<p id="berryStatus" class="muted" role="status" aria-live="polite"></p>
+</section>
+</div>
+</section></div>
+<!--#endif-->
+<!--#if USE_BEKEN_UPDATE_WEB-->
+<div data-panel="firmware" hidden><section class="warning"><h2>Firmware update</h2>
+<p>Keep the device powered until it restarts. Settings and files are kept.</p>
+<label for="firmware">Beken RBL file</label><input id="firmware" type="file" accept=".rbl" required>
+<div class="actions"><button id="start" type="button" class="primary">Upload and install</button><button id="cancel" type="button" hidden>Cancel update</button></div>
+<progress id="progress" max="1" value="0"></progress>
+</section></div>
+<!--#endif-->
+</div></div></main>
+<script>
+let stateTimer=0,setupTimer=0,bootstrap={},setupComplete=false,statePolling=false,setupScanBusy=false,setupMessageUntil=0;
+let csrf="",busy=false,cancelRequested=false,consoleCommandBusy=false;
+let consoleTimer=0,consolePolling=false,consolePollPromise=Promise.resolve(),webCursor=0,berryCursor=0,consoleGeneration="",consolePollErrorShown=false;
+let filesystemPath="/",filesystemRequestId=0;
+const recentConsoleResultGroups=new Map();
+const BERRY_SOURCE_MAX_BYTES=65536,BERRY_DIRECT_SOURCE_MAX_BYTES=2048;
+/*#if !USE_WEB_FILESYSTEM*/const fsBusy=false;/*#endif*//*#if !USE_PWM*/const lights=new Map();/*#endif*/
+const byId=id=>document.getElementById(id),say=text=>{byId("status").textContent=text;if(byId("app").hidden)byId("loginStatus").textContent=text};
+/*#if USE_WEB_CONSOLE*/
+function createInputHistory(){
+ const entries=[];let cursor=0,draft="",browsing=false,anchorInput=null,anchorCaret=-1;
+ return{
+  record(value){
+   value=String(value);if(!value.trim())return;
+   if(entries[entries.length-1]!==value){entries.push(value);if(entries.length>20)entries.shift()}
+   cursor=entries.length;draft="";browsing=false;anchorInput=null;anchorCaret=-1;
+  },
+  edited(){cursor=entries.length;draft="";browsing=false;anchorInput=null;anchorCaret=-1},
+  isBrowsing(){return browsing},
+  isBrowsingAt(input){return browsing&&input===anchorInput&&input.selectionStart===anchorCaret&&input.selectionEnd===anchorCaret},
+  navigate(input,key){
+   if(!entries.length)return false;
+   if(key==="ArrowUp"){
+    if(!browsing){cursor=entries.length;draft=input.value;browsing=true}
+    if(cursor>0)cursor--;
+    input.value=entries[cursor];input.setSelectionRange(0,0);anchorInput=input;anchorCaret=0;return true;
+   }
+   if(!browsing)return false;
+   if(cursor<entries.length-1){cursor++;input.value=entries[cursor]}
+   else{cursor=entries.length;input.value=draft;browsing=false}
+   input.setSelectionRange(input.value.length,input.value.length);anchorInput=browsing?input:null;anchorCaret=browsing?input.value.length:-1;return true;
+  }
+ }
+}
+const webInputHistory=createInputHistory(),berryInputHistory=createInputHistory();
+function handleInputHistory(event,input,history,multiline){
+ if(event.isComposing||event.keyCode===229||event.ctrlKey||event.metaKey||event.altKey||event.shiftKey||
+    (event.key!=="ArrowUp"&&event.key!=="ArrowDown")||input.selectionStart!==input.selectionEnd)return false;
+ if(multiline){
+  const browsingAtCaret=history.isBrowsingAt(input);
+  if(history.isBrowsing()&&!browsingAtCaret)return false;
+  if(!browsingAtCaret&&((event.key==="ArrowUp"&&input.selectionStart!==0)||
+     (event.key==="ArrowDown"&&input.selectionEnd!==input.value.length)))return false;
+ }
+ if(!history.navigate(input,event.key))return false;event.preventDefault();return true;
+}
+/*#endif*/
+let requestQueue=Promise.resolve();
+function queueRequest(send){
+ const result=requestQueue.then(send,send);
+ requestQueue=result.then(()=>undefined,()=>undefined);
+ return result;
+}
+function request(path,method="GET",body=null,contentType="application/json",extraHeaders={}){
+ /*#if USE_WEB_FILESYSTEM*/if(fsBusy)return Promise.reject(new Error(fsWords.failed));/*#endif*/
+ const send=async()=>{
+ const headers={};
+ if(method==="POST"){headers["Content-Type"]=contentType;headers["X-Newmota-CSRF"]=csrf}
+ Object.assign(headers,extraHeaders);
+ const response=await fetch(path,{method,body,headers,credentials:"same-origin",cache:"no-store"});
+ const text=await response.text();let data={};try{data=JSON.parse(text)}catch{}
+ if(!response.ok){
+  if(response.status===401){csrf="";clearTimeout(stateTimer);clearTimeout(setupTimer);clearTimeout(consoleTimer);byId("login").hidden=false;byId("app").hidden=true;byId("onboarding").hidden=true}
+  const error=new Error(data.error||text||`Request failed (${response.status})`);error.status=response.status;throw error;
+ }
+ return {data,text,response};
+ };
+ return queueRequest(send);
+}
+async function connect(){
+ try{
+  const {data:boot}=await request("/api/bootstrap");bootstrap=boot;
+  if(boot.auth_required){const {data:session}=await request("/api/session");csrf=session.csrf||""}else csrf="";
+  if(boot.mode==="onboarding"||boot.mode==="recovery"){
+   byId("login").hidden=true;byId("app").hidden=true;byId("onboarding").hidden=false;
+   const apStaysOnline=boot.station_access_point!==false;
+   byId("setupIntro").textContent=boot.mode==="recovery"
+    ?(apStaysOnline?"The configured Wi-Fi network is unavailable. Test a new network while this recovery access point stays online.":"The configured Wi-Fi network is unavailable. Testing a new network will disconnect this recovery access point. Reconnect here if the test fails.")
+    :(apStaysOnline?"Connect this device to Wi-Fi. The setup access point stays open while you configure it.":"Connect this device to Wi-Fi. Testing will disconnect the setup access point; reconnect here if the test fails, or to your Wi-Fi network if it succeeds.");
+   byId("setupApply").disabled=false;
+   byId("setupStatus").textContent=apStaysOnline?"":"The setup access point may disconnect during the Wi-Fi test.";
+   pollSetup();return;
+  }
+  byId("onboarding").hidden=true;
+  byId("login").hidden=true;byId("app").hidden=false;
+  await refreshInfo();
+  /*#if USE_PWM*/await pollLights();/*#endif*/
+  /*#if USE_SENSORS*/pollSensors();/*#endif*//*#if USE_BERRY*/pollWidgets();/*#endif*/
+  await refreshWifiSettings();
+  // POWERn values use the StateText2 alias when USE_STATE_TEXT is built in.
+  try{onWord=(await hw("StateText2")).StateText2||"ON"}catch{}
+  await refreshState();pollState();
+  /*#if USE_MQTT*/loadMqtt();/*#endif*/
+/*#if USE_WEB_FILESYSTEM*/
+  filesystemPath="/";
+  await loadFilesystemPage(0);
+/*#endif*/
+/*#if USE_BEKEN_UPDATE_WEB*/
+  try{
+   const {data:caps}=await request("/api/update/capabilities");
+   say(caps.available?`Ready. Maximum RBL size: ${caps.max_image_size} bytes.`:"Beken RBL writer unavailable for this layout.");
+  }catch(error){
+   if(error.status!==404)throw error;
+   say("This build has no firmware upload.");
+  }
+/*#endif*/
+/*#if USE_WEB_CONSOLE*/
+  try{await refreshConsoleOutput()}catch(error){say(error.message)}
+  pollConsoleOutput();
+/*#endif*/
+ }catch(error){
+  if(error.status===401||error.message.includes("401")||error.message==="Login required"){
+   byId("login").hidden=false;byId("app").hidden=true;say("");
+  }else say(error.message);
+ }
+}
+const bytes=n=>n>=1048576?(n/1048576).toFixed(1)+" MiB":n>=1024?(n/1024).toFixed(1)+" KiB":n+" B";
+// Renders [label, value] rows; empty values are skipped and arrays are joined.
+function kvRender(parent,rows){
+ parent.replaceChildren(...rows.filter(([,v])=>v!==""&&v!=null).map(([k,v])=>{const row=document.createElement("div"),key=document.createElement("span"),val=document.createElement("span");
+  row.className="kv-row";key.className="kv-key";val.className="kv-val";key.textContent=k;val.textContent=Array.isArray(v)?v.join(", "):String(v);row.append(key,val);return row}))}
+async function refreshInfo(){
+ const {data}=await request("/api/info");
+ const identity=data.identity||{},network=data.network||{},memory=data.memory||{},fs=data.filesystem||{},web=data.web||{};
+ byId("deviceName").textContent=identity.device_name||network.hostname||"Newmota";
+ byId("deviceSub").textContent=`${identity.target||"Beken"} · ${identity.version||"—"}`;
+ byId("netIp").textContent=network.address||"—";
+ const usage=fs.available&&fs.total?`${bytes(fs.used)} used · ${bytes(Math.max(0,fs.total-fs.used))} free of ${bytes(fs.total)}`:"Filesystem not mounted";
+/*#if USE_WEB_FILESYSTEM*/
+ byId("fsUsageText").textContent="LittleFS · "+usage;byId("fsUsageBar").value=fs.total?Math.min(1,fs.used/fs.total):0;
+/*#endif*/
+ kvRender(byId("info"),[["Device name",identity.device_name],["Hostname",network.hostname],["Version",identity.version],["Target",identity.target],["Chip",identity.chip],
+  ["SDK",[identity.sdk,identity.sdk_version].filter(Boolean).join(" ")],["IP address",network.address],["Gateway",network.gateway],["Subnet",network.subnet],["MAC",network.mac],["Wi-Fi",network.ssid],
+  /* Supported Beken chips are 2.4 GHz only. */["Channel",network.channel],["Band",network.channel?"2.4GHz":""],
+  ["Web",web.transport],["Flash",memory.flash?bytes(memory.flash):""],["Program",memory.program?bytes(memory.program)+(memory.program_capacity?" of "+bytes(memory.program_capacity):""):""],
+  ["Free heap",memory.heap_free?bytes(memory.heap_free):""],["Boot count",data.operation?.boot_count],["LittleFS",usage],["Restart required",data.restart_required?"Yes":""]]);
+}
+async function refreshWifiSettings(){
+ const {data}=await request("/api/command","POST","SSId","text/plain");
+ byId("wifiSsid1").value=data.SSId1||"";
+ byId("wifiSsid2").value=data.SSId2||"";
+}
+
+const hw=async command=>{const {data}=await request("/api/command","POST",command,"text/plain");if(typeof data.Command==="string")throw Error(data.Command);return data};
+/*#if USE_WEB_GPIO*/
+/* GPIO editors (Module: assign User pins; Template: edit the user template). Reads
+   /api/gpio/catalog and /api/gpio; writes only through Module, GPIO, Template and Restart. */
+let gpioCat=null,gpioSt=null,gpioRows=[],tplRows=[],tplValues=[];
+// Drafts survive page switches; only the saved or explicitly reloaded editor re-renders.
+const dirty={module:false,template:false};
+const gpioDesc=v=>gpioCat.Functions.find(([f,n])=>v>=f&&v<f+n);
+const gpioName=v=>v===0?"None":v===1?"User":(d=>d?d[3]+(d[1]>1?v-d[0]+1:""):"Unknown "+v)(gpioDesc(v));
+function gpioControl(cell,value,caps,user,changed){
+ const kind=document.createElement("select"),index=document.createElement("select"),add=(s,v,l)=>s.add(new Option(l,String(v)));
+ add(kind,0,"None");if(user)add(kind,1,"User");
+ for(const [first,,req,name] of gpioCat.Functions)if((caps&req)===req)add(kind,first,name);
+ const cur=gpioDesc(value);if(value>1&&(!cur||!kind.querySelector(`option[value="${cur[0]}"]`)))add(kind,cur?cur[0]:value,gpioName(value));
+ kind.value=String(cur?cur[0]:value);
+ const fill=n=>{const d=gpioDesc(Number(kind.value));index.replaceChildren();index.hidden=!d||d[1]<2;if(!index.hidden)for(let i=1;i<=d[1];i++)add(index,i,String(i));index.value=String(n)};
+ fill(cur?value-cur[0]+1:1);kind.setAttribute("aria-label","Function");index.setAttribute("aria-label","Instance");
+ const read=()=>Number(kind.value)+(index.hidden?0:Number(index.value)-1);
+ kind.addEventListener("change",()=>{fill(1);changed(read())});index.addEventListener("change",()=>changed(read()));
+ cell.append(kind,index);return {disable:off=>{kind.disabled=index.disabled=off}}}
+const gpioLabel=p=>"GPIO"+p[0]+(p[2]&2?" ⚠":"")+(p[2]&1?"":" · reserved");
+function gpioDup(rows){const seen=new Map();for(const r of rows){const v=r.value();if(v>1)seen.set(v,(seen.get(v)||0)+1)}
+ let dup=false;for(const r of rows){const v=r.value(),d=v>1&&seen.get(v)>1;r.tr.classList.toggle("dup",d);r.tr.title=d?"A function is assigned to more than one pin.":r.tr.dataset.caution||"";dup||=d}return dup}
+function gpioRow(body,pin){const tr=document.createElement("tr"),label=document.createElement("td"),cell=document.createElement("td");label.textContent=gpioLabel(pin);if(pin[2]&2)tr.dataset.caution="Caution: strapping or otherwise sensitive pin";tr.append(label,cell);body.append(tr);return [tr,cell]}
+function moduleOptions(select,zero){select.replaceChildren(new Option(zero,"0"));for(const [n,name] of gpioCat.Modules)select.add(new Option(n+" · "+name,String(n)))}
+async function loadGpio(editor){
+ try{gpioCat??=await controllerApi("/api/gpio/catalog");gpioSt=await controllerApi("/api/gpio");if(editor==="module"||!dirty.module)renderModule();if(editor==="template"||!dirty.template)renderTemplate()}
+ catch(error){byId("gpioMsg").textContent=byId("tplMsg").textContent=error.message}}
+function renderModule(){
+ moduleOptions(byId("gpioModule"),"0 · "+(gpioSt.Template.NAME||"User template"));byId("gpioModule").value=String(gpioSt.Module);
+ const body=byId("gpioRows");body.replaceChildren();gpioRows=[];
+ for(const pin of gpioSt.Pins){if(pin[1]===255||!(pin[2]&1)||pin[4]===0)continue;let value=pin[5];const [tr,cell]=gpioRow(body,pin);
+  if(pin[4]===1)gpioRows.push({tr,user:true,value:()=>value,control:gpioControl(cell,value,pin[3],false,v=>{value=v;dirty.module=true;gpioDup(gpioRows)})});
+  else{cell.textContent=gpioName(value);tr.className="off";gpioRows.push({tr,user:false,value:()=>value})}}
+ gpioDup(gpioRows);dirty.module=false;moduleHint()}
+function moduleHint(){const changed=Number(byId("gpioModule").value)!==gpioSt.Module;for(const r of gpioRows)r.control?.disable(changed);
+ byId("gpioHint").textContent=changed?"Save to switch modules; edit its pins after the restart.":gpioRows.some(r=>r.user)?"Pins marked User in the selected template can be assigned here.":"The selected template has no User pins."}
+byId("gpioModule").addEventListener("change",()=>{dirty.module=true;moduleHint()});
+async function gpioDone(msg,restart,editor){if(restart){msg.textContent="Saved. Restarting…";await hw("Restart 1").catch(()=>{})}else{dirty[editor]=false;msg.textContent="Saved. Restart to apply.";await loadGpio(editor)}}
+function reloadGpio(editor,msg){if(dirty[editor]&&!confirm("Discard unsaved changes?"))return;byId(msg).textContent="";dirty[editor]=false;loadGpio(editor)}
+async function saveModule(restart){const msg=byId("gpioMsg");if(busy)return;if(gpioDup(gpioRows)){msg.textContent="A function is assigned to more than one pin.";return}busy=true;
+ try{const module=Number(byId("gpioModule").value);if(module!==gpioSt.Module)await hw("Module "+module);else{const values=gpioRows.filter(r=>r.user).map(r=>r.value());if(values.length)await hw("GPIO "+JSON.stringify({GPIO:values}))}await gpioDone(msg,restart,"module")}
+ catch(error){msg.textContent=error.message}finally{busy=false}}
+byId("gpioSave").addEventListener("click",()=>saveModule(false));byId("gpioSaveRestart").addEventListener("click",()=>saveModule(true));
+byId("gpioReload").addEventListener("click",()=>reloadGpio("module","gpioMsg"));
+function renderTemplate(source){
+ const t=source||gpioSt.Template;byId("tplName").value=t.NAME||"";byId("tplFlag").value=String(t.FLAG||0);moduleOptions(byId("tplBase"),"0");byId("tplBase").value=String(t.BASE||0);byId("tplActivate").checked=gpioSt.Module===0;
+ const body=byId("tplRows");body.replaceChildren();tplRows=[];const bySlot=new Map(gpioSt.Pins.filter(p=>p[1]!==255).map(p=>[p[1],p])),slots=gpioSt.Template.GPIO.length;
+ tplValues=Array.from({length:slots},(_,i)=>Number((t.GPIO||[])[i])||0);
+ for(let slot=0;slot<slots;slot++){const pin=bySlot.get(slot);if(!pin)continue;let value=tplValues[slot];const [tr,cell]=gpioRow(body,pin);
+  const control=gpioControl(cell,value,pin[3],true,v=>{value=v;dirty.template=true;gpioDup(tplRows);tplJson()});if(!(pin[2]&1)){control.disable(true);tr.className="off"}
+  tplRows.push({tr,slot,value:()=>value})}
+ gpioDup(tplRows);tplJson();dirty.template=!!source}
+function tplDoc(){const gpio=tplValues.slice();for(const r of tplRows)gpio[r.slot]=r.value();return {NAME:byId("tplName").value,ARCH:gpioCat.Arch,GPIO:gpio,FLAG:Math.max(0,Number(byId("tplFlag").value)||0),BASE:Number(byId("tplBase").value)}}
+const tplJson=()=>{byId("tplJson").value=JSON.stringify(tplDoc())};
+for(const id of ["tplName","tplFlag","tplBase"])byId(id).addEventListener("input",()=>{dirty.template=true;tplJson()});
+for(const id of ["tplJson","tplActivate"])byId(id).addEventListener("input",()=>{dirty.template=true});
+byId("tplApply").addEventListener("click",()=>{try{const t=JSON.parse(byId("tplJson").value);if(!t||!Array.isArray(t.GPIO)||(t.ARCH&&t.ARCH!==gpioCat.Arch))throw Error();renderTemplate(t);byId("tplMsg").textContent=""}catch{byId("tplMsg").textContent="Template JSON is invalid or for another architecture."}});
+async function saveTemplate(restart){const msg=byId("tplMsg");if(busy)return;if(gpioDup(tplRows)){msg.textContent="A function is assigned to more than one pin.";return}busy=true;
+ try{const command="Template "+JSON.stringify(tplDoc());if(new TextEncoder().encode(command).length>512)throw Error("Template exceeds the 512-byte web command limit; shorten the name.");
+  await hw(command);if(byId("tplActivate").checked&&gpioSt.Module!==0)await hw("Module 0");await gpioDone(msg,restart,"template")}
+ catch(error){msg.textContent=error.message}finally{busy=false}}
+byId("tplSave").addEventListener("click",()=>saveTemplate(false));byId("tplSaveRestart").addEventListener("click",()=>saveTemplate(true));
+byId("tplReload").addEventListener("click",()=>reloadGpio("template","tplMsg"));
+/*#endif*/
+/*#if USE_TIMERS*/
+/* Timers: /api/timers lists the global switch, solar settings and 16 timers; saves send one
+   complete TimerN record, TimerN 0, Timers ON|OFF, Latitude, Longitude and Sunrise. */
+let tm=null,tmIndex=0,tmDirty=false;
+const TM_DAYS=["Su","Mo","Tu","We","Th","Fr","Sa"],TM_ACTIONS=["Off","On","Toggle","Berry"];
+const tmTime=t=>t.Mode===0?t.Time:(t.Mode===1?"☀↑ ":"☀↓ ")+(t.Time.startsWith("-")?"−":"+")+t.Time.replace("-","");
+async function loadTimers(){try{tm=await controllerApi("/api/timers");renderTimers()}catch(error){byId("tmMsg").textContent=error.message}}
+function renderTimers(){
+ byId("tmEnabled").checked=tm.Timers==="ON";byId("tmClock").hidden=tm.TimeValid!==false;const body=byId("tmRows");body.replaceChildren();
+ tm.List.forEach((t,i)=>{const tr=document.createElement("tr");if(!t.Enable)tr.className="off";
+  for(const text of [i+1,t.Enable?"✓":"—",tmTime(t),[...t.Days].map((on,d)=>on==="1"?TM_DAYS[d]:"·").join(" "),"Power"+t.Output,TM_ACTIONS[t.Action]]){const td=document.createElement("td");td.textContent=String(text);tr.append(td)}
+  const td=document.createElement("td"),b=document.createElement("button");b.type="button";b.textContent="Edit";b.setAttribute("aria-label","Edit timer "+(i+1));b.addEventListener("click",()=>openTimer(i));td.append(b);tr.append(td);body.append(tr)});
+ byId("tmSolar").hidden=!(tm.List.some(t=>t.Mode!==0)||(!byId("tmEditor").hidden&&byId("tmMode").value!=="0"));
+ byId("tmLat").value=tm.Latitude;byId("tmLon").value=tm.Longitude;byId("tmTwilight").value=String(tm.Sunrise)}
+function openTimer(i){
+ if(tmDirty&&i!==tmIndex&&!confirm("Discard unsaved changes?"))return;tmIndex=i;const t=tm.List[i];byId("tmEditor").hidden=false;byId("tmTitle").textContent="Timer"+(i+1);
+ byId("tmEnable").checked=!!t.Enable;byId("tmMode").value=String(t.Mode);byId("tmSign").value=t.Time.startsWith("-")?"-":"+";byId("tmTime").value=t.Time.replace("-","");
+ byId("tmWindow").value=String(t.Window);byId("tmRepeat").checked=!!t.Repeat;byId("tmAction").value=String(t.Action);
+ const out=byId("tmOutput"),set=new Set(powerIndices.filter(n=>n<=16));set.add(t.Output);out.replaceChildren();
+ for(const n of [...set].sort((a,b)=>a-b))out.add(new Option("Power"+n+(powerIndices.includes(n)?"":" · not configured"),String(n)));out.value=String(t.Output);
+ const days=byId("tmDays");days.replaceChildren();TM_DAYS.forEach((name,d)=>{const l=document.createElement("label"),c=document.createElement("input");c.type="checkbox";c.checked=t.Days[d]==="1";c.addEventListener("change",()=>{tmDirty=true});l.append(c,name);days.append(l)});
+ byId("tmMsg").textContent="";tmDirty=false;tmMode();renderTimers();byId("tmEnable").focus()}
+function tmMode(){const solar=byId("tmMode").value!=="0";byId("tmSign").hidden=!solar;if(solar)byId("tmSolar").hidden=false}
+for(const id of ["tmEnable","tmMode","tmSign","tmTime","tmWindow","tmRepeat","tmOutput","tmAction"])byId(id).addEventListener("input",()=>{tmDirty=true});
+byId("tmMode").addEventListener("change",tmMode);
+function tmRecord(){const solar=byId("tmMode").value!=="0",time=byId("tmTime").value,minutes=Number(byId("tmWindow").value);
+ if(!/^\d{2}:\d{2}$/.test(time)||(solar&&time>"11:59"))throw Error("Enter a time; sunrise and sunset offsets are at most 11:59.");
+ if(!Number.isInteger(minutes)||minutes<0||minutes>15)throw Error("The random window is 0 to 15 minutes.");
+ return {Enable:byId("tmEnable").checked?1:0,Mode:Number(byId("tmMode").value),Time:(solar&&byId("tmSign").value==="-"?"-":"")+time,Window:minutes,
+  Days:[...byId("tmDays").querySelectorAll("input")].map(c=>c.checked?"1":"0").join(""),Repeat:byId("tmRepeat").checked?1:0,Output:Number(byId("tmOutput").value),Action:Number(byId("tmAction").value)}}
+async function saveTimer(clear){if(busy||(clear&&!confirm("Clear this timer?")))return;busy=true;
+ try{const n=tmIndex+1,data=await hw("Timer"+n+" "+(clear?"0":JSON.stringify(tmRecord())));tm.List[tmIndex]=data["Timer"+n];tmDirty=false;openTimer(tmIndex);byId("tmMsg").textContent="Saved."}
+ catch(error){byId("tmMsg").textContent=error.message}finally{busy=false}}
+byId("tmSave").addEventListener("click",()=>saveTimer(false));byId("tmClear").addEventListener("click",()=>saveTimer(true));
+byId("tmClose").addEventListener("click",()=>{if(tmDirty&&!confirm("Discard unsaved changes?"))return;tmDirty=false;byId("tmEditor").hidden=true;renderTimers()});
+byId("tmEnabled").addEventListener("change",async()=>{const on=byId("tmEnabled").checked;try{tm.Timers=(await hw("Timers "+(on?"ON":"OFF"))).Timers}catch(error){byId("tmEnabled").checked=!on;byId("tmMsg").textContent=error.message}});
+byId("tmSolarSave").addEventListener("click",async()=>{if(busy)return;busy=true;const msg=byId("tmSolarMsg");
+ try{const lat=byId("tmLat").value.trim(),lon=byId("tmLon").value.trim(),re=/^[+-]?\d{1,3}(\.\d{1,6})?$/;if(!re.test(lat)||!re.test(lon))throw Error("Enter latitude and longitude in decimal degrees, at most six decimals.");
+  await hw("Latitude "+lat);await hw("Longitude "+lon);await hw("Sunrise "+byId("tmTwilight").value);tm=await controllerApi("/api/timers");renderTimers();msg.textContent="Saved."}
+ catch(error){msg.textContent=error.message}finally{busy=false}});
+/*#endif*/
+// Pages poll only while shown: Home data, Configuration MQTT status, Console output.
+const onPage=name=>!byId("app").hidden&&!document.querySelector(`[data-panel="${name}"]`).hidden;
+let configTab="wifi";
+const onConfigTab=name=>onPage("configuration")&&configTab===name;
+function showConfigTab(name){
+ configTab=name;
+ for(const panel of document.querySelectorAll("section[data-sub]"))panel.hidden=panel.dataset.sub!==name;
+ for(const tab of document.querySelectorAll(".tabs button"))tab.setAttribute("aria-selected",String(tab.dataset.sub===name));
+/*#if USE_MQTT*/
+ if(name==="mqtt")pollMqttStatus();
+/*#endif*/
+/*#if USE_WEB_GPIO*/
+ if((name==="module"||name==="template")&&!gpioSt)loadGpio();
+/*#endif*/
+/*#if USE_TIMERS*/
+ if(name==="timers"&&!tm)loadTimers();
+/*#endif*/
+}
+for(const tab of document.querySelectorAll(".tabs button"))tab.addEventListener("click",()=>showConfigTab(tab.dataset.sub));
+function showPage(name){
+/*#if USE_WEB_FILESYSTEM*/
+ if(fsBusy||(name!=="tools"&&!fsLeave()))return;
+/*#endif*/
+ for(const panel of document.querySelectorAll("[data-panel]"))panel.hidden=panel.dataset.panel!==name;
+ for(const button of document.querySelectorAll("[data-page]")){if(button.dataset.page===name){button.setAttribute("aria-current","page");byId("pageTitle").textContent=button.textContent}else button.removeAttribute("aria-current")}
+ byId("sidebar").classList.remove("open");byId("menu").setAttribute("aria-expanded","false");
+/*#if USE_WEB_FILESYSTEM*/
+ if(name==="tools")loadFilesystemPage();
+/*#endif*/
+ if(name==="information")refreshInfo().catch(error=>say(error.message));
+ if(name==="home"){/*#if USE_PWM*/pollLights();/*#endif*//*#if USE_SENSORS*/pollSensors();/*#endif*//*#if USE_BERRY*/pollWidgets()/*#endif*/}
+ if(name==="configuration")showConfigTab(configTab);
+/*#if USE_WEB_CONSOLE*/
+ if(name==="console")pollConsoleOutput();
+/*#endif*/
+}
+for(const button of document.querySelectorAll("[data-page]"))button.addEventListener("click",()=>showPage(button.dataset.page));
+byId("menu").addEventListener("click",()=>{const open=byId("sidebar").classList.toggle("open");byId("menu").setAttribute("aria-expanded",String(open))});
+function applyTheme(theme){document.documentElement.dataset.theme=theme;byId("theme").value=theme}
+try{const theme=localStorage.getItem("newmota-theme");if(["dark","light","slate","warm"].includes(theme))applyTheme(theme)}catch{}
+byId("theme").addEventListener("change",()=>{applyTheme(byId("theme").value);try{localStorage.setItem("newmota-theme",byId("theme").value)}catch{}});
+
+/*#if USE_MQTT*/
+const mqttStrings = {"saved": "Settings saved. Connection status is shown separately.", "tlsDeferred": "TLS is unavailable in this image.", "unavailable": "MQTT configuration unavailable.", "testRunning": "Broker test started. Watch the connection status for the result.", "passwordSet": "A broker password is stored.", "passwordEmpty": "No broker password is stored."};
+async function mqttRequest(path, body, type) { return (await request(path, body === undefined ? "GET" : "POST", body, type || "application/x-www-form-urlencoded")).data; }
+
+const mqttTextFields = ["host","port","client","user","topic","fulltopic","keep_alive","retry","timeout","tele_period","prefix1","prefix2","prefix3","group1","group2","group3","group4"];
+const mqttFlags = ["enabled","response_topic","offline_lwt","group_topic_mode","only_json","no_retain","power_retain","info_retain","state_retain","status_retain","power_index"];
+let mqttTimer, mqttBusy = false, mqttLoaded = false, mqttStatusBusy = false;
+function mqttFormBody() {
+  const body = new URLSearchParams();
+  mqttTextFields.forEach(key => body.set(key, byId("mqtt-" + key).value));
+  mqttFlags.forEach(key => body.set(key, byId("mqtt-" + key).checked ? "1" : "0"));
+  const action = byId("mqtt-password-action").value;
+  body.set("password_action", action);
+  if (action === "replace") body.set("password", byId("mqtt-password").value);
+  return body.toString();
+}
+function mqttPasswordAction() {
+  const replace = byId("mqtt-password-action").value === "replace";
+  byId("mqtt-password").disabled = !replace;
+  if (!replace) byId("mqtt-password").value = "";
+}
+async function loadMqtt() {
+  try {
+    const data = await mqttRequest("/api/mqtt");
+    mqttTextFields.forEach(key => { byId("mqtt-" + key).value = data[key] ?? ""; });
+    mqttFlags.forEach(key => { byId("mqtt-" + key).checked = !!data[key]; });
+    byId("mqtt-password-action").value = "preserve";
+    byId("mqtt-password").value = ""; mqttPasswordAction();
+    byId("mqtt-password-state").textContent = data.password_set ? mqttStrings.passwordSet : mqttStrings.passwordEmpty;
+    byId("mqtt-message").textContent = data.tls ? mqttStrings.tlsDeferred : "";
+    byId("mqtt-save").disabled = !!data.tls;
+    mqttLoaded = true;
+    pollMqttStatus();
+  } catch(error) {
+    byId("mqtt-message").textContent = error.message || mqttStrings.unavailable;
+    byId("mqtt-save").disabled = true;
+  }
+}
+async function pollMqttStatus() {
+  clearTimeout(mqttTimer);
+  if (!mqttLoaded || !onConfigTab("mqtt") || document.hidden || mqttStatusBusy) return;
+  if(busy||fsBusy){mqttTimer=setTimeout(pollMqttStatus,2000);return}
+  mqttStatusBusy = true;
+  try {
+    const data = await mqttRequest("/api/mqtt/status");
+    kvRender(byId("mqtt-status"), Object.entries(data).filter(([key]) => !["tls_supported", "test_allowed"].includes(key)).map(([key, value]) => [key.replace(/_/g, " "), value]));
+    byId("mqtt-test").disabled = data.state === "disabled" || data.state === "tls_unavailable" ||
+      data.test === "running" || !data.test_allowed;
+  } catch(error) { kvRender(byId("mqtt-status"), [["error", error.message]]); }
+  finally { mqttStatusBusy = false; }
+  if (onConfigTab("mqtt") && !document.hidden) mqttTimer = setTimeout(pollMqttStatus, 2000);
+}
+async function submitMqtt(preview) {
+  if (mqttBusy || !mqttLoaded) return;
+  mqttBusy = true; byId("mqtt-save").disabled = true; byId("mqtt-preview").disabled = true;
+  try {
+    const data = await mqttRequest(preview ? "/api/mqtt/preview" : "/api/mqtt", mqttFormBody());
+    if (preview) kvRender(byId("mqtt-topics"), Object.entries(data));
+    else {
+      byId("mqtt-password-action").value = "preserve";
+      byId("mqtt-password").value = ""; mqttPasswordAction();
+      byId("mqtt-topics").replaceChildren();
+      await loadMqtt();
+      byId("mqtt-message").textContent = mqttStrings.saved;
+    }
+  } catch(error) { byId("mqtt-message").textContent = error.message; }
+  finally { mqttBusy = false; byId("mqtt-save").disabled = false; byId("mqtt-preview").disabled = false; }
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) pollMqttStatus(); });
+byId("mqtt-form").addEventListener("submit", event => { event.preventDefault(); submitMqtt(false); });
+byId("mqtt-preview").addEventListener("click", () => submitMqtt(true));
+byId("mqtt-reload").addEventListener("click", () => { if (!mqttBusy) loadMqtt(); });
+byId("mqtt-password-action").addEventListener("change", mqttPasswordAction);
+byId("mqtt-power_retain").addEventListener("change", () => { if (byId("mqtt-power_retain").checked) byId("mqtt-only_json").checked = false; });
+byId("mqtt-only_json").addEventListener("change", () => { if (byId("mqtt-only_json").checked) byId("mqtt-power_retain").checked = false; });
+byId("mqtt-test").addEventListener("click", async () => {
+  if (mqttBusy) return;
+  mqttBusy = true; byId("mqtt-test").disabled = true;
+  try {
+    await mqttRequest("/api/mqtt/test", "", "text/plain");
+    byId("mqtt-message").textContent = mqttStrings.testRunning;
+  } catch(error) { byId("mqtt-message").textContent = error.message; }
+  finally { mqttBusy = false; pollMqttStatus(); }
+});
+/*#endif*/
+
+let powerIndices=[],relayLayout="",onWord="ON";
+const relays=new Map();
+function relayCard(n){
+ const root=document.createElement("section"),head=document.createElement("h3"),sw=document.createElement("input");
+ head.textContent="Relay "+n;sw.type="checkbox";sw.className="sw";sw.setAttribute("aria-label","Relay "+n+" power");head.append(sw);root.append(head);
+ sw.addEventListener("change",async()=>{const on=sw.checked;sw.disabled=true;try{await hw("Power"+n+(on?" ON":" OFF"))}catch(error){sw.checked=!on;say(error.message)}finally{sw.disabled=false}});
+ relays.set(n,sw);return root}
+function renderRelays(data){
+ const owned=new Set([...lights.values()].map(c=>c.l.Power)),shown=powerIndices.filter(n=>!owned.has(n)),layout=shown.join();
+ if(layout!==relayLayout){relayLayout=layout;relays.clear();byId("relay-grid").replaceChildren(...shown.map(relayCard))}
+ for(const [n,sw] of relays)if(!sw.disabled)sw.checked=(data["POWER"+n]??(n===1?data.POWER:""))===onWord}
+async function refreshState(){
+ const {data}=await request("/api/state");powerIndices=Object.keys(data).filter(k=>/^POWER\d*$/.test(k)).map(k=>Number(k.slice(5))||1);renderRelays(data);
+ const seconds=Math.max(0,Number(data.UptimeSec)||0);byId("netUptime").textContent=`${Math.floor(seconds/86400)}d ${String(Math.floor(seconds/3600)%24).padStart(2,"0")}:${String(Math.floor(seconds/60)%60).padStart(2,"0")}:${String(seconds%60).padStart(2,"0")}`;
+}
+function pollState(){
+ clearTimeout(stateTimer);if(byId("app").hidden||document.hidden||statePolling)return;
+ if(busy||consoleCommandBusy||fsBusy){stateTimer=setTimeout(pollState,500);return}
+ statePolling=true;refreshState().catch(error=>say(error.message)).finally(()=>{statePolling=false;if(!byId("app").hidden&&!document.hidden)stateTimer=setTimeout(pollState,1000)});
+}
+function safeWifiCommandValue(value){return value.trim()===value&&!['0','1','?'].includes(value)&&!/[\x00-\x1f\x7f;'"{}\[\]]/.test(value)}
+byId("wifiForm").addEventListener("submit",async event=>{
+ event.preventDefault();if(busy||consoleCommandBusy||fsBusy)return;
+ const slots=[[byId("wifiSsid1").value,byId("wifiPassword1").value],[byId("wifiSsid2").value,byId("wifiPassword2").value]];
+ if(slots.some(([ssid,password])=>(ssid&&(new TextEncoder().encode(ssid).length>32||!safeWifiCommandValue(ssid)))||(password&&(new TextEncoder().encode(password).length>64||!safeWifiCommandValue(password))))){say("Wi-Fi credentials contain values this command interface cannot safely store.");return}
+ busy=true;try{const {data:selection}=await request("/api/command","POST","Ap","text/plain"),preferredSlot=Number(selection.Ap);if(preferredSlot!==1&&preferredSlot!==2)throw Error("Invalid preferred Wi-Fi slot.");for(let slot=0;slot<slots.length;slot++){const [ssid,password]=slots[slot];await request("/api/command","POST",`SSId${slot+1} ${ssid||"0"}`,"text/plain");if(password)await request("/api/command","POST",`Password${slot+1} ${password}`,"text/plain")}await request("/api/command","POST",`Ap ${preferredSlot}`,"text/plain");byId("wifiPassword1").value="";byId("wifiPassword2").value="";say("Wi-Fi saved. Restart the device to connect.");await refreshWifiSettings()}catch(error){say(error.message)}finally{busy=false}
+});
+byId("setupScan").addEventListener("click",async()=>{
+ if(busy)return;busy=true;setupScanBusy=true;byId("setupScan").disabled=true;byId("setupApply").disabled=true;byId("setupStatus").textContent="Scanning for Wi-Fi networks…";
+ try{let {data}=await request("/api/command","POST","WifiScan 1","text/plain"),result=data.WiFiScan;
+  for(let i=0;(result==="Scanning"||result==="Busy")&&i<70;i++){await new Promise(resolve=>setTimeout(resolve,500));({data}=await request("/api/command","POST","WifiScan","text/plain"));result=data.WiFiScan}
+  if(result==="Scanning"||result==="Busy"){
+   byId("setupStatus").textContent="Wi-Fi scan is still running. Wait a little longer, or enter the SSID manually and retry.";setupMessageUntil=Date.now()+5000;return;
+  }
+  if(result==="Failed"||result==="Not Started"){
+   byId("setupStatus").textContent=`Wi-Fi scan ${result.toLowerCase()}. You can enter the SSID manually and retry.`;setupMessageUntil=Date.now()+5000;return;
+  }
+  const select=byId("setupNetworks");select.replaceChildren(new Option("Choose a network…",""));
+  for(const [key,network] of Object.entries(typeof result==="object"&&result?result:{}))if(/^NET[0-9]+$/.test(key)&&network.SSId)select.add(new Option(`${network.SSId} · ${network.Signal} dBm`,network.SSId));
+  const found=select.options.length>1;
+  byId("setupStatus").textContent=found?"Select a network or enter its SSID manually.":"No networks found. You can still enter the SSID manually.";
+  setupMessageUntil=Date.now()+5000;
+ }catch(error){byId("setupStatus").textContent=error.message;setupMessageUntil=Date.now()+5000}finally{busy=false;setupScanBusy=false;byId("setupScan").disabled=false;if(!setupComplete)byId("setupApply").disabled=false}
+});
+byId("setupNetworks").addEventListener("change",()=>{if(byId("setupNetworks").value)byId("setupSsid").value=byId("setupNetworks").value});
+async function pollSetup(){
+ clearTimeout(setupTimer);if(document.hidden||byId("onboarding").hidden||setupComplete)return;
+ if(setupScanBusy){setupTimer=setTimeout(pollSetup,700);return}
+ try{const {data}=await request("/api/onboarding/status");
+  if(data.state==="testing"){byId("setupApply").disabled=true;byId("setupStatus").textContent=bootstrap.station_access_point===false?"Testing Wi-Fi. The setup connection may drop; reconnect to this setup network if the test fails.":"Testing Wi-Fi credentials; the setup AP remains available…"}
+  if(data.state==="succeeded"){setupComplete=true;byId("setupApply").disabled=true;byId("setupPassword").value="";byId("setupWebPassword").value="";byId("setupStatus").textContent=bootstrap.station_access_point===false?"Wi-Fi accepted. Saving configuration and restarting; reconnect to your Wi-Fi network.":data.restart_pending?"Wi-Fi accepted. Saving configuration and restarting…":"Wi-Fi accepted. Restart the device to use the new network."}
+  if(data.state==="failed"){byId("setupApply").disabled=false;if(Date.now()>=setupMessageUntil)byId("setupStatus").textContent="Wi-Fi test failed. The setup AP is available again; check the credentials and try again."}
+ }catch(error){if(Date.now()>=setupMessageUntil)byId("setupStatus").textContent=bootstrap.station_access_point===false&&byId("setupApply").disabled?"The setup access point is offline during the Wi-Fi test. Reconnect to check the result.":error.message}
+ if(!setupComplete&&!byId("onboarding").hidden)setupTimer=setTimeout(pollSetup,700);
+}
+byId("setupForm").addEventListener("submit",async event=>{
+ event.preventDefault();if(busy){byId("setupStatus").textContent=setupScanBusy?"Wait for the Wi-Fi scan to finish before testing credentials.":"Another Wi-Fi operation is still running.";return}
+ const ssid=byId("setupSsid").value,password=byId("setupPassword").value,web=byId("setupWebPassword").value,bytes=text=>new TextEncoder().encode(text).length;
+ if(!ssid||bytes(ssid)>32||bytes(password)>64||bytes(web)>64||(web&&bytes(web)<8)||/[\r\n]/.test(ssid+password+web)){byId("setupStatus").textContent="SSID/password length or password policy is invalid.";return}
+ busy=true;byId("setupApply").disabled=true;setupComplete=false;
+ try{await request("/api/onboarding/apply","POST",`ssid=${encodeURIComponent(ssid)}&password=${encodeURIComponent(password)}&webpassword=${encodeURIComponent(web)}`,"application/x-www-form-urlencoded");await pollSetup()}
+ catch(error){byId("setupStatus").textContent=bootstrap.station_access_point===false&&!error.status?"The setup connection dropped while the test was starting. Reconnect to check whether Wi-Fi was accepted or retry.":error.message;setupMessageUntil=Date.now()+5000;byId("setupApply").disabled=false}finally{busy=false}
+});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){pollState();pollSetup();/*#if USE_WEB_CONSOLE*/pollConsoleOutput()/*#endif*/}else{clearTimeout(stateTimer);clearTimeout(setupTimer);clearTimeout(consoleTimer)}});
+
+/*#if USE_WEB_FILESYSTEM*/
+function filesystemPlaceholder(text){
+ const body=byId("fileList"),row=document.createElement("tr"),cell=document.createElement("td");
+ body.replaceChildren();cell.colSpan=4;cell.textContent=text;row.append(cell);body.append(row);
+}
+function fsChildPath(name){
+ if(/[\/\x00-\x1f\x7f]/.test(name))return "";
+ const path=filesystemPath==="/"?"/"+name:filesystemPath+"/"+name;
+ return new TextEncoder().encode(path).length<192?path:"";
+}
+function renderFilesystem(entries,append=false){
+ const body=byId("fileList");if(!append)body.replaceChildren();
+ if(!entries.length){if(!append)filesystemPlaceholder("—");byId("fsStatus").textContent="This directory is empty.";return}
+ byId("fsStatus").textContent="";
+ for(const entry of entries){
+  const row=document.createElement("tr"),name=document.createElement("td"),type=document.createElement("td"),size=document.createElement("td");
+  const isDirectory=entry.type==="directory",child=isDirectory?fsChildPath(String(entry.name)):"";
+  if(child){const button=document.createElement("button");button.type="button";button.className="file-link";button.textContent=String(entry.name);button.addEventListener("click",()=>openFilesystemDirectory(child));name.append(button)}
+  else name.textContent=String(entry.name);
+  type.textContent=isDirectory?"Directory":"File";size.textContent=isDirectory?"—":`${Number(entry.size)||0} B`;
+  const actions=document.createElement("td");
+  fsActions(actions,fsChildPath(String(entry.name)),isDirectory);
+  row.append(name,type,size,actions);body.append(row);
+ }
+}
+const fsElement=name=>byId(({up:"fsUp",message:"fsStatus",list:"fileList",controls:"fs-transfer-controls",drop:"fs-drop",editor:"fs-editor",filename:"fs-filename",text:"fs-text",files:"fs-files",upload:"fs-upload",new:"fs-new",save:"fs-save",back:"fs-back",cancel:"fs-cancel",transferProgress:"fs-transfer-progress"})[name]);
+const fsRender=renderFilesystem,fsBreadcrumb=()=>{byId("fsPath").textContent=filesystemPath};
+const fsWords={edit:'Edit',remove:'Delete',discard:'Discard unsaved changes?',deleteConfirm:'Delete this file?',deleteDirectoryConfirm:'Delete this empty directory?',replace:'Replace the existing file?',cancelled:'Transfer cancelled.',cancelling:'Cancelling…',failed:'Filesystem request failed.',pathInvalid:'Invalid file path.',done:'Files saved.',binary:'The editor requires UTF-8 text without NUL bytes.',unsupported:'Folder drop is unavailable in this browser. Use Upload for files.',loading:'Loading directory…',empty:'This directory is empty.',new:'New file',save:'Save',back:'Back / Cancel',cancel:'Cancel transfer',drop:'Drop files or folders here. Empty folders are not transferred.',filename:'File path',text:'File contents'};
+let fsBusy=false,fsCancelled=false,fsEditorOriginal="",fsEditorSaved="",fsEditorSavedPath="";
+function fsDirty(){return !fsElement("editor").hidden&&(fsElement("text").value!==fsEditorSaved||fsElement("filename").value!==fsEditorSavedPath)}
+function fsLeave(){return !fsDirty()||confirm(fsWords.discard)}
+function fsMessage(text){fsElement("message").textContent=text||""}
+const fsPause=()=>new Promise(resolve=>setTimeout(resolve,100));
+function fsRequest(route,body,type="text/plain",headers={},binary=false){
+ return queueRequest(async()=>{
+ await fsPause();
+ if(route==="upload/finish"&&fsCancelled)throw new Error(fsWords.cancelled);
+ const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),10000);
+ try{
+  const response=await fetch("/api/filesystem/"+route,{method:"POST",body,credentials:"same-origin",cache:"no-store",signal:controller.signal,headers:{"Content-Type":type,"X-Newmota-CSRF":csrf,...headers}});
+  if(!response.ok){let message=fsWords.failed;try{message=(await response.json()).error||message}catch{}throw new Error(message)}
+  return binary?new Uint8Array(await response.arrayBuffer()):response.json();
+ }finally{clearTimeout(timeout)}
+ });
+}
+function fsShowEditor(value){
+ fsElement("editor").hidden=!value;fsElement("controls").hidden=value;fsElement("drop").hidden=value;document.getElementById("fs-drop-hint").hidden=value;
+}
+function fsSetBusy(value,cancellable=false){
+ fsBusy=value;if(value)++filesystemRequestId;
+ for(const control of fsElement("controls").querySelectorAll("button,input"))control.disabled=value;
+ for(const control of fsElement("editor").querySelectorAll("button,input,textarea"))control.disabled=value;
+ fsElement("up").disabled=value||filesystemPath==="/";
+ fsElement("cancel").hidden=!value||!cancellable;
+}
+async function loadFilesystemPage(){
+ if(fsBusy)return;
+ const id=++filesystemRequestId,path=filesystemPath;
+ fsBreadcrumb();fsMessage(fsWords.loading);filesystemPlaceholder("—");
+ let offset=0,count=0;
+ try{
+  while(true){
+   const data=await fsRequest("list",`${offset}\n${path}`);
+   if(id!==filesystemRequestId)return;
+   if(data.path!==path||!Array.isArray(data.entries))throw new Error(fsWords.failed);
+   if(!count&&data.entries.length)fsElement("list").replaceChildren();
+   fsRender(data.entries,true);count+=data.entries.length;
+   if(!data.more)break;
+   if(!Number.isInteger(data.next)||data.next<=offset)throw new Error(fsWords.failed);
+   offset=data.next;
+  }
+  fsMessage(count?"":fsWords.empty);
+  await refreshInfo();
+ }catch(error){if(id===filesystemRequestId)fsMessage(error.message)}
+ fsElement("up").disabled=filesystemPath==="/";
+}
+function openFilesystemDirectory(path){
+ if(fsBusy||!fsLeave())return;
+ fsShowEditor(false);filesystemPath=path;loadFilesystemPage();
+}
+function fsActions(cell,path,isDirectory=false){
+ if(!path||path==="/.newmota"||path.startsWith("/.newmota/"))return;
+ const actions=[["🗑︎",fsWords.remove,()=>fsDelete(path,isDirectory)]];
+ if(!isDirectory)actions.unshift(["✎",fsWords.edit,()=>fsEdit(path)]);
+ for(const [icon,label,action]of actions){
+  const button=document.createElement("button");button.type="button";button.className="fs-icon-btn"+(label===fsWords.remove?" danger":"");button.textContent=icon;button.title=label;button.setAttribute("aria-label",label);
+  button.addEventListener("click",()=>{if(!fsBusy)action()});cell.append(button);
+ }
+}
+async function fsDelete(path,isDirectory=false){
+ if(!confirm((isDirectory?fsWords.deleteDirectoryConfirm:fsWords.deleteConfirm)+"\n"+path))return;
+ fsSetBusy(true);let message="";try{await fsRequest("delete",path)}catch(error){message=error.message}finally{fsSetBusy(false)}
+ await loadFilesystemPage();if(message)fsMessage(message);
+}
+/*#endif*/
+async function controllerApi(path,body){return (await request(path,body===undefined?"GET":"POST",body,"text/plain")).data}
+
+
+/*#if USE_PWM*/
+/* Home light cards: the page knows endpoints only by Kind from /api/light; hue and saturation
+   come only from the wheel and always travel together. Max one request per light per 150 ms. */
+const lights=new Map();let lightLayout="",lightTimer=0;
+const hsv=(h,s,v)=>[5,3,1].map(n=>{const k=(n+h/60)%6;return Math.round(255*v*(1-s*Math.max(0,Math.min(k,4-k,1))))});
+function wheelImage(size){const c=document.createElement("canvas");c.width=c.height=size;const x=c.getContext("2d"),img=x.createImageData(size,size),r=size/2;
+ for(let y=0;y<size;y++)for(let i=0;i<size;i++){const dx=i-r+.5,dy=y-r+.5,d=Math.hypot(dx,dy);if(d>r)continue;const o=(y*size+i)*4,rgb=hsv((Math.atan2(dy,dx)*180/Math.PI+360)%360,d/r,1);img.data.set(rgb,o);img.data[o+3]=d>r-1?255*(r-d):255}
+ return img}
+function lightSend(card,fields){
+ Object.assign(card.pending??={},fields);if(card.busy||card.timer)return;
+ card.timer=setTimeout(async()=>{card.timer=0;const body=new URLSearchParams({endpoint:card.l.Endpoint,...card.pending}).toString();card.pending=null;card.busy=true;
+  try{const l=await controllerApi("/api/light",body);if(!card.drag&&!card.pending)lightApply(card,l)}catch(error){say(error.message)}
+  finally{card.busy=false;if(card.pending)lightSend(card,{})}},Math.max(0,150-(Date.now()-(card.last||0))));card.last=Date.now()}
+function lightApply(card,l){const hue=card.l.Hue;Object.assign(card.l,l);if(!l.Sat)card.l.Hue=hue;lightDraw(card)}
+function lightDraw(card){
+ const l=card.l;card.sw.checked=!!l.On;
+ for(const [key,input,out] of card.rows){const v=key==="CT"?l.CT:key==="Bri"&&!l.On?0:Math.round((key==="White"?(l.Channels||[])[3]||0:l.Bri)*100/255);if(!card.drag)input.value=v;out.textContent=v+(key==="CT"?"":"%")}
+ if(card.wheel){const x=card.wheel.getContext("2d"),r=card.wheel.width/2,a=l.Hue*Math.PI/180,d=l.Sat/255*(r-6);x.putImageData(card.img,0,0);x.lineWidth=2;x.strokeStyle="#fff";x.beginPath();x.arc(r+Math.cos(a)*d,r+Math.sin(a)*d,7,0,7);x.stroke();
+  card.wheel.style.filter=`brightness(${l.On?.45+.55*l.Bri/255:.45})`;card.wheel.setAttribute("aria-valuetext",`Hue ${l.Hue}°, saturation ${Math.round(l.Sat*100/255)}%`)}
+ if(card.mode)card.mode.textContent=l.Mode==="white"?"Colour":"White";
+ card.foot.textContent=[l.Scheme?"Effect scheme "+l.Scheme:"",card.wheel&&l.RGB?"#"+l.RGB:"",l.Power?"Power"+l.Power:""].filter(Boolean).join(" · ")}
+function lightCard(l){
+ const card={l:{...l},rows:[]},root=document.createElement("section"),head=document.createElement("h3"),sw=document.createElement("input");
+ head.textContent="Light "+(l.Endpoint+1);sw.type="checkbox";sw.className="sw";sw.setAttribute("aria-label","Light "+(l.Endpoint+1)+" power");head.append(sw);root.append(head);card.sw=sw;
+ sw.addEventListener("change",()=>{card.l.On=sw.checked;lightDraw(card);lightSend(card,{power:sw.checked?1:0})});
+ if(l.Kind.startsWith("rgb")){
+  const w=card.wheel=document.createElement("canvas");w.className="lw";w.width=w.height=150;w.tabIndex=0;w.setAttribute("role","slider");w.setAttribute("aria-label","Colour wheel");card.img=wheelImage(150);
+  const hs=()=>{card.l.On=true;lightDraw(card);lightSend(card,{hue:card.l.Hue,sat:card.l.Sat})};
+  const pick=e=>{const b=w.getBoundingClientRect(),dx=e.clientX-b.left-b.width/2,dy=e.clientY-b.top-b.height/2;card.l.Hue=Math.round((Math.atan2(dy,dx)*180/Math.PI+360)%360);card.l.Sat=Math.round(Math.min(1,Math.hypot(dx,dy)/(b.width/2-6))*255);hs()};
+  w.addEventListener("pointerdown",e=>{card.drag=true;w.setPointerCapture(e.pointerId);pick(e)});
+  w.addEventListener("pointermove",e=>{if(card.drag)pick(e)});
+  for(const t of ["pointerup","pointercancel"])w.addEventListener(t,()=>{card.drag=false});
+  w.addEventListener("keydown",e=>{const n=e.shiftKey?6:1;if(e.key==="ArrowLeft"||e.key==="ArrowRight")card.l.Hue=(card.l.Hue+(e.key==="ArrowRight"?5:355)*n)%360;else if(e.key==="ArrowUp"||e.key==="ArrowDown")card.l.Sat=Math.max(0,Math.min(255,card.l.Sat+(e.key==="ArrowUp"?13:-13)*n));else return;e.preventDefault();hs()});
+  root.append(w)}
+ const row=(key,name,min,max)=>{const label=document.createElement("label"),out=document.createElement("span"),input=document.createElement("input");label.textContent=name;label.append(out);input.type="range";input.min=min;input.max=max;input.setAttribute("aria-label",name);
+  input.addEventListener("input",()=>{card.drag=true;const v=Number(input.value),b=Math.round(v*255/100);
+   if(key==="CT"){card.l.CT=v;card.l.On=true;lightSend(card,{ct:v})}
+   else if(key==="White"){const c=(card.l.Channels||[0,0,0,0]).slice();c[3]=b;card.l.Channels=c;card.l.On=true;lightSend(card,{channels:c.join(",")})}
+   else{card.l.Bri=b;card.l.On=b>0;lightSend(card,{bri:b})}
+   lightDraw(card)});
+  input.addEventListener("change",()=>{card.drag=false});root.append(label,input);card.rows.push([key,input,out])};
+ row("Bri","Brightness",0,100);if(l.Kind==="rgbw")row("White","White",0,100);if(l.Kind==="ct"||l.Kind==="rgbct")row("CT","Colour temperature",153,500);
+ // As Tasmota's TuyaMCU light mode button: switches the Light between white and colour; it names the mode it switches to.
+ if(l.Mode){const m=card.mode=document.createElement("button");m.type="button";m.className="lm";root.append(m);
+  m.addEventListener("click",()=>{const c=card.l;c.On=true;if(c.Mode==="white"){c.Mode="color";lightSend(card,{hue:c.Hue,sat:c.Sat||255})}else{c.Mode="white";lightSend(card,l.Kind==="rgbct"?{ct:c.CT}:{channels:"0,0,0,255",bri:c.Bri||255})}lightDraw(card)})}
+ card.foot=document.createElement("p");card.foot.className="muted";root.append(card.foot);card.root=root;lightDraw(card);return card}
+async function pollLights(){
+ clearTimeout(lightTimer);if(document.hidden||!onPage("home"))return;
+ try{const list=(await controllerApi("/api/light")).Lights||[],layout=list.map(l=>l.Endpoint+l.Kind).join();
+  if(layout!==lightLayout){lightLayout=layout;lights.clear();byId("light-grid").replaceChildren(...list.map(l=>{const c=lightCard(l);lights.set(l.Endpoint,c);return c.root}))}
+  else for(const l of list){const c=lights.get(l.Endpoint);if(c&&!c.drag&&!c.busy&&!c.pending)lightApply(c,l)}}
+ catch{}
+ if(lights.size&&!document.hidden&&onPage("home"))lightTimer=setTimeout(pollLights,1000)}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)pollLights()});
+/*#endif*/
+/*#if USE_SENSORS*/
+// Sensor cards, the energy meter among them; the device sends formatted values and units.
+let sensorTimer=0,sensorPolling=false;
+async function pollSensors(){
+ clearTimeout(sensorTimer);
+ if(document.hidden||sensorPolling||!onPage("home"))return;
+ // A firmware upload or a save keeps the device to itself; ask again afterwards.
+ if(busy){sensorTimer=setTimeout(pollSensors,2000);return}
+ sensorPolling=true;
+ try{
+  const data=await controllerApi("/api/sensors/readings"),cards=new Map();
+  for(const r of data.readings||[]){
+   let card=cards.get(r.sensor);
+   if(!card){card=document.createElement("section");card.className="card";const title=document.createElement("h3");title.textContent=r.sensor;card.append(title);cards.set(r.sensor,card)}
+   const row=document.createElement("div"),key=document.createElement("span"),val=document.createElement("span");
+   row.className="kv-row";key.className="kv-key";val.className="kv-val";key.textContent=r.label;val.textContent=r.value+(r.unit?" "+r.unit:"");row.append(key,val);card.append(row);
+  }
+  document.getElementById("sensor-grid").replaceChildren(...cards.values());
+ }catch(error){}
+ finally{sensorPolling=false;if(!document.hidden&&onPage("home"))sensorTimer=setTimeout(pollSensors,2000)}
+}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)pollSensors()});
+/*#endif*/
+/*#if USE_BERRY*/
+/* Berry widgets from /api/widgets, compact: text, value, button, toggle, matrix and, with Matter, qr parts
+   are drawn, other kinds are skipped. One changed widget is fetched per poll, every 250 ms while widgets
+   change and once a second otherwise, so a busy script cannot exceed the request budget. */
+const widgetCards=new Map(),WIDGET_KINDS=["text","line","hist","gauge","matrix","qr","button","toggle","number","input","select","table","value"];
+let widgetTimer=0,widgetPolling=false,widgetChangedAt=0,widgetCursor="";
+async function widgetAction(id,part,value){
+ try{await controllerApi("/api/widgets/action",id+"\n"+part+"\n"+value);widgetChangedAt=Date.now();if(!widgetPolling)pollWidgets();return true}
+ catch(error){say(error.message);return false}}
+// Dark dots on white with a four-dot margin, in every theme, so a camera can read a QR code.
+function widgetMatrix(rows,size){
+ const n=Number.isInteger(size)&&size>0&&size<=32?size:0,total=n+8,ns="http://www.w3.org/2000/svg",svg=document.createElementNS(ns,"svg"),dots=document.createElementNS(ns,"path");let d="";
+ (Array.isArray(rows)?rows:[]).forEach((row,y)=>{for(let x=0;x<n;x++)if((row>>>(n-1-x))&1)d+=`M${x+4} ${y+4}h1v1h-1z`});
+ svg.setAttribute("viewBox",`0 0 ${total} ${total}`);svg.setAttribute("shape-rendering","crispEdges");svg.setAttribute("role","img");
+ svg.style.cssText="display:block;width:100%;max-width:200px;margin:0 auto;background:#fff";dots.setAttribute("d",d);svg.append(dots);return svg}
+/*#if USE_MATTER*/
+/* QR code version 1-L, alphanumeric, mask 0: enough for a Matter setup payload (22 characters, 25 at
+   most). Rows as widgetMatrix takes them; other text gives no rows. */
+function qrRows(t){const A="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:",n=21,b=[],put=(v,c)=>{for(let i=c;i--;)b.push(v>>i&1)};
+ if(typeof t!=="string"||t.length>25||[...t].some(c=>!A.includes(c)))return [];
+ put(2,4);put(t.length,9);for(let i=0;i+1<t.length;i+=2)put(A.indexOf(t[i])*45+A.indexOf(t[i+1]),11);if(t.length%2)put(A.indexOf(t.at(-1)),6);put(0,Math.min(4,152-b.length));while(b.length%8)b.push(0);
+ const d=[];for(let i=0;i<b.length;i+=8)d.push(b.slice(i,i+8).reduce((a,v)=>a*2+v,0));for(let p=236;d.length<19;p^=253)d.push(p);
+ const gf=(x,y)=>{let z=0;for(let i=8;i--;)z=(z<<1^(z>>7)*285)^(y>>i&1)*x;return z&255},e=[0,0,0,0,0,0,0];
+ for(const v of d){const f=v^e.shift();e.push(0);[127,122,154,164,11,68,117].forEach((g,j)=>e[j]^=gf(g,f))}
+ const w=d.concat(e),m=[...Array(n)].map(()=>Array(n).fill(0)),fx=m.map(r=>r.slice()),s=(x,y,o)=>{m[y][x]=+!!o;fx[y][x]=1};
+ for(let i=0;i<n;i++){s(6,i,i%2==0);s(i,6,i%2==0)}
+ for(const [cx,cy] of [[3,3],[n-4,3],[3,n-4]])for(let dy=-4;dy<5;dy++)for(let dx=-4;dx<5;dx++){const x=cx+dx,y=cy+dy,r=Math.max(Math.abs(dx),Math.abs(dy));if(x>=0&&x<n&&y>=0&&y<n)s(x,y,r!=2&&r!=4)}
+ for(let i=0;i<15;i++){const o=0x77C4>>i&1;s(...(i<6?[8,i]:i<8?[8,i+1]:i<9?[7,8]:[14-i,8]),o);s(...(i<8?[n-1-i,8]:[8,n-15+i]),o)}
+ s(8,n-8,1);let k=0;
+ for(let r=n-1;r>=1;r-=2){if(r==6)r=5;for(let v=0;v<n;v++)for(let j=0;j<2;j++){const x=r-j,y=(r+1)&2?v:n-1-v;if(!fx[y][x]){const bit=w[k>>3]>>7-(k&7)&1;k++;m[y][x]=(x+y)%2?bit:1-bit}}}
+ return m.map(r=>r.reduce((a,v)=>a*2+v,0))}
+/*#endif*/
+function widgetPart(part,id,index){
+ const kind=WIDGET_KINDS.find(key=>key in part),address=typeof part.name==="string"?part.name:String(index);
+ if(kind==="text"){const p=document.createElement("p");if(part.small)p.className="muted";p.textContent=String(part.text);return p}
+ if(kind==="value"){const row=document.createElement("div"),key=document.createElement("span"),val=document.createElement("span");row.className="kv-row";key.className="kv-key";val.className="kv-val";
+  key.textContent=part.label||"";val.textContent=String(part.value)+(part.unit?" "+part.unit:"");row.append(key,val);return row}
+ if(kind==="matrix")return widgetMatrix(part.matrix,part.size);
+ /*#if USE_MATTER*/if(kind==="qr")return widgetMatrix(qrRows(part.qr),21);/*#endif*/
+ if(kind==="button"){const button=document.createElement("button");button.type="button";button.textContent=String(part.button);
+  button.addEventListener("click",async()=>{button.disabled=true;await widgetAction(id,address,"");button.disabled=false});return button}
+ if(kind==="toggle"){const label=document.createElement("label"),sw=document.createElement("input");label.textContent=String(part.toggle);sw.type="checkbox";sw.className="sw";sw.checked=part.state===true;label.append(sw);
+  sw.addEventListener("change",async()=>{sw.disabled=true;if(!await widgetAction(id,address,sw.checked?"true":"false"))sw.checked=!sw.checked;sw.disabled=false});return label}
+ return null}
+function widgetCard(widget,id){
+ const card=document.createElement("section"),title=document.createElement("h3");card.className="card";title.textContent=widget.title||"";card.append(title);
+ (Array.isArray(widget.parts)?widget.parts:[]).forEach((part,index)=>{const node=widgetPart(part,id,index);if(node)card.append(node)});return card}
+async function pollWidgets(){
+ clearTimeout(widgetTimer);if(document.hidden||!onPage("home")||widgetPolling)return;
+ if(busy){widgetTimer=setTimeout(pollWidgets,1000);return}
+ widgetPolling=true;let interval=1000;
+ try{
+  const list=(await controllerApi("/api/widgets")).widgets||[],grid=byId("widget-grid"),ids=new Set(list.map(entry=>entry.id));
+  for(const [id,entry] of widgetCards)if(!ids.has(id)){entry.card.remove();widgetCards.delete(id)}
+  const stale=list.filter(entry=>widgetCards.get(entry.id)?.rev!==entry.rev);
+  if(stale.length){
+   widgetChangedAt=Date.now();
+   // Round-robin after the last fetched widget, so one that always changes cannot starve the others.
+   const after=list.findIndex(entry=>entry.id===widgetCursor),next=stale.find(entry=>list.indexOf(entry)>after)||stale[0];widgetCursor=next.id;
+   try{const widget=await controllerApi("/api/widgets/"+encodeURIComponent(next.id)),card=widgetCard(widget,next.id),old=widgetCards.get(next.id);
+    if(old)old.card.replaceWith(card);else grid.append(card);widgetCards.set(next.id,{rev:widget.rev,card})}catch{}
+  }
+  const order=list.map(entry=>widgetCards.get(entry.id)).filter(Boolean).map(entry=>entry.card);
+  if(order.some((card,index)=>grid.children[index]!==card))grid.append(...order);
+  if(stale.length>1||Date.now()-widgetChangedAt<2000)interval=250;
+ }catch{for(const entry of widgetCards.values())entry.card.remove();widgetCards.clear();interval=5000}
+ finally{widgetPolling=false;if(!document.hidden&&onPage("home"))widgetTimer=setTimeout(pollWidgets,interval)}
+}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)pollWidgets()});
+/*#endif*/
+
+/*#if USE_WEB_FILESYSTEM*/
+async function fsUploadFile(file,target,confirmReplacement=true){
+ let id="";
+ try{
+  fsElement("transferProgress").value=0;fsMessage(target);
+  const begin=await fsRequest("upload/begin",`${file.size}\n${target}`);id=begin.upload_id;
+  if(fsCancelled)throw new Error(fsWords.cancelled);
+  if(begin.exists&&confirmReplacement&&!confirm(fsWords.replace+"\n"+target))throw new Error(fsWords.cancelled);
+  if(!/^[0-9a-f]{32}$/.test(id)||!Number.isInteger(begin.chunk_size)||begin.chunk_size<1||begin.chunk_size>1800)throw new Error(fsWords.failed);
+  let offset=0;
+  while(offset<file.size){
+   if(fsCancelled)throw new Error(fsWords.cancelled);
+   const end=Math.min(file.size,offset+begin.chunk_size),bytes=new Uint8Array(await file.slice(offset,end).arrayBuffer());
+   const envelope=new Uint8Array(33+bytes.length);envelope.set(new TextEncoder().encode(id+"\n"));envelope.set(bytes,33);
+   const reply=await fsRequest("upload/chunk",envelope,"application/octet-stream",{"Content-Range":`bytes ${offset}-${end-1}/${file.size}`});
+   if(reply.received_bytes!==end)throw new Error(fsWords.failed);
+   offset=end;fsElement("transferProgress").value=file.size?offset/file.size:1;
+   fsMessage(`${target}: ${offset}/${file.size} B`);
+  }
+  if(fsCancelled)throw new Error(fsWords.cancelled);
+  await fsRequest("upload/finish",id);id="";fsElement("transferProgress").value=1;
+ }finally{if(id){try{await fsRequest("upload/abort",id)}catch{}}}
+}
+function fsTarget(destination,relative){
+ const path=(destination==="/"?"/":destination+"/")+relative;
+ if(new TextEncoder().encode(path).length>=192||relative.split("/").some(part=>!part||part==="."||part==="..")||/[\x00-\x1f\x7f]/.test(path))throw new Error(fsWords.pathInvalid);
+ return path;
+}
+async function fsUploadFiles(files,destination=filesystemPath){
+ if(fsBusy)return;
+ fsSetBusy(true,true);fsCancelled=false;let errorMessage="";
+ try{
+  for(const item of files){
+   if(fsCancelled)throw new Error(fsWords.cancelled);
+   const file=item.file||item,relative=item.relative||file.webkitRelativePath||file.name;
+   await fsUploadFile(file,fsTarget(destination,relative));
+  }
+ }catch(error){errorMessage=error.message}
+ finally{fsSetBusy(false);fsElement("files").value="";await loadFilesystemPage();fsMessage(errorMessage||fsWords.done)}
+}
+async function fsEdit(path=""){
+ if(fsBusy||!fsLeave())return;
+ fsSetBusy(true,true);fsCancelled=false;
+ try{
+  let text="";
+  if(path){
+   const chunks=[];let offset=0;
+   while(true){
+    if(fsCancelled)throw new Error(fsWords.cancelled);
+    const chunk=await fsRequest("read",`${offset}\n${path}`,"text/plain",{},true);
+    if(fsCancelled)throw new Error(fsWords.cancelled);
+    chunks.push(chunk);offset+=chunk.length;
+    if(chunk.length<4096)break;
+   }
+   const data=new Uint8Array(offset);let at=0;for(const chunk of chunks){data.set(chunk,at);at+=chunk.length}
+   if(data.includes(0))throw new Error(fsWords.binary);
+   try{text=new TextDecoder("utf-8",{fatal:true}).decode(data)}catch{throw new Error(fsWords.binary)}
+  }
+  if(fsCancelled)throw new Error(fsWords.cancelled);
+  fsEditorOriginal=path;fsEditorSaved=text;fsEditorSavedPath=path||fsTarget(filesystemPath,"new.txt");
+  fsElement("filename").value=fsEditorSavedPath;fsElement("text").value=text;fsShowEditor(true);
+  fsMessage("");
+ }catch(error){fsMessage(error.message)}finally{fsSetBusy(false)}
+}
+async function fsSave(){
+ if(fsBusy)return;
+ const target=fsElement("filename").value,text=fsElement("text").value.replace(/\r\n?/g,"\n");
+ try{if(!target.startsWith("/"))throw new Error(fsWords.pathInvalid);fsTarget("/",target.slice(1))}catch(error){fsMessage(error.message);return}
+ fsSetBusy(true,true);fsCancelled=false;let message="";
+ try{
+  await fsUploadFile(new Blob([new TextEncoder().encode(text)]),target,target!==fsEditorOriginal);
+  fsElement("text").value=text;fsEditorSaved=text;fsEditorOriginal=target;fsEditorSavedPath=target;message=fsWords.done;
+ }catch(error){message=error.message}finally{fsSetBusy(false);await loadFilesystemPage();fsMessage(message)}
+}
+async function fsDroppedEntries(entry,relative=""){
+ const path=relative+entry.name;
+ if(entry.isFile){const file=await new Promise((resolve,reject)=>entry.file(resolve,reject));return[{file,relative:path}]}
+ if(!entry.isDirectory)return[];
+ const reader=entry.createReader(),files=[];
+ while(true){const children=await new Promise((resolve,reject)=>reader.readEntries(resolve,reject));if(!children.length)break;for(const child of children)files.push(...await fsDroppedEntries(child,path+"/"))}
+ return files;
+}
+fsElement("upload").addEventListener("click",()=>{if(!fsBusy)fsElement("files").click()});
+fsElement("files").addEventListener("change",event=>fsUploadFiles(Array.from(event.target.files)));
+fsElement("new").addEventListener("click",()=>fsEdit());
+fsElement("save").addEventListener("click",fsSave);
+fsElement("back").addEventListener("click",()=>{if(!fsBusy&&fsLeave()){fsShowEditor(false);loadFilesystemPage()}});
+fsElement("cancel").addEventListener("click",()=>{fsCancelled=true;fsMessage(fsWords.cancelling)});
+fsElement("text").addEventListener("keydown",event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==="s"){event.preventDefault();fsSave()}});
+const fsDrop=fsElement("drop");
+fsDrop.addEventListener("dragover",event=>event.preventDefault());
+fsDrop.addEventListener("drop",async event=>{
+ event.preventDefault();if(fsBusy)return;
+ const destination=filesystemPath;
+ try{
+  const items=Array.from(event.dataTransfer.items||[]),files=[];
+  if(items.length){const dropped=[];for(const item of items){if(item.kind!=="file")continue;const entry=item.webkitGetAsEntry?item.webkitGetAsEntry():null,file=entry?null:item.getAsFile();if(!entry&&!file?.name)throw new Error(fsWords.unsupported);dropped.push(entry||file)}
+   for(const value of dropped)if(value instanceof File)files.push(value);else files.push(...await fsDroppedEntries(value))}
+  else files.push(...Array.from(event.dataTransfer.files||[]));
+  if(files.length)await fsUploadFiles(files,destination);else fsMessage(fsWords.unsupported);
+ }catch(error){fsMessage(error.message)}
+});
+if(typeof window!=="undefined")window.addEventListener("beforeunload",event=>{if(fsDirty()||fsBusy){event.preventDefault();event.returnValue=""}});
+document.addEventListener("click",event=>{if(event.target.type==="radio"&&(fsBusy||!fsLeave())){event.preventDefault();event.stopPropagation()}},true);
+byId("fsUp").addEventListener("click",()=>{if(filesystemPath!=="/"){const i=filesystemPath.lastIndexOf("/");openFilesystemDirectory(i<=0?"/":filesystemPath.slice(0,i))}});
+/*#endif*/
+byId("loginForm").addEventListener("submit",async event=>{
+ event.preventDefault();
+ try{
+  const {data}=await request("/api/login","POST",byId("password").value,"text/plain",{"X-Newmota-CSRF":"login"});
+  csrf=data.csrf||"";byId("password").value="";await connect();
+ }catch(error){say(error.message)}
+});
+byId("refresh").addEventListener("click",async()=>{try{await refreshInfo();say("Device status refreshed.")}catch(error){say(error.message)}});
+/*#if USE_WEB_CONSOLE*/
+byId("command").addEventListener("input",()=>webInputHistory.edited());
+byId("command").addEventListener("keydown",event=>{
+ if(event.isComposing||event.keyCode===229)return;
+ if(handleInputHistory(event,byId("command"),webInputHistory,false))return;
+});
+byId("commandForm").addEventListener("submit",async event=>{
+ event.preventDefault();const commandInput=byId("command"),submitted=commandInput.value,command=submitted.trim();if(!command||busy||consoleCommandBusy)return;
+ webInputHistory.record(command);
+ consoleCommandBusy=true;appendLine("webConsole",`> ${command}`);
+ try{
+  if(consolePolling)await consolePollPromise;
+  const {text}=await request("/api/console/command","POST",command,"text/plain");
+  const match=text.match(/\n__NEWMOTA_RESULT_([0-9a-f]{8})_([0-9a-f]{32})__$/i);
+  const output=match?text.slice(0,match.index):text;
+  if(match){const group=Number.parseInt(match[1],16),generation=match[2].toLowerCase(),key=`${generation}:${group}`;recentConsoleResultGroups.set(key,true);
+   if(recentConsoleResultGroups.size>32)recentConsoleResultGroups.delete(recentConsoleResultGroups.keys().next().value)}
+  if(output&&output!=="Accepted")appendLine("webConsole",`RSLT: ${output}`);
+  if(commandInput.value===submitted)commandInput.value="";
+ }
+ catch(error){appendLine("webConsole",`Error: ${error.message}`);say(error.message)}
+ finally{consoleCommandBusy=false;pollConsoleOutput()}
+});
+byId("berryForm").addEventListener("submit",async event=>{
+ event.preventDefault();const sourceInput=byId("berrySource"),source=sourceInput.value;if(!source.trim()||busy||consoleCommandBusy)return;
+ const sourceBytes=new TextEncoder().encode(source);
+ if(sourceBytes.length>BERRY_SOURCE_MAX_BYTES){say("Berry source exceeds the 64 KiB limit.");return}
+ berryInputHistory.record(source);
+ consoleCommandBusy=true;appendLine("berryOutput",`> ${source}`);
+ let uploadId="";
+ try{
+  if(sourceBytes.length<=BERRY_DIRECT_SOURCE_MAX_BYTES){
+   await request("/api/berry/console","POST",source,"text/plain");
+  }else{
+   const begin=await request("/api/berry/console/begin","POST",String(sourceBytes.length),"text/plain");
+   uploadId=String(begin.data.upload_id||"");
+   const prefix=new TextEncoder().encode(uploadId+"\n"),chunkSize=Number(begin.data.chunk_size);
+   if(!/^[0-9a-f]{32}$/i.test(uploadId)||!Number.isInteger(chunkSize)||chunkSize<1||chunkSize+prefix.length>2048)
+    throw new Error("Invalid Berry upload response");
+   for(let offset=0;offset<sourceBytes.length;){
+    const endOffset=Math.min(offset+chunkSize,sourceBytes.length),data=sourceBytes.subarray(offset,endOffset);
+    const payload=new Uint8Array(prefix.length+data.length);payload.set(prefix);payload.set(data,prefix.length);
+    await request("/api/berry/console/chunk","POST",payload,"application/octet-stream",{
+     "Content-Range":`bytes ${offset}-${endOffset-1}/${sourceBytes.length}`
+    });
+    offset=endOffset;say(`Uploading Berry source (${offset}/${sourceBytes.length} bytes)…`);
+    if(offset<sourceBytes.length)await new Promise(resolve=>setTimeout(resolve,75));
+   }
+   await request("/api/berry/console/run","POST",uploadId,"text/plain");
+  }
+  if(sourceInput.value===source)sourceInput.value="";
+ }
+ catch(error){
+  if(uploadId)try{await request("/api/berry/console/abort","POST",uploadId,"text/plain")}catch(abortError){}
+  appendLine("berryOutput",`Error: ${error.message}`);say(error.message)
+ }
+ finally{consoleCommandBusy=false;pollConsoleOutput()}
+});
+byId("berrySource").addEventListener("input",()=>berryInputHistory.edited());
+byId("berrySource").addEventListener("keydown",event=>{
+ const input=byId("berrySource");
+ if(event.isComposing||event.keyCode===229)return;
+ if(handleInputHistory(event,input,berryInputHistory,true))return;
+ if(event.key==="Enter"&&(event.ctrlKey||event.metaKey||
+    (!event.shiftKey&&!event.altKey&&input.selectionStart===input.selectionEnd&&
+     input.selectionStart===input.value.length&&input.value.endsWith("\n")))){
+  event.preventDefault();byId("berryForm").requestSubmit();
+ }
+});
+function appendLine(id,text){
+ const output=byId(id),line=document.createElement("div");line.className="terminal-line";line.textContent=String(text);output.append(line);
+ while(output.children.length>60)output.firstElementChild.remove();output.scrollTop=output.scrollHeight;
+}
+function setBerryAvailable(available){
+ byId("berrySource").disabled=!available;byId("berryRun").disabled=!available;
+ byId("berryStatus").textContent=available?"":"Berry is unavailable in this firmware.";
+ byId("berryConsole").setAttribute("aria-disabled",available?"false":"true");
+}
+async function refreshConsoleOutput(){
+ const body=`web=${webCursor}&berry=${berryCursor}`;
+ const {data}=await request("/api/console/poll","POST",body,"text/plain");
+ if(typeof data.generation==="string"){
+  if(consoleGeneration&&consoleGeneration!==data.generation){
+   consoleGeneration=data.generation;webCursor=0;berryCursor=0;
+   appendLine("webConsole","Console history reset.");appendLine("berryOutput","Console history reset.");return;
+  }
+  consoleGeneration=data.generation;
+ }
+ const web=data.web||{},berry=data.berry||{};
+ if(Number.isInteger(web.next))webCursor=web.next;
+ if(Number.isInteger(berry.next))berryCursor=berry.next;
+ if(web.reset)appendLine("webConsole","Console history reset.");
+ if(web.dropped)appendLine("webConsole","Some console output was lost.");
+ for(const event of web.items||[]){if(event.type==="result"&&recentConsoleResultGroups.has(`${consoleGeneration}:${event.group}`))continue;appendLine("webConsole",event.text)}
+ if(berry.reset)appendLine("berryOutput","Console history reset.");
+ if(berry.dropped)appendLine("berryOutput","Some console output was lost.");
+ for(const event of berry.items||[])appendLine("berryOutput",event.text);
+ setBerryAvailable(data.berry_available===true);
+}
+function pollConsoleOutput(){
+ clearTimeout(consoleTimer);
+ if(!onPage("console")||consolePolling)return;
+ if(busy||consoleCommandBusy||fsBusy){consoleTimer=setTimeout(pollConsoleOutput,500);return}
+ consolePolling=true;
+ consolePollPromise=refreshConsoleOutput().then(()=>{consolePollErrorShown=false}).catch(error=>{
+  if(!consolePollErrorShown){appendLine("webConsole",`Error: ${error.message}`);consolePollErrorShown=true}
+ }).finally(()=>{
+  consolePolling=false;if(onPage("console"))consoleTimer=setTimeout(pollConsoleOutput,500);
+ });
+ return consolePollPromise;
+}
+/*#endif*/
+byId("logout").addEventListener("click",async()=>{try{await request("/api/logout","POST","","text/plain")}finally{location.reload()}});
+/*#if USE_BEKEN_UPDATE_WEB*/
+byId("start").addEventListener("click",async()=>{
+ const file=byId("firmware").files[0];
+ if(!file){say("Choose an RBL file first.");return}
+ if(busy)return;busy=true;cancelRequested=false;byId("start").disabled=true;byId("cancel").hidden=false;
+ let begun=false;
+ try{
+  const {data:caps}=await request("/api/update/capabilities");
+  if(!caps.available)throw new Error("Beken RBL writer unavailable for this layout.");
+  if(file.size<caps.minimum_initial_chunk||file.size>caps.max_image_size)throw new Error("This RBL size is not supported by this Beken layout.");
+  await request("/api/update/begin","POST",String(file.size),"text/plain");begun=true;
+  // A lost packet or reply leaves the session receiving: ask where it stands and go on from there.
+  const transient=error=>error instanceof TypeError||[408,503,504].includes(error.status);
+  for(let offset=0,failures=0;offset<file.size;){
+   if(cancelRequested)throw new Error("Update cancelled.");
+   try{
+    if(offset<0){
+     const {data:state}=await request("/api/update/capabilities");
+     if(state.state!=="receiving")throw new Error("The update session ended; start again.");
+     offset=state.received_bytes;continue;
+    }
+    const end=Math.min(offset+caps.chunk_size,file.size),chunk=file.slice(offset,end);
+    await request("/api/update/chunk","POST",chunk,"application/octet-stream",{"Content-Range":`bytes ${offset}-${end-1}/${file.size}`});
+    offset=end;failures=0;byId("progress").value=offset/file.size;say(`Uploading ${offset} of ${file.size} bytes`);
+   }catch(error){
+    if(!transient(error)||++failures>3)throw error;
+    say(`Connection interrupted, resuming (${failures}/3)…`);
+    await new Promise(resolve=>setTimeout(resolve,1000));offset=-1;
+   }
+  }
+  if(cancelRequested)throw new Error("Update cancelled.");
+  await request("/api/update/finish","POST","","text/plain");
+  say("RBL verified. Activating and restarting…");
+  if(cancelRequested)throw new Error("Update cancelled.");
+  await request("/api/update/activate","POST","","text/plain");begun=false;
+ }catch(error){
+  say(error.message);
+  if(begun)try{await request("/api/update/abort","POST","","text/plain")}catch{}
+ }finally{busy=false;byId("start").disabled=false;byId("cancel").hidden=true}
+});
+byId("cancel").addEventListener("click",()=>{cancelRequested=true;say("Cancelling after the current chunk…")});
+/*#endif*/
+connect();
+</script>
+</body>
+</html>

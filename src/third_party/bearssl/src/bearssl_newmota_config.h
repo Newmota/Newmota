@@ -1,0 +1,25 @@
+/*
+ * Newmota BearSSL configuration: the size and multiplication bounds that the
+ * firmware build selects, ahead of the imported autodetection.
+ */
+
+#ifndef BEARSSL_NEWMOTA_CONFIG
+#define BEARSSL_NEWMOTA_CONFIG
+
+#ifndef BR_SLOW_MUL15
+#define BR_SLOW_MUL15 1         // shrinks EC code by 8.5k
+#endif
+
+#ifndef BR_MAX_RSA_SIZE
+#ifdef USE_4K_RSA
+#define BR_MAX_RSA_SIZE 4096    // max 4096 bits RSA keys
+#else
+#define BR_MAX_RSA_SIZE 2048    // max 2048 bits RSA keys
+#endif
+#endif
+
+#ifndef BR_MAX_EC_SIZE
+#define BR_MAX_EC_SIZE 384      // max 384 bits EC keys (required for P-384 certificates, ex: Letsencrypt ECDSA)
+#endif
+
+#endif

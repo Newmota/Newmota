@@ -1,0 +1,88 @@
+schema = 1
+
+[source]
+project = "framework-beken-bdk 3.0.78"
+paths = [
+  "beken378/driver/include/gpio_pub.h",
+  "beken378/driver/gpio/gpio.c",
+]
+
+[architecture]
+# BK7238's BDK GPIO enum exposes GPIO0/1, 6..11, 14..17, 20..26, and 28.
+pin_count = 29
+template_slots = [
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+  10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+  20, 21, 22, 23, 24, 25, 26, 27, 28,
+]
+numbering = "gpio"
+default_capabilities = ["input", "output", "pull-up", "pull-down", "interrupt"]
+
+[[pin]]
+id = 21
+cautions = ["boot-mode"]
+
+[[pin]]
+id = 2
+present = false
+
+[[pin]]
+id = 3
+present = false
+
+[[pin]]
+id = 4
+present = false
+
+[[pin]]
+id = 5
+present = false
+
+[[pin]]
+id = 12
+present = false
+
+[[pin]]
+id = 13
+present = false
+
+[[pin]]
+id = 18
+present = false
+
+[[pin]]
+id = 19
+present = false
+
+[[pin]]
+id = 27
+present = false
+
+[[reservation]]
+owner = "console-uart1"
+pins = [10, 11]
+template_may_claim = true
+
+[[pin]]
+id = 26
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 24
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 20
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 28
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 1
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]
+
+[[pin]]
+id = 10
+capabilities = ["input", "output", "pull-up", "pull-down", "interrupt", "analog"]

@@ -1,0 +1,6 @@
+# config/env/amebad/safeboot/bw16-2m-safeboot.yaml — BW16 recovery image
+name: bw16-2m-safeboot
+board: bw16-2m
+role: safeboot
+profile: Safeboot
+language: en_GB

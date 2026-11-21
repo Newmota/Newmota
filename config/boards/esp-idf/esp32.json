@@ -1,0 +1,14 @@
+{
+  "chip": "esp32",
+  "flash": {
+    "size_kb": 4096,
+    "mode": "dio",
+    "frequency_mhz": 40
+  },
+  "psram": {
+    "mode": "quad",
+    "frequency_mhz": 40
+  },
+  "console": "uart0",
+  "profile_default": "Standard"
+}

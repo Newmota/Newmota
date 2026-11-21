@@ -1,0 +1,7 @@
+# config/env/esp-idf/application/esp32c2-2m.yaml — Compact 2 MB environment for ESP32-C2
+name: esp32c2-2m
+board: esp32c2-2m
+role: application
+profile: Compact
+safeboot: esp32c2-2m-safeboot
+language: en_GB

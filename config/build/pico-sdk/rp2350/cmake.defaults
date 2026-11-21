@@ -1,0 +1,2 @@
+# RP2350 Arm/Cortex-M33 baseline.
+PICO_PLATFORM=rp2350-arm-s

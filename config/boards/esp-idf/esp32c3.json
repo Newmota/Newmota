@@ -1,0 +1,10 @@
+{
+  "chip": "esp32c3",
+  "flash": {
+    "size_kb": 4096,
+    "mode": "dio",
+    "frequency_mhz": 80
+  },
+  "console": "usb-serial-jtag",
+  "profile_default": "Standard"
+}

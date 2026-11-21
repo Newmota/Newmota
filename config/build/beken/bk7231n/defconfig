@@ -1,0 +1,2 @@
+# The common framework-beken-bdk selects the complete SoC configuration header.
+# This file is intentionally empty of OpenBeken make variables.

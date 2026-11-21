@@ -1,0 +1,6 @@
+name: esp32-solo1
+board: esp32-solo1
+role: application
+profile: Standard
+safeboot: esp32-solo1-safeboot
+language: en_GB

@@ -1,0 +1,6 @@
+name: esp32c5ser
+board: esp32c5ser
+role: application
+profile: Standard
+safeboot: esp32c5ser-safeboot
+language: en_GB
