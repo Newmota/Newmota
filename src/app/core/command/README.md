@@ -311,24 +311,24 @@ loop, once `ms` (0 to 3 600 000, one hour) has passed since the `Defer` command 
 Power1 ON; Defer 2000 Power1 OFF; Defer 4000 Power1 ON
 ```
 
-- The deferred line is checked with the full chain rules when it is scheduled, and may be at
-  most 128 bytes. A chain inside it needs escaped semicolons:
+- The deferred line may be at most 128 bytes. A chain inside it needs escaped semicolons:
   `Defer 5000 Power1 OFF\; Power2 OFF`.
-- Only the syntax is checked in advance. When the line runs, it runs with the source of the
-  `Defer` command (serial, web, MQTT, Berry), so commands limited to one source behave the same,
-  and a command can still refuse its payload then.
+- Only its syntax is checked when it is scheduled, with the full chain rules. It runs with the
+  source of the `Defer` command (serial, web, MQTT, Berry), so commands limited to one source
+  behave the same, and a command can still refuse its payload then. On an MQTT group topic, the
+  deferred line must pass the same group-topic check as a direct command.
 - It answers at once with `{"Defer":{"Ms":2000,"Pending":1}}`. When it runs, the deferred line
   answers on the serial console, in the web console history and on `stat/<topic>/RESULT`, also
-  when it came from MQTT.
+  when it came from MQTT. A deferred `Status 0` from MQTT answers section by section on MQTT,
+  as a direct one does, and not on the serial console.
 - Eight lines can wait at the same time; a ninth answers `{"Defer":"Full"}`. One line runs per
   main-loop pass: the earliest due first, lines with the same due time in the order they were
-  scheduled. Timing follows the loop, so it
-  can be late by up to the `Sleep` period.
+  scheduled. Timing follows the loop, so a line can be late by up to the `Sleep` period.
 - `Defer` and `Defer ?` answer `{"Defer":{"Pending":<n>}}`. `Defer Cancel` cancels every
   waiting line and answers `{"Defer":{"Cancelled":<n>}}`.
-- Waiting lines live in RAM. A requested restart drops them, and while it is pending `Defer`
-  answers `{"Defer":"Restarting"}`. Nothing is kept across a restart. For outputs that must switch off even after a restart or power loss, use
-  `PulseTime`.
+- Waiting lines live in RAM. A requested restart or deep sleep drops them, and while one is
+  pending `Defer` answers `{"Defer":"Restarting"}`. Nothing is kept across a restart. For
+  outputs that must switch off even after a restart or power loss, use `PulseTime`.
 
 ## I2C diagnostics
 

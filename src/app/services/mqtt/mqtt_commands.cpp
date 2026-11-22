@@ -13,6 +13,9 @@
 #include "services/status/status_commands.h"
 
 #include "services/mqtt/mqtt_service.h"
+#if USE_DEFER
+#include "core/command/defer.h"
+#endif
 #include "support/text.h"
 
 #include <cstdio>
@@ -39,19 +42,57 @@ bool invalid_payload(const MqttPublishPacket& packet) {
     return false;
 }
 
-bool group_segment_allowed(void*, const std::string_view segment) {
-    std::array<char, kMaximumCommandSegmentLength> decoded{};
-    std::size_t size = 0U;
-    if (!decode_command_segment(segment, decoded.data(), decoded.size(), size))
-        return false;
-    auto text = support::trim_ascii({decoded.data(), size});
-    if (!text.empty() && text.front() == '_')
-        text = support::trim_ascii(text.substr(1U));
-    const auto separator = text.find_first_of(" \t");
-    const auto name = text.substr(0U, separator);
+/** @brief Names a group topic must not change on every device at once. */
+bool group_name_allowed(const std::string_view name) {
     return !support::ascii_iequals(name, "topic") && !support::ascii_iequals(name, "mqtttopic") &&
            !support::ascii_iequals(name, "mqttclient") &&
            !support::ascii_iequals(name, "buttontopic");
+}
+
+/** @brief Returns the command name of one segment after decoding and a leading `_`. */
+template <std::size_t Capacity>
+bool segment_name(const std::string_view segment, std::array<char, Capacity>& decoded,
+    std::string_view& text, std::string_view& name) {
+    std::size_t size = 0U;
+    if (!decode_command_segment(segment, decoded.data(), decoded.size(), size))
+        return false;
+    text = support::trim_ascii({decoded.data(), size});
+    if (!text.empty() && text.front() == '_')
+        text = support::trim_ascii(text.substr(1U));
+    name = text.substr(0U, text.find_first_of(" \t"));
+    return true;
+}
+
+#if USE_DEFER
+/** @brief Checks one segment of a deferred line; a nested Defer is refused on group topics. */
+bool deferred_segment_allowed(void*, const std::string_view segment) {
+    std::array<char, defer::kLineCapacity> decoded{};
+    std::string_view text;
+    std::string_view name;
+    return segment_name(segment, decoded, text, name) && !support::ascii_iequals(name, "defer") &&
+           group_name_allowed(name);
+}
+#endif
+
+bool group_segment_allowed(void*, const std::string_view segment) {
+    std::array<char, kMaximumCommandSegmentLength> decoded{};
+    std::string_view text;
+    std::string_view name;
+    if (!segment_name(segment, decoded, text, name))
+        return false;
+#if USE_DEFER
+    // A deferred line runs later on every device of the group, so it passes the same check.
+    if (support::ascii_iequals(name, "defer") && name.size() < text.size()) {
+        auto rest = support::trim_ascii(text.substr(name.size()));
+        const auto delay_end = rest.find_first_of(" \t");
+        if (delay_end != std::string_view::npos) {
+            rest = support::trim_ascii(rest.substr(delay_end + 1U));
+            return rest.size() <= defer::kLineCapacity &&
+                   for_each_command_segment(rest, deferred_segment_allowed, nullptr);
+        }
+    }
+#endif
+    return group_name_allowed(name);
 }
 
 } // namespace
