@@ -744,9 +744,12 @@ CommandStatus set_option_command(
     if (!settings.option(request.index, value)) {
         return CommandStatus::invalid;
     }
+#if !USE_BACKLOG
+    // SetOption34 is Tasmota's Backlog gap; without a Backlog queue it only reports 200.
     if (request.index == 34U && !request.is_query()) {
         return CommandStatus::invalid;
     }
+#endif
 #if USE_ENERGY_MAX_POWER
     /** Source SO33 accepts1..250; invalid payload queries the retained value. */
     if (request.index == 33 && !request.is_query()) {

@@ -5,3 +5,6 @@ role: application
 profile: Standard
 safeboot: pico2-w-safeboot
 language: en_GB
+# Plan 43 trial: Tasmota's Backlog, Delay and NoDelay.
+features:
+  USE_BACKLOG: true

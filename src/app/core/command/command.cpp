@@ -268,6 +268,17 @@ template <typename Visitor>
 
 /** @brief Validates one complete semicolon-delimited command line. */
 bool validate_command_line(const std::string_view line, std::size_t* const count) {
+#if USE_BACKLOG
+    if (is_backlog_line(line)) {
+        if (support::trim_ascii(line).size() > kMaximumCommandSegmentLength) {
+            return false;
+        }
+        if (count != nullptr) {
+            *count = 1U;
+        }
+        return true;
+    }
+#endif
     std::size_t segment_count = 0;
     std::size_t reboot_index = 0;
     bool saw_reboot = false;
@@ -304,6 +315,11 @@ bool for_each_command_segment(
     if (visitor == nullptr) {
         return false;
     }
+#if USE_BACKLOG
+    if (is_backlog_line(line)) {
+        return visitor(context, support::trim_ascii(line));
+    }
+#endif
     return scan_command_line(
         line,
         [visitor, context](const std::string_view segment) { return visitor(context, segment); },
@@ -563,6 +579,10 @@ struct CommandChainContext final {
     std::size_t count;
     std::size_t index{};
     CommandResult result{CommandStatus::handled, true, false};
+#if USE_BACKLOG
+    /** A Backlog line or a queued command: one command without escape decoding. */
+    bool raw{};
+#endif
 };
 
 } // namespace
@@ -684,6 +704,16 @@ CommandState parse_command_state(const std::string_view payload) {
  * @brief Routes a normalized request through the fixed subsystem order.
  */
 CommandStatus CommandProcessor::dispatch(const CommandRequest& request, CommandOutput& output) {
+#if USE_BACKLOG
+    // Tasmota's CommandHandler: every command delays the next queued one by SetOption34.
+    restart_backlog_gap();
+    if (support::ascii_iequals(request.name, "backlog")) {
+        return backlog_command(request, output);
+    }
+    if (support::ascii_iequals(request.name, "delay")) {
+        return delay_command(request, output);
+    }
+#endif
 #if USE_WIFI
     if (network_ != nullptr) {
         network_->note_command_activity(platform::monotonic_milliseconds());
@@ -904,7 +934,15 @@ bool CommandProcessor::execute_chain_segment(void* const context, const std::str
     auto& chain = *static_cast<CommandChainContext*>(context);
     std::array<char, kMaximumCommandSegmentLength> decoded{};
     std::size_t decoded_size = 0;
+#if USE_BACKLOG
+    if (chain.raw && segment.size() <= decoded.size()) {
+        std::memcpy(decoded.data(), segment.data(), segment.size());
+        decoded_size = segment.size();
+    } else if (chain.raw ||
+               !decode_command_segment(segment, decoded.data(), decoded.size(), decoded_size)) {
+#else
     if (!decode_command_segment(segment, decoded.data(), decoded.size(), decoded_size)) {
+#endif
         chain.result = {CommandStatus::invalid, false, false};
         (void)write_status_error(*chain.output, CommandStatus::invalid);
 #if USE_WEB_CONSOLE
@@ -984,7 +1022,15 @@ CommandResult CommandProcessor::execute(std::string_view line, const CommandSour
     CommandOutput& destination = caller_output;
 #endif
     std::size_t count = 0;
+#if USE_BACKLOG
+    // Queued commands run as Tasmota runs them: one command, no chain validation.
+    const bool raw = source == CommandSource::backlog;
+    if (raw) {
+        count = 1U;
+    } else if (!validate_command_line(line, &count)) {
+#else
     if (!validate_command_line(line, &count)) {
+#endif
         (void)write_status_error(destination, CommandStatus::invalid);
 #if USE_WEB_CONSOLE
         web_output.finish_segment();
@@ -993,8 +1039,12 @@ CommandResult CommandProcessor::execute(std::string_view line, const CommandSour
     }
 
 #if USE_MQTT
-    mqtt_output.begin(
-        mqtt_result_publisher_ != nullptr && source != CommandSource::mqtt, count > 1U);
+    bool mqtt_enabled = mqtt_result_publisher_ != nullptr && source != CommandSource::mqtt;
+#if USE_BACKLOG
+    // Backlog2 and Backlog3 answer without MQTT.
+    mqtt_enabled = mqtt_enabled && !(raw && backlog_no_mqtt_response_);
+#endif
+    mqtt_output.begin(mqtt_enabled, count > 1U);
 #endif
     CommandChainContext context{this, source, &destination,
 #if USE_MQTT
@@ -1004,7 +1054,13 @@ CommandResult CommandProcessor::execute(std::string_view line, const CommandSour
         &web_output,
 #endif
         count};
-    (void)for_each_command_segment(line, &CommandProcessor::execute_chain_segment, &context);
+#if USE_BACKLOG
+    if (raw || is_backlog_line(line)) {
+        context.raw = true;
+        (void)execute_chain_segment(&context, support::trim_ascii(line));
+    } else
+#endif
+        (void)for_each_command_segment(line, &CommandProcessor::execute_chain_segment, &context);
 #if USE_MQTT
     auto payload = mqtt_output.finish();
     if (!payload.empty() && context.result.output_failed)

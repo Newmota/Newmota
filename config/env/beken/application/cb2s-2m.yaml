@@ -5,3 +5,6 @@ policy: true
 role: application
 profile: Compact
 language: en_GB
+# Plan 43 trial: Tasmota's Backlog, Delay and NoDelay.
+features:
+  USE_BACKLOG: true

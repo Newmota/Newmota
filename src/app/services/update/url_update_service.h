@@ -12,6 +12,7 @@
 #pragma once
 
 #include "core/update/update_session.h"
+#include "newmota_features.h"
 #include "newmota/platform/tcp_stream.h"
 #include "services/update/url_update_limits.h"
 
@@ -65,7 +66,13 @@ class UrlUpdateService final {
     /** @brief Starts a pull or schedules its Safeboot handoff. */
     [[nodiscard]] UrlUpdateRequestResult request(std::uint32_t now);
     /** @brief Advances network and writer work without blocking. */
+#if USE_BACKLOG
+    /** @brief As above; @p start_allowed false holds the start, as Tasmota's ota_state_flag
+     * waits for CommandsReady(). */
+    void poll(std::uint32_t now, bool network_available, bool start_allowed);
+#else
     void poll(std::uint32_t now, bool network_available);
+#endif
 
     /** @brief True while this service owns or is replacing the shared TCP stream. */
     [[nodiscard]] bool active() const;

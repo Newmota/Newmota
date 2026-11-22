@@ -6,3 +6,6 @@ policy: true
 profile: Compact
 safeboot: bl602-2m-safeboot
 language: en_GB
+# Plan 43 trial: Tasmota's Backlog, Delay and NoDelay.
+features:
+  USE_BACKLOG: true

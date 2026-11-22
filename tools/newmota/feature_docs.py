@@ -58,6 +58,10 @@ FEATURE_DOCS: dict[str, tuple[str, str]] = {
     "USE_APP_MESSAGE_ROUTING": ("Core services", "Application-level message routing."),
     "USE_TIME": ("Core services", "Time service."),
     "USE_TIMERS": ("Core services", "Timer schedules."),
+    "USE_BACKLOG": (
+        "Core services",
+        "Tasmota's Backlog queue with Delay, NoDelay and SetOption34 (trial).",
+    ),
     "USE_ESP_TASMOTA_SETTINGS_IMPORT": ("Core services", "Import settings from Tasmota on ESP."),
     "USE_DEEPSLEEP": (
         "Core services",

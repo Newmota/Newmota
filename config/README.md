@@ -115,6 +115,7 @@ synchronization, with an already-set external RTC.
 | `USE_I2C`, I2C sensors such as `USE_BH1750` and `USE_TC74` | Off | [I2C](../src/app/drivers/i2c/README.md), [sensors](../src/app/README.md) |
 | RTC chips (`USE_DS3231`, `USE_DS1307`, `USE_BM8563`, `USE_PCF85063`, `USE_PCF85363`, `USE_RV3028`, `USE_RX8010`, `USE_RX8025`, `USE_RX8130`) | Off | Each selects the generic `USE_RTC_CHIPS` owner, Time, and I2C; application-only on all families. Select one physical model per address. [RTC behavior](../src/app/drivers/rtc/README.md) |
 | `USE_GPS` | Off | UBX setup, time and navigation through configured GPS RX/TX and shared UART; excludes BL616/BL618DG. [GPS behavior](../src/app/drivers/gps/README.md) |
+| `USE_BACKLOG` | Off | Trial (plan 43), on in the `make test` environments: Tasmota's `Backlog`, `Delay`, `NoDelay` and `SetOption34`. [Backlog](../src/app/core/command/README.md#backlog-delay-and-nodelay-trial) |
 | `USE_NTP_SERVER` | Off | Custom applications only; IPv4 UDP123 independently serves shared UTC from NTP/GPS or trusted RTC/manual local fallback. [Quality and limits](../src/app/services/time/README.md) |
 | `USE_BLE` | Off | Custom ESP, BL602, BL616, AmebaD and Pico W/Pico 2 W applications only; BL618 modules use BL616, while BL618DG BLE is deferred. |
 | `USE_BLE_SENSORS` | Off | Selects `USE_BLE` and the AES-CCM primitives; MiBeacon, BTHome, CGD1 and Mi scale sensors. [BLE sensors](../src/app/README.md#ble-sensors) |

@@ -45,6 +45,10 @@ PowerOperationSource power_source(CommandSource source) {
     case CommandSource::mqtt:
         return PowerOperationSource::mqtt;
 #endif
+#if USE_BACKLOG
+    case CommandSource::backlog:
+        return PowerOperationSource::backlog;
+#endif
     default:
         return PowerOperationSource::unspecified;
     }
