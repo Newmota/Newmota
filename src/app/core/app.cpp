@@ -519,7 +519,6 @@ bool RouteButtonEvent(void*, const ButtonEvent& event) {
         if (event.decoupled && discovery == 0U) {
             // Source SO73 status publications carry Action only; HOLD uses StateText4.
             std::array<char, 128> payload{};
-
             struct Buffer {
                 char* data;
                 std::size_t size{};
@@ -672,7 +671,6 @@ bool RouteSwitchEvent(void*, const SwitchEvent& event) {
 
 #if USE_MQTT
     std::array<char, 96> payload{};
-
     struct Buffer {
         char* data;
         std::size_t size{};
@@ -2147,11 +2145,7 @@ void SynchronizeMqttConfiguration() {
         recovery_web.poll(now, network.available());
 #endif
 #if USE_OTA_PULL
-#if USE_BACKLOG
-        url_update.poll(now, network.available(), command_processor.commands_ready());
-#else
         url_update.poll(now, network.available());
-#endif
 #endif
 #if USE_WGET
         wget.poll(now, network.online(), restart.pending());
@@ -2182,31 +2176,13 @@ void SynchronizeMqttConfiguration() {
             mqtt_paused_for_transfer = false;
         }
 #endif
-#if USE_BACKLOG
-        // Tasmota's BacklogLoop, then its CommandsReady() gate for restart and saves.
-        command_processor.poll_backlog(now);
-        const bool commands_ready = command_processor.commands_ready();
-#if NEWMOTA_DEEP_SLEEP
-        const bool restart_ready = commands_ready || restart.deep_sleep_pending();
-#else
-        const bool restart_ready = commands_ready;
-#endif
-#else
-        constexpr bool commands_ready = true;
-        constexpr bool restart_ready = true;
-#endif
-        if (restart.pending() && restart_ready && !restart_power_flushed) {
+        if (restart.pending() && !restart_power_flushed) {
             if (settings.flush_power_state(power.state_mask()) == SettingsUpdateResult::failed) {
                 AddLog(LogLevel::error, "CFG: power state save before restart failed");
             }
             restart_power_flushed = true;
         }
-#if USE_BACKLOG
-        if (!restart_ready) {
-            restart.hold(now);
-        } else
-#endif
-            restart.poll(now);
+        restart.poll(now);
         const auto ticks = scheduler.poll(now);
 #ifndef NEWMOTA_IMAGE_SAFEBOOT
         PollInputs(now);
@@ -2365,8 +2341,7 @@ void SynchronizeMqttConfiguration() {
 #endif
 #endif
 #endif
-            if (commands_ready &&
-                settings.poll_power_state(power.state_mask()) == SettingsUpdateResult::failed) {
+            if (settings.poll_power_state(power.state_mask()) == SettingsUpdateResult::failed) {
                 AddLog(LogLevel::error, "CFG: periodic power state save failed");
             }
 #if USE_DEEPSLEEP
@@ -2394,9 +2369,6 @@ void SynchronizeMqttConfiguration() {
 #endif
 #if USE_PWM || USE_WS2812
         busy = busy || light.transitioning() || light.addressable();
-#endif
-#if USE_BACKLOG
-        busy = busy || command_processor.backlog_no_delay(); // Tasmota's SleepDelay skip
 #endif
 #if USE_SERIAL
         busy = busy || serial::any_active(); // receive rings fill within one Sleep period

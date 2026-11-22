@@ -285,8 +285,6 @@ ENERGY_INJECT_FEATURES = ("USE_ENERGY_DUMMY", "USE_BERRY_ENERGY_API")
 # Keep niche modules off in every existing profile. Extend this registry when a
 # module is added; native adapters translate the resolved requirements only.
 OPTIONAL_FEATURES = {
-    # Plan 43 trial: Tasmota's Backlog queue, Delay, NoDelay and CommandsReady().
-    "USE_BACKLOG": FeatureSpec(("app/core/command/backlog.cpp",)),
     "USE_CRYPTO_HW_P256": FeatureSpec((), platforms=("esp",), crypto=("EC",)),
     "USE_CRYPTO_HW_AES": FeatureSpec((), platforms=("esp", "bouffalo", "amebad"), crypto=("AES",)),
     "USE_CRYPTO_HW_SHA1": FeatureSpec((), platforms=("esp", "bouffalo"), crypto=("SHA1",)),

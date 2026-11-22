@@ -293,46 +293,14 @@ like LittleFS does, but not atomically. `df` adds an `"SD"` object with the card
 `Mounted`, `Total`, `Used` and `Free` bytes; without a card it reports
 `"SD":{"Mounted":false}`. `wget` always saves to flash.
 
-Without `USE_BACKLOG`, Newmota uses synchronous command chains in place of Tasmota's deferred
-`Backlog` queue; see [Backlog, Delay and NoDelay](#backlog-delay-and-nodelay-trial). Tasmota's
-web `GET /cm` route is not part of the interface.
+Newmota uses synchronous command chains in place of Tasmota's deferred `Backlog`
+queue. Tasmota's web `GET /cm` route is not part of the interface.
 
 Safeboot has a smaller command table and excludes `ButtonDebounce`, `ButtonTopic`,
 `ButtonRetain`, `SwitchMode`, `SwitchDebounce`, `SwitchTopic`, `SwitchRetain`, `SwitchText`,
 physical button and switch handling,
 normal application hardware configuration
 and Berry.
-
-## Backlog, Delay and NoDelay (trial)
-
-With `USE_BACKLOG` (plan 43, a trial that may be reverted; on in the `make test` environments),
-Newmota copies Tasmota's `CmndBacklog`, `CmndDelay`, `BacklogLoop` and `CommandsReady()`:
-
-- A line whose first word is `Backlog` or `Backlog<n>`, from MQTT, the serial console, the web
-  or Berry, is one command. Its payload is not split, limited or validated as a Newmota chain,
-  and `\;` escapes are not decoded.
-- The payload is split at `;`, except while an entry has unbalanced `{` and `}`. Each entry is
-  trimmed, loses leading `Backlog` words and is appended to one RAM queue on the heap without a
-  size limit. Entries starting with `Reset` are dropped. The command answers nothing.
-- `Backlog` or `Backlog ?` empties the queue and answers `{"Backlog":"Aborted"}`, or
-  `{"Backlog":"Empty"}` when nothing was queued.
-- `Backlog0` and `Backlog2` run without gaps until the queue is empty; `Backlog2` and
-  `Backlog3` answer only to the consoles, not on MQTT. The flags are global, as in Tasmota.
-- The main loop runs one queued command per pass once the queue timer is reached. Every command
-  from any source sets that timer to now + `SetOption34` (0–255 ms, default 200). A `NoDelay`
-  entry is skipped and lets the following command run without a gap.
-- Each queued command answers on its own: on the serial console, in the web console history
-  and, unless suppressed, as `stat/<topic>/RESULT` (or the `SetOption4` topic).
-- `Delay <n>` with n 2–3600 sets the timer to now + n × 100 ms, `Delay -1` to the next full
-  second; other values keep the `SetOption34` gap. It answers `{"Delay":<remaining 0.1 s>}`.
-  In a normal chain or a direct command it only moves the timer of the next queued command.
-- `NoDelay` is only an entry marker; sent as a command it is unknown, as in Tasmota.
-- While the queue is not empty, a requested restart waits with its remaining delay and the
-  power state is not saved before it (deep sleep does not wait, as in Tasmota), the `SaveData` countdown stops, and an
-  `Upgrade` (URL update) does not start its download. Newmota has no command files, so
-  Tasmota's file-run gate has no counterpart. `HostedLoad` and `HostedOta` start in the
-  command itself and are not deferred.
-- A restart loses the queue.
 
 ## I2C diagnostics
 

@@ -91,18 +91,6 @@ class RestartController final {
      */
     void poll(std::uint32_t now);
 
-#if USE_BACKLOG && NEWMOTA_DEEP_SLEEP
-    /** @brief Deep sleep is pending; Tasmota's deep sleep does not wait for the Backlog queue. */
-    [[nodiscard]] bool deep_sleep_pending() const { return pending_ && sleep_; }
-#endif
-#if USE_BACKLOG
-    /**
-     * @brief Freezes the remaining restart delay for this pass, as Tasmota counts its
-     * restart_flag down only while CommandsReady().
-     */
-    void hold(std::uint32_t now);
-#endif
-
   private:
     static constexpr std::uint32_t kDelayMilliseconds = 1000;
 
@@ -115,9 +103,6 @@ class RestartController final {
     bool sleep_{false};
 #endif
     std::uint32_t deadline_{0};
-#if USE_BACKLOG
-    std::uint32_t last_poll_{0};
-#endif
     bool pending_{false};
 };
 

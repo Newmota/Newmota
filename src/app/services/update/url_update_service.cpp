@@ -585,12 +585,7 @@ void UrlUpdateService::report_progress() {
 }
 
 /** @brief Advances the active request from the application loop. */
-#if USE_BACKLOG
-void UrlUpdateService::poll(
-    const std::uint32_t now, const bool network_available, const bool start_allowed) {
-#else
 void UrlUpdateService::poll(const std::uint32_t now, const bool network_available) {
-#endif
     if (state_ == UrlUpdateState::idle && settings_.ota_update_pending()) {
         failure_ = Failure::none;
         expected_image_size_ = 0U;
@@ -631,11 +626,6 @@ void UrlUpdateService::poll(const std::uint32_t now, const bool network_availabl
         if (!network_available || !deadline_reached(now, command_start_deadline_)) {
             return;
         }
-#if USE_BACKLOG
-        if (!start_allowed) {
-            return;
-        }
-#endif
         (void)begin_download(now);
         return;
     }

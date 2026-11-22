@@ -56,9 +56,6 @@ enum class PowerOperationSource : std::uint8_t {
     max_energy = 14,
     overtemperature = 15,
     light = 16,
-#if USE_BACKLOG
-    backlog = 5,
-#endif
     berry = 27
 };
 

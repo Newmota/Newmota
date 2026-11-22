@@ -47,9 +47,6 @@ RestartRequestResult RestartController::schedule(
     }
 
     deadline_ = now + kDelayMilliseconds;
-#if USE_BACKLOG
-    last_poll_ = now;
-#endif
     pending_ = true;
     return RestartRequestResult::scheduled;
 }
@@ -66,9 +63,6 @@ RestartRequestResult RestartController::schedule_deep_sleep(
     sleep_microseconds_ = microseconds;
     sleep_ = true;
     deadline_ = now + kDelayMilliseconds;
-#if USE_BACKLOG
-    last_poll_ = now;
-#endif
     pending_ = true;
     return RestartRequestResult::scheduled;
 }
@@ -101,9 +95,6 @@ RestartRequestResult RestartController::schedule_deep_sleep(
  * @brief Performs a scheduled restart after the response delay expires.
  */
 void RestartController::poll(const std::uint32_t now) {
-#if USE_BACKLOG
-    last_poll_ = now;
-#endif
     if (!pending_ || static_cast<std::int32_t>(now - deadline_) < 0) {
         return;
     }
@@ -118,15 +109,5 @@ void RestartController::poll(const std::uint32_t now) {
 #endif
     restart_now();
 }
-
-#if USE_BACKLOG
-/** @brief Moves the deadline by the time since the last pass while commands are queued. */
-void RestartController::hold(const std::uint32_t now) {
-    if (pending_) {
-        deadline_ += now - last_poll_;
-    }
-    last_poll_ = now;
-}
-#endif
 
 } // namespace newmota
