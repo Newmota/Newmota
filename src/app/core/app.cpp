@@ -28,6 +28,9 @@
 #include "services/temperature/global_temperature_selection.h"
 #endif
 #include "core/command/command.h"
+#if USE_DEFER
+#include "core/command/defer.h"
+#endif
 #include "core/command/serial_console.h"
 #include "core/hardware/hardware.h"
 #if USE_BERRY || USE_SERIAL || USE_WS2812 || USE_DISPLAY || USE_I2S || USE_EDGE_CAPTURE ||         \
@@ -519,6 +522,7 @@ bool RouteButtonEvent(void*, const ButtonEvent& event) {
         if (event.decoupled && discovery == 0U) {
             // Source SO73 status publications carry Action only; HOLD uses StateText4.
             std::array<char, 128> payload{};
+
             struct Buffer {
                 char* data;
                 std::size_t size{};
@@ -671,6 +675,7 @@ bool RouteSwitchEvent(void*, const SwitchEvent& event) {
 
 #if USE_MQTT
     std::array<char, 96> payload{};
+
     struct Buffer {
         char* data;
         std::size_t size{};
@@ -2182,6 +2187,14 @@ void SynchronizeMqttConfiguration() {
             }
             restart_power_flushed = true;
         }
+#if USE_DEFER
+        // A restart drops waiting Defer commands, as it would lose them anyway.
+        if (restart.pending()) {
+            defer::clear();
+        } else {
+            defer::poll(command_processor, now);
+        }
+#endif
         restart.poll(now);
         const auto ticks = scheduler.poll(now);
 #ifndef NEWMOTA_IMAGE_SAFEBOOT

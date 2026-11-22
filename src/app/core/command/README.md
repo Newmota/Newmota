@@ -302,6 +302,30 @@ physical button and switch handling,
 normal application hardware configuration
 and Berry.
 
+## Defer
+
+Application images expose `Defer <ms> <command>`. It runs the command line later from the main
+loop, once `ms` (0 to 3 600 000, one hour) has passed since the `Defer` command ran:
+
+```text
+Power1 ON; Defer 2000 Power1 OFF; Defer 4000 Power1 ON
+```
+
+- The deferred line is checked with the full chain rules when it is scheduled, and may be at
+  most 128 bytes. A chain inside it needs escaped semicolons:
+  `Defer 5000 Power1 OFF\; Power2 OFF`.
+- It answers at once with `{"Defer":{"Ms":2000,"Pending":1}}`. When it runs, the deferred line
+  answers like a serial command: on the serial console, in the web console history and on
+  `stat/<topic>/RESULT`.
+- Eight lines can wait at the same time; a ninth answers `{"Defer":"Full"}`. Lines due together
+  run in the order they were scheduled, one per main-loop pass. Timing follows the loop, so it
+  can be late by up to the `Sleep` period.
+- `Defer ?` answers `{"Defer":{"Pending":<n>}}`. `Defer` without a payload cancels every waiting
+  line and answers `{"Defer":{"Cancelled":<n>}}`.
+- Waiting lines live in RAM. A requested restart drops them, and nothing is kept across a
+  restart. For outputs that must switch off even after a restart or power loss, use
+  `PulseTime`.
+
 ## I2C diagnostics
 
 Images selecting `USE_I2C` expose `I2CScan`. Configure complete SCL/SDA pin pairs with

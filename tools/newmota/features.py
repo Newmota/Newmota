@@ -81,6 +81,7 @@ FEATURE_SOURCES = {
     "USE_WIFI_POWER": ("app/services/network/wifi_tx_power.cpp",),
     "USE_ESP_HOSTED": ("app/services/network/hosted_service.cpp",),
     "USE_HARDWARE_COMMANDS": ("app/core/hardware/hardware_commands.cpp",),
+    "USE_DEFER": ("app/core/command/defer.cpp",),
     # Safeboot keeps its LED pins off; the status LED policy is application-only.
     "USE_STATUS_LEDS": (
         "app/services/power/led_commands.cpp",
@@ -154,6 +155,7 @@ CORE_FEATURES = (
     "USE_BERRY_GPIO",
     "USE_BERRY_PIXMAT",
     "USE_HARDWARE_COMMANDS",
+    "USE_DEFER",
     "USE_STATUS_LEDS",
     "USE_SWITCHES",
     "USE_SLEEP",
@@ -1369,6 +1371,7 @@ def feature_values(environment: Environment, layout: LayoutFacts | None = None) 
         ("USE_BERRY_GPIO", use_berry),
         ("USE_BERRY_PIXMAT", use_berry),
         ("USE_HARDWARE_COMMANDS", environment.role == "application"),
+        ("USE_DEFER", environment.role == "application"),
         ("USE_STATUS_LEDS", environment.role == "application"),
         ("USE_SWITCHES", environment.role == "application"),
         ("USE_SLEEP", environment.role == "application"),

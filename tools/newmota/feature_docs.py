@@ -49,6 +49,7 @@ FEATURE_DOCS: dict[str, tuple[str, str]] = {
     ),
     "USE_PWM": ("Core services", "PWM outputs and the light service."),
     "USE_HARDWARE_COMMANDS": ("Core services", "GPIO and template commands."),
+    "USE_DEFER": ("Core services", "Defer <ms> <command>: run a command line later."),
     "USE_STATUS_LEDS": ("Core services", "Status LED behaviour."),
     "USE_SWITCHES": ("Core services", "Switch inputs with Tasmota's SwitchMode."),
     "USE_SLEEP": ("Core services", "Sleep power saving."),

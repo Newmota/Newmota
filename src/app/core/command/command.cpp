@@ -55,6 +55,9 @@
 #if USE_DEEPSLEEP
 #include "core/system/deep_sleep_service.h"
 #endif
+#if USE_DEFER
+#include "core/command/defer.h"
+#endif
 #include "core/storage/filesystem_commands.h"
 #include "core/system/boot_counter.h"
 #if USE_HARDWARE_COMMANDS
@@ -878,6 +881,12 @@ CommandStatus CommandProcessor::dispatch(const CommandRequest& request, CommandO
             support::ascii_iequals(request.name, "mv"))) {
         (void)output.write("{\"Filesystem\":\"Download active\"}");
         return CommandStatus::failed;
+    }
+#endif
+#if USE_DEFER
+    const auto defer_status = defer::command(request, output);
+    if (defer_status != CommandStatus::unknown) {
+        return defer_status;
     }
 #endif
     const auto reset_status =
