@@ -287,6 +287,10 @@ ENERGY_INJECT_FEATURES = ("USE_ENERGY_DUMMY", "USE_BERRY_ENERGY_API")
 # Keep niche modules off in every existing profile. Extend this registry when a
 # module is added; native adapters translate the resolved requirements only.
 OPTIONAL_FEATURES = {
+    # Plan 44: Home Assistant MQTT discovery, one retained message per entity.
+    "USE_HA_DISCOVERY": FeatureSpec(
+        ("app/services/mqtt/ha_discovery.cpp",), dependencies=("USE_MQTT",)
+    ),
     "USE_CRYPTO_HW_P256": FeatureSpec((), platforms=("esp",), crypto=("EC",)),
     "USE_CRYPTO_HW_AES": FeatureSpec((), platforms=("esp", "bouffalo", "amebad"), crypto=("AES",)),
     "USE_CRYPTO_HW_SHA1": FeatureSpec((), platforms=("esp", "bouffalo"), crypto=("SHA1",)),

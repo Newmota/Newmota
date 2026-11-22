@@ -134,6 +134,9 @@ class SensorService {
     /** @brief Applies output units and precision without altering canonical samples. */
     void set_presentation(const SensorPresentation& presentation);
 
+    /** @brief Returns the output units and precision in use. */
+    [[nodiscard]] const SensorPresentation& presentation() const { return presentation_; }
+
     /** @brief Visits current canonical readings in the same registry/device order as output.
      * @param visitor Synchronous consumer; false stops enumeration without modifying samples.
      * @param context Caller-owned state, retained only during this call.
@@ -209,6 +212,10 @@ class SensorService {
  *  Stable while the sensor name is; never 0.
  */
 [[nodiscard]] std::uint32_t sensor_series_key(const char* sensor, const char* field);
+
+/** @brief Returns the unit a reading is shown with, as in StatusSNS; empty for none. */
+[[nodiscard]] const char* sensor_reading_unit(
+    const SensorReading& reading, const SensorPresentation& presentation);
 
 /** @brief Returns the singleton sensor owner. */
 SensorService& sensor_service();

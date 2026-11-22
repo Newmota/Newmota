@@ -112,7 +112,7 @@ Br _matter.bridge.add("topic", [{'type': 'relay', 'relay': 1}]) # Without discov
 Br _matter.bridge.remove("topic")
 ```
 
-Newmota does not publish discovery yet, so Newmota remotes need `add`. Commands fail while a remote
+Newmota publishes Home Assistant discovery, not Tasmota discovery, so Newmota remotes need `add`. Commands fail while a remote
 is unreachable or has not answered live since the last link change. An MQTT publication above the
 packet limit is now skipped with a log line, instead of ending the session.
 

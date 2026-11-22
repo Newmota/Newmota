@@ -6,3 +6,6 @@ policy: true
 profile: Compact
 safeboot: bl602-2m-safeboot
 language: en_GB
+# Plan 44: measured before it is turned on everywhere.
+features:
+  USE_HA_DISCOVERY: true

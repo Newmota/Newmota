@@ -330,6 +330,31 @@ Power1 ON; Defer 2000 Power1 OFF; Defer 4000 Power1 ON
   pending `Defer` answers `{"Defer":"Restarting"}`. Nothing is kept across a restart. For
   outputs that must switch off even after a restart or power loss, use `PulseTime`.
 
+## Home Assistant discovery
+
+Images with `USE_HA_DISCOVERY` and MQTT publish Home Assistant's MQTT discovery. Home Assistant's
+MQTT integration (and openHAB or Domoticz) then finds the device without further setup.
+
+- One retained message per entity on `homeassistant/<platform>/<MAC>/<id>/config`, where `<MAC>`
+  is the 12-digit station MAC. Entities: one `switch` per relay, one `sensor` per sensor
+  reading (energy phases as array elements of `ENERGY`), the diagnostic sensors RSSI, Signal,
+  Uptime and IP address, and a Restart `button`. Lights, switches and buttons follow later.
+- State comes from `tele/<topic>/STATE` and `tele/<topic>/SENSOR`; commands go to the normal
+  `cmnd/<topic>/...` topics. Availability follows the LWT.
+- The device shows `DeviceName` (or the host name), model = module or template name,
+  manufacturer Newmota, the firmware version, the MAC and a link to the web interface. A device
+  with a single power output names its entity after the device; otherwise "Relay <n>". Rename
+  entities in Home Assistant.
+- Messages go out 2–5 seconds after each MQTT connect and again within about two seconds when
+  something they depend on changes: `DeviceName`, the topics, `SetOption19`, the state texts,
+  the relays or the set of sensor readings. They are paced through the MQTT queue.
+- The published entity ids are kept in `/.newmota/ha_discovery.txt`. An entity that is gone
+  (a sensor removed, fewer relays) gets an empty retained message, which removes it from Home
+  Assistant together with its user settings. `SetOption19 1` removes every entity this way;
+  `SetOption19 0`, the default, publishes them again.
+- `SetOption104` (no retain) also drops the retain flag of discovery messages, so Home Assistant
+  then only sees them while it is running.
+
 ## I2C diagnostics
 
 Images selecting `USE_I2C` expose `I2CScan`. Configure complete SCL/SDA pin pairs with

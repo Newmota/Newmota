@@ -121,6 +121,27 @@ class MqttService final {
                                      : std::string_view{};
     }
 
+    /** @brief Returns `tele/<topic>/STATE` of the active configuration. */
+    [[nodiscard]] std::string_view state_topic() const {
+        return {state_topic_.data(), state_topic_size_};
+    }
+
+    /** @brief Returns `tele/<topic>/SENSOR` of the active configuration. */
+    [[nodiscard]] std::string_view sensor_topic() const {
+        return {sensor_topic_.data(), sensor_topic_size_};
+    }
+
+    /** @brief Returns the command prefix `cmnd/<topic>/` of the active configuration. */
+    [[nodiscard]] std::string_view command_prefix() const {
+        return {command_prefix_.data(), command_prefix_size_};
+    }
+
+    /** @brief Reports whether publication is enabled and the transport is connected. */
+    [[nodiscard]] bool connected() const {
+        return enabled_ && transport_.state != nullptr &&
+               transport_.state(transport_.context) == MqttTransportState::connected;
+    }
+
     /** @brief Returns the configured last-will topic. */
     [[nodiscard]] std::string_view lwt_topic() const { return preview_.lwt.data(); }
 

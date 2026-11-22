@@ -96,6 +96,10 @@ FEATURE_DOCS: dict[str, tuple[str, str]] = {
         "Wi-Fi through an ESP-Hosted companion; Hosted, HostedOta and HostedLoad.",
     ),
     "USE_MQTT": ("Network and time", "MQTT client and commands."),
+    "USE_HA_DISCOVERY": (
+        "Network and time",
+        "Home Assistant MQTT discovery: one retained message per entity (SetOption19 1 = off).",
+    ),
     "USE_WEB": ("Network and time", "Web interface."),
     "USE_WEB_CONSOLE": ("Network and time", "Web and Berry consoles in the web interface."),
     "USE_WEB_FILESYSTEM": ("Network and time", "File browser and editor in the web interface."),

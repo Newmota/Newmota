@@ -5,3 +5,6 @@ role: application
 profile: Compact
 safeboot: esp32c2-2m-safeboot
 language: en_GB
+# Plan 44: measured before it is turned on everywhere.
+features:
+  USE_HA_DISCOVERY: true

@@ -390,6 +390,11 @@ struct Ambient {
 };
 } // namespace
 
+const char* sensor_reading_unit(
+    const SensorReading& reading, const SensorPresentation& presentation) {
+    return reading_unit(reading, presentation);
+}
+
 namespace {
 /** @brief Builds StatusSNS members, one object per sensor name. */
 struct FieldWriter {

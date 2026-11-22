@@ -31,6 +31,9 @@
 #if USE_DEFER
 #include "core/command/defer.h"
 #endif
+#if USE_HA_DISCOVERY
+#include "services/mqtt/ha_discovery.h"
+#endif
 #include "core/command/serial_console.h"
 #include "core/hardware/hardware.h"
 #if USE_BERRY || USE_SERIAL || USE_WS2812 || USE_DISPLAY || USE_I2S || USE_EDGE_CAPTURE ||         \
@@ -2266,6 +2269,14 @@ void SynchronizeMqttConfiguration() {
                         runtime.service.poll(now);
 #if USE_TASMOTA_STATE
                         runtime.commands.poll();
+#endif
+#if USE_HA_DISCOVERY
+#if USE_HARDWARE_COMMANDS
+                        const auto model = SelectedModuleName(settings.hardware_configuration());
+#else
+                        constexpr std::string_view model = "Newmota";
+#endif
+                        ha_discovery::poll(runtime.service, settings, power, model, now);
 #endif
                     }
                 } else {
