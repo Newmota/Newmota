@@ -29,8 +29,9 @@ namespace {
 
 struct Slot final {
     std::uint32_t due;
-    std::uint32_t order; ///< Scheduling order, so equal due times run as scheduled.
-    std::uint8_t size;   ///< 0 marks a free slot.
+    std::uint32_t order;  ///< Scheduling order, so equal due times run as scheduled.
+    CommandSource source; ///< Where the Defer command came from; the line runs with it.
+    std::uint8_t size;    ///< 0 marks a free slot.
     std::array<char, kLineCapacity> line;
 };
 
@@ -51,33 +52,39 @@ bool write_console(void*, const std::string_view text) {
 
 } // namespace
 
-CommandStatus command(const CommandRequest& request, CommandOutput& output) {
+CommandStatus command(
+    const CommandRequest& request, CommandOutput& output, const bool restart_pending) {
     if (!support::ascii_iequals(request.name, "defer")) {
         return CommandStatus::unknown;
     }
     if (request.has_index) {
         return CommandStatus::invalid;
     }
-    if (!request.has_payload) {
+    if (request.is_query()) {
+        return output.format("{\"Defer\":{\"Pending\":%u}}", pending()) ? CommandStatus::handled
+                                                                        : CommandStatus::failed;
+    }
+    const auto payload = support::trim_ascii(request.payload);
+    if (support::ascii_iequals(payload, "cancel")) {
         const auto cancelled = pending();
         clear();
         return output.format("{\"Defer\":{\"Cancelled\":%u}}", cancelled) ? CommandStatus::handled
                                                                           : CommandStatus::failed;
     }
-    if (request.is_query()) {
-        return output.format("{\"Defer\":{\"Pending\":%u}}", pending()) ? CommandStatus::handled
-                                                                        : CommandStatus::failed;
+    if (restart_pending) {
+        // The restart drops every waiting line, so this one would never run.
+        (void)output.write("{\"Defer\":\"Restarting\"}");
+        return CommandStatus::failed;
     }
 
-    const auto payload = support::trim_ascii(request.payload);
     const auto separator = payload.find_first_of(" \t");
     if (separator == std::string_view::npos) {
         return CommandStatus::invalid;
     }
     std::uint32_t milliseconds = 0U;
     const auto line = support::trim_ascii(payload.substr(separator + 1U));
-    // The deferred line is checked now, with the full chain rules, so it cannot fail later
-    // for its syntax.
+    // The line's syntax is checked now with the full chain rules; its commands can still
+    // refuse their payloads when it runs.
     if (!support::parse_unsigned_decimal(
             payload.substr(0U, separator), kMaximumMilliseconds, milliseconds) ||
         line.empty() || line.size() > kLineCapacity || !validate_command_line(line)) {
@@ -96,6 +103,7 @@ CommandStatus command(const CommandRequest& request, CommandOutput& output) {
     }
     free_slot->due = platform::monotonic_milliseconds() + milliseconds;
     free_slot->order = next_order++;
+    free_slot->source = request.source;
     std::memcpy(free_slot->line.data(), line.data(), line.size());
     free_slot->size = static_cast<std::uint8_t>(line.size());
     return output.format("{\"Defer\":{\"Ms\":%lu,\"Pending\":%u}}",
@@ -121,6 +129,7 @@ void poll(CommandProcessor& processor, const std::uint32_t now) {
     // Free the slot first: the command may defer or cancel further commands.
     std::array<char, kLineCapacity> line{};
     const std::size_t size = next->size;
+    const auto source = next->source;
     std::memcpy(line.data(), next->line.data(), size);
     next->size = 0U;
 
@@ -132,7 +141,7 @@ void poll(CommandProcessor& processor, const std::uint32_t now) {
 #else
     CommandOutput output{write_console, nullptr};
 #endif
-    const auto result = processor.execute({line.data(), size}, CommandSource::internal, output);
+    const auto result = processor.execute_deferred({line.data(), size}, source, output);
     if (!result.response_suppressed && !result.output_failed && output.size() != 0U) {
         (void)platform::write_console("\r\n");
     }

@@ -254,6 +254,15 @@ class CommandProcessor final {
     [[nodiscard]] CommandResult execute(std::string_view line, CommandSource source,
         CommandOutput& output, std::uint32_t* web_output_group = nullptr);
 
+#if USE_DEFER
+    /**
+     * @brief Runs a deferred line with its original source. Nobody waits for the answer any
+     * more, so MQTT-sourced lines also answer through the MQTT result mirror.
+     */
+    [[nodiscard]] CommandResult execute_deferred(
+        std::string_view line, CommandSource source, CommandOutput& output);
+#endif
+
   private:
     /**
      * @brief Implements command parsing with an optional forced response suppression.
@@ -296,6 +305,9 @@ class CommandProcessor final {
 #endif
 #if USE_PING
     PingService* ping_;
+#endif
+#if USE_DEFER
+    bool deferred_{};
 #endif
 };
 

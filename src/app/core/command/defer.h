@@ -30,12 +30,13 @@ inline constexpr std::size_t kLineCapacity = 128U;
 inline constexpr std::uint32_t kMaximumMilliseconds = 3600000U;
 
 /**
- * @brief Handles `Defer`.
+ * @brief Handles `Defer`; refuses new lines while a restart is pending.
  * @return unknown for every other command name.
  */
-[[nodiscard]] CommandStatus command(const CommandRequest& request, CommandOutput& output);
+[[nodiscard]] CommandStatus command(
+    const CommandRequest& request, CommandOutput& output, bool restart_pending);
 
-/** @brief Runs the earliest due command line, at most one per main-loop pass. */
+/** @brief Runs the earliest due line (equal due times in scheduling order), one per pass. */
 void poll(CommandProcessor& processor, std::uint32_t now);
 
 /** @brief Drops every waiting command line, as a restart does. */

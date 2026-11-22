@@ -57,6 +57,7 @@
 #endif
 #if USE_DEFER
 #include "core/command/defer.h"
+#include "core/system/restart.h"
 #endif
 #include "core/storage/filesystem_commands.h"
 #include "core/system/boot_counter.h"
@@ -884,7 +885,7 @@ CommandStatus CommandProcessor::dispatch(const CommandRequest& request, CommandO
     }
 #endif
 #if USE_DEFER
-    const auto defer_status = defer::command(request, output);
+    const auto defer_status = defer::command(request, output, restart_.pending());
     if (defer_status != CommandStatus::unknown) {
         return defer_status;
     }
@@ -1002,8 +1003,11 @@ CommandResult CommandProcessor::execute(std::string_view line, const CommandSour
     }
 
 #if USE_MQTT
-    mqtt_output.begin(
-        mqtt_result_publisher_ != nullptr && source != CommandSource::mqtt, count > 1U);
+    bool mqtt_enabled = source != CommandSource::mqtt;
+#if USE_DEFER
+    mqtt_enabled = mqtt_enabled || deferred_;
+#endif
+    mqtt_output.begin(mqtt_result_publisher_ != nullptr && mqtt_enabled, count > 1U);
 #endif
     CommandChainContext context{this, source, &destination,
 #if USE_MQTT
@@ -1030,6 +1034,17 @@ CommandResult CommandProcessor::execute(std::string_view line, const CommandSour
 #endif
     return context.result;
 }
+
+#if USE_DEFER
+/** @brief Runs one deferred line with the MQTT result mirror forced on. */
+CommandResult CommandProcessor::execute_deferred(
+    const std::string_view line, const CommandSource source, CommandOutput& output) {
+    deferred_ = true;
+    const auto result = execute(line, source, output);
+    deferred_ = false;
+    return result;
+}
+#endif
 
 /**
  * @brief Implements command parsing and optional response suppression.
