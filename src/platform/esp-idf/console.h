@@ -41,6 +41,11 @@ class Console final {
      * @brief Returns the configured UART baud rate, or zero for USB backends.
      */
     [[nodiscard]] std::uint32_t baudrate() const;
+    /**
+     * @brief Gives the UART0 pads to the configuration; a USB console keeps running.
+     * @return true when UART0 was released by this call.
+     */
+    [[nodiscard]] bool release_uart();
 
   private:
     enum class Backend : std::uint8_t {
@@ -48,6 +53,7 @@ class Console final {
         uart0,
         usb_cdc,
         usb_serial_jtag,
+        released,
     };
 
     /**
@@ -58,6 +64,7 @@ class Console final {
 
     Backend backend_{Backend::uninitialized};
     bool usb_fallback_{false};
+    bool uart_released_{false};
 };
 
 /**

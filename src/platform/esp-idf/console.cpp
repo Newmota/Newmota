@@ -278,6 +278,28 @@ bool Console::write(const std::string_view text) {
     }
 }
 
+/**
+ * @brief Stops UART0 so GPIO setup can take its pads.
+ *
+ * A USB backend keeps running. When UART0 is the boot fallback, the console
+ * stops until restart. The pad's GPIO configuration clears its UART function,
+ * so SDK output still sent to UART0 no longer reaches the pin.
+ */
+bool Console::release_uart() {
+    if (uart_released_) {
+        return false;
+    }
+    if (uart_is_driver_installed(UART_NUM_0)) {
+        (void)uart_driver_delete(UART_NUM_0);
+    }
+    if (backend_ == Backend::uart0) {
+        backend_ = Backend::released;
+        usb_fallback_ = false;
+    }
+    uart_released_ = true;
+    return true;
+}
+
 /** @brief Describes the selected backend and any boot-time fallback. */
 const char* Console::status() const {
     if (usb_fallback_) {
@@ -290,6 +312,8 @@ const char* Console::status() const {
         return "Using USB CDC";
     case Backend::usb_serial_jtag:
         return "Using USB Serial/JTAG";
+    case Backend::released:
+        return "UART0 console released; the template uses its pins";
     case Backend::uninitialized:
         return "Console not initialized";
     }

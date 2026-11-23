@@ -75,7 +75,10 @@ A console reservation with `template_may_claim = true` leaves its pins available
 configuration wins: when the active template assigns one of them, or a runtime owner such as
 the selected energy driver or Berry `gpio` claims one, the console stops before the pin is driven and stays
 off until restart. Beken uses this for UART1 on GPIO10/11, which plugs often wire to LEDs or
-BL0937 SEL. The bootloader still prints on UART1 during reset.
+BL0937 SEL. The bootloader still prints on UART1 during reset. ESP-IDF chips with a USB console
+use it for the UART0 pads, which are only the boot fallback there (for example GPIO43/44 on the
+ESP32-S3): a USB console keeps running, a UART0 fallback stops. Environments whose console is
+UART0 keep those pins reserved. The ROM and bootloader still print on UART0 during reset.
 
 Strapping and other sensitive pins remain available with a caution flag, so valid
 Tasmota templates keep working. A board without `gpio.exposed` exposes every pin of the

@@ -82,7 +82,14 @@ psram_modes = ["octal"]
 [[reservation]]
 owner = "console-uart0"
 pins = [43, 44]
-consoles = ["uart0", "usb-serial-jtag"]
+consoles = ["uart0"]
+
+# With a USB console, UART0 is only the boot fallback; a template may take its pins.
+[[reservation]]
+owner = "console-uart0"
+pins = [43, 44]
+consoles = ["usb-serial-jtag"]
+template_may_claim = true
 
 [[reservation]]
 owner = "console-usb-serial-jtag"

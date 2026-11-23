@@ -12,6 +12,7 @@
 #include "newmota/platform/platform.h"
 
 #include "console.h"
+#include "newmota/platform/gpio_detail.h"
 #include "newmota_features.h"
 #include "sdkconfig.h"
 
@@ -327,9 +328,13 @@ void yield_execution() {
     vTaskDelay(0);
 }
 
-/** @brief Does nothing: no topology here lets a configuration take console pins. */
+/** @brief Releases UART0 when a template assigns one of its pads (USB-console topologies). */
 bool release_console() {
-    return false;
+    if (!console().release_uart()) {
+        return false;
+    }
+    detail::release_console_pins();
+    return true;
 }
 
 /** @brief Initializes the ESP-IDF runtime console. */
