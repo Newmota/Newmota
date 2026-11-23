@@ -9,10 +9,12 @@ notices are retained. The four e-paper descriptors have one Newmota change: thei
 
 To use one, enable `USE_DISPLAY`, choose the descriptor for the panel and board,
 and upload it through Newmota's browser file manager as `/display.ini` in the
-device's LittleFS. Configure the required GPIO functions in the device's hardware
-template, or replace descriptor `*` pin fields with physical pins. Restart the
-device to load the descriptor. This repository directory is a source library;
-its files are not installed on devices automatically.
+device's LittleFS, or list it under `filesystem` in a
+[user configuration](../../../user_config/README.md#files-in-the-factory-filesystem) to put it
+into the factory image. Configure the required GPIO functions in the device's hardware
+template and keep `*` in the descriptor's pin fields. A physical pin in the descriptor is
+accepted only on a GPIO the template leaves unassigned; on an assigned GPIO the display does not
+start and the log names the pin. Restart the device to load the descriptor.
 
 QSPI descriptors from Tasmota revision
 `fb629eddb5047764781851ee059366328814a552` can be supplied separately with the

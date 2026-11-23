@@ -367,6 +367,18 @@ bool initialize_display_from_filesystem(const Hardware& hardware) {
         !runtime_pins::claim_display(runtime_pins::kDisplay, parsed_info.pins,
             parsed_info.pin_count, workspace->authorized_configured_pins.data(),
             authorized_count)) {
+        // The template owns its pins: name the first one the descriptor sets explicitly.
+        for (std::size_t i = 0; i < parsed_info.pin_count; ++i) {
+            const auto pin = parsed_info.pins[i];
+            bool authorized{};
+            for (std::size_t j = 0; j < authorized_count; ++j)
+                authorized |= workspace->authorized_configured_pins[j].value() == pin.value();
+            if (!authorized && runtime_pins::configured(pin)) {
+                AddLog(LogLevel::error, "DSP: GPIO%u is assigned in the template; use * in %s",
+                    static_cast<unsigned int>(pin.value()), kDescriptorPath);
+                return false;
+            }
+        }
         AddLog(LogLevel::error, "DSP: descriptor pins conflict with configured hardware");
         return false;
     }
