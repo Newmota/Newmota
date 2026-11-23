@@ -4242,9 +4242,8 @@ function pollWidgets() {
     });
     if (Number.isInteger(answer.rev)) widgetRev = answer.rev;
     if (changed) widgetChangedAt = Date.now();
-    if (answer.more) interval = 0;
-    else if (waiting) interval = 250;
-    else if (Date.now() - widgetChangedAt < 2000) interval = 250;
+    // A partial answer is continued after 250 ms like a change, so catching up keeps the request rate.
+    if (answer.more || waiting || Date.now() - widgetChangedAt < 2000) interval = 250;
   }).catch(() => {
     interval = 5000;
   }).finally(() => {

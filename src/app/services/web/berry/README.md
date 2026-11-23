@@ -17,7 +17,7 @@ widget.remove("demo")   # true when it existed
 ```
 
 - `widget.set(id, html [, order])` creates a widget or replaces its markup; its data stays. The id
-  is 1–31 characters of `A-Z a-z 0-9 _ - .`; other ids raise `value_error`. `order` (integer)
+  is 1–31 characters of `A-Z a-z 0-9 _ - .`, but not `.` or `..`; other ids raise `value_error`. `order` (integer)
   sorts widgets, equal orders keep registration order; without it a new widget gets 0 and an
   existing one keeps its order. Widgets appear after the native cards.
 - `widget.data(id, value)` replaces the data of a widget that exists, with `json.dump(value)`.
@@ -74,6 +74,11 @@ offers:
 
 Data comes through `nm.on`; a widget script should not start timers or requests of its own.
 Its CSS is global, so scope a `<style>` to `[data-id="<id>"]`, which the page sets on the card.
+
+The compact Beken page shows the same markup, data, bindings and controls, with these limits:
+the only charts are `matrix` and, in builds with `USE_MATTER`, `qr` (also as `nm.qr`); `nm` has
+no other chart helpers; `w2` and `w3` widen a card but `h2` and `h3` do nothing; data updates
+are not highlighted.
 
 ## Limits
 

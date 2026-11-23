@@ -55,11 +55,14 @@ firmware uploads until its asynchronous download finishes. Existing browser uplo
   `{"step":<seconds>,"values":[...]}`, oldest first with `null` for gaps; the panel fetches one
   series at a time, each at most once a minute, and draws it under the measurement's row;
   footer fields fetch no history. The `series` id is a hash of sensor name and field.
-  `/api/widgets` lists the Berry widgets as `{"widgets":[{"id":...,"rev":...}]}` in display
-  order and `/api/widgets/<id>` returns one widget; Home fetches at most one changed widget per
-  poll, every 250 ms while widgets change and once a second otherwise, and shows them after the
-  native cards. `POST /api/widgets/action` takes `id\npart\nvalue` from a widget control and
-  queues it for the script (503 when eight are waiting). See the
+  `/api/widgets/updates/<since>` answers what changed in the Berry widgets after revision
+  `since`: every widget in display order with its markup and data revisions, the data changed
+  since then (`"more":true` when not all of it fits), the revision to ask from next and a
+  per-boot generation. `/api/widgets/markup/<id>` returns a widget's markup as text. Home asks
+  every 250 ms while widgets change and once a second otherwise, fetches markup for at most two
+  widgets per question, continues a partial answer after 250 ms, and shows them after the native cards. `POST /api/widgets/action` takes
+  `id\nname\nvalue` from a widget control and queues it for the script (503 when eight are
+  waiting). See the
   [widget module](berry/README.md). `/api/info`
   supplies the slower authenticated device
   metadata snapshot, `POST /api/filesystem/list` returns a bounded
@@ -198,8 +201,9 @@ splits Wi-Fi, MQTT, Module, Template, and Timers into tabs, with compact Module 
 GPIO editors on the same `/api/gpio` routes. Information and the filesystem browser show
 LittleFS used, free, and total space from `/api/info`.
 It retains a smaller English-only asset rather than embedding the complete generic page.
-With Berry, Home also shows Berry widgets in a compact form: `text`, `value`, `button`, `toggle`
-and `matrix` parts, and `qr` with `USE_MATTER`, enough for the Matter pairing card. The build keeps only the page sections
+With Berry, Home also shows Berry widgets with their markup, data and controls. Its only charts
+are `matrix` and, with `USE_MATTER`, `qr`; `w2`/`w3` widen a card, row spans and the update
+highlight are left out. The build keeps only the page sections
 whose features are on: `<!--#if USE_X-->` in markup and `/*#if USE_X*/` in scripts, closed by
 `#endif` the same way, with `!USE_X` for the opposite; an unknown name or an unbalanced marker
 fails the build. MQTT, timers, lights, energy, the RBL upload and the panels below follow their

@@ -23,6 +23,7 @@
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 1rem}.form-grid label{margin:.7rem 0 .3rem}.checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(17rem,1fr));gap:0 1rem}.check-row{display:flex;align-items:center;gap:.5rem;margin:.45rem 0}.check-row input{margin:0}.check-row label{margin:0}.field-hint{color:var(--dim);font-size:.85rem;margin:.4rem 0}summary{cursor:pointer;color:var(--accent);margin:1rem 0 .3rem}.actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem}
 .tabs{display:flex;flex-wrap:wrap;gap:.25rem;border-bottom:1px solid var(--border)}.tabs button{background:transparent;border-color:transparent;border-radius:6px 6px 0 0;margin-bottom:-1px}.tabs [aria-selected=true]{background:var(--panel);border-color:var(--border);border-bottom-color:var(--panel);color:var(--accent)}[data-panel=configuration] section{max-width:56rem;margin-top:0;border-top-left-radius:0}
 .sw{appearance:none;flex:none;width:2.5rem;height:1.4rem;margin:0;border-radius:1rem;background:var(--border);position:relative;cursor:pointer}.sw:before{content:"";position:absolute;top:.2rem;left:.2rem;width:1rem;height:1rem;border-radius:50%;background:#fff;transition:left .15s}.sw:checked{background:var(--accent)}.sw:checked:before{left:1.3rem}.sw:disabled{opacity:.5}
+/*#if USE_BERRY*/.widget-card{border:1px solid var(--border);border-radius:10px;padding:1.25rem;background:var(--panel);margin:1rem 0}@media(min-width:600px){.widget-card.w2{grid-column:span 2}.widget-card.w3{grid-column:span 3}}.widget-card .value{font-size:1.5rem;font-weight:600}.widget-card :is(.unit,.label,.small){color:var(--dim)}.widget-card .small{font-size:.85rem}.widget-card p{margin:.3rem 0}.widget-card .row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}.widget-card .scroll{overflow:auto;max-height:20rem}.widget-card table{width:100%;border-collapse:collapse;font-size:.8rem}.widget-card :is(th,td){padding:2px 4px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}/*#endif*/
 #fsUsage{margin:0 0 1rem}#fsUsage progress{margin:.3rem 0 0;height:.5rem}
 @media(max-width:600px){.form-grid{grid-template-columns:1fr}}
 </style>
@@ -765,13 +766,16 @@ async function pollSensors(){
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)pollSensors()});
 /*#endif*/
 /*#if USE_BERRY*/
-/* Berry widgets from /api/widgets, compact: text, value, button, toggle, matrix and, with Matter, qr parts
-   are drawn, other kinds are skipped. One changed widget is fetched per poll, every 250 ms while widgets
-   change and once a second otherwise, so a busy script cannot exceed the request budget. */
-const widgetCards=new Map(),WIDGET_KINDS=["text","line","hist","gauge","matrix","qr","button","toggle","number","input","select","table","value"];
-let widgetTimer=0,widgetPolling=false,widgetChangedAt=0,widgetCursor="";
-async function widgetAction(id,part,value){
- try{await controllerApi("/api/widgets/action",id+"\n"+part+"\n"+value);widgetChangedAt=Date.now();if(!widgetPolling)pollWidgets();return true}
+/* Berry widgets, compact: the script's markup becomes a card and its data is written only as text,
+   field values, or a QR code or dot matrix; this page draws no line, bar or gauge charts. One
+   question asks what changed after the revision seen; markup is fetched for at most two widgets per
+   question and a partial answer is continued after 250 ms, so many widgets cannot exceed the request
+   budget. Every 250 ms while widgets change, otherwise once a second. The spans w2 and w3 widen a
+   card; this page has no row spans and no update highlight. */
+const widgetCards=new Map(),widgetHandlers=new Map();
+let widgetTimer=0,widgetPolling=false,widgetChangedAt=0,widgetRev=0,widgetGen=0,widgetInserting=null;
+async function widgetAction(id,name,value){
+ try{await controllerApi("/api/widgets/action",id+"\n"+name+"\n"+value);widgetChangedAt=Date.now();if(!widgetPolling)pollWidgets();return true}
  catch(error){say(error.message);return false}}
 // Dark dots on white with a four-dot margin, in every theme, so a camera can read a QR code.
 function widgetMatrix(rows,size){
@@ -796,40 +800,68 @@ function qrRows(t){const A="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:",n=21,
  for(let r=n-1;r>=1;r-=2){if(r==6)r=5;for(let v=0;v<n;v++)for(let j=0;j<2;j++){const x=r-j,y=(r+1)&2?v:n-1-v;if(!fx[y][x]){const bit=w[k>>3]>>7-(k&7)&1;k++;m[y][x]=(x+y)%2?bit:1-bit}}}
  return m.map(r=>r.reduce((a,v)=>a*2+v,0))}
 /*#endif*/
-function widgetPart(part,id,index){
- const kind=WIDGET_KINDS.find(key=>key in part),address=typeof part.name==="string"?part.name:String(index);
- if(kind==="text"){const p=document.createElement("p");if(part.small)p.className="muted";p.textContent=String(part.text);return p}
- if(kind==="value"){const row=document.createElement("div"),key=document.createElement("span"),val=document.createElement("span");row.className="kv-row";key.className="kv-key";val.className="kv-val";
-  key.textContent=part.label||"";val.textContent=String(part.value)+(part.unit?" "+part.unit:"");row.append(key,val);return row}
- if(kind==="matrix")return widgetMatrix(part.matrix,part.size);
- /*#if USE_MATTER*/if(kind==="qr")return widgetMatrix(qrRows(part.qr),21);/*#endif*/
- if(kind==="button"){const button=document.createElement("button");button.type="button";button.textContent=String(part.button);
-  button.addEventListener("click",async()=>{button.disabled=true;await widgetAction(id,address,"");button.disabled=false});return button}
- if(kind==="toggle"){const label=document.createElement("label"),sw=document.createElement("input");label.textContent=String(part.toggle);sw.type="checkbox";sw.className="sw";sw.checked=part.state===true;label.append(sw);
-  sw.addEventListener("change",async()=>{sw.disabled=true;if(!await widgetAction(id,address,sw.checked?"true":"false"))sw.checked=!sw.checked;sw.disabled=false});return label}
- return null}
-function widgetCard(widget,id){
- const card=document.createElement("section"),title=document.createElement("h3");card.className="card";title.textContent=widget.title||"";card.append(title);
- (Array.isArray(widget.parts)?widget.parts:[]).forEach((part,index)=>{const node=widgetPart(part,id,index);if(node)card.append(node)});return card}
+const widgetField=n=>n.tagName==="INPUT"||n.tagName==="SELECT"||n.tagName==="TEXTAREA";
+const widgetEditing=n=>n===document.activeElement&&(n.tagName==="SELECT"?!!n.dataset.open:n.tagName==="TEXTAREA"||(n.tagName==="INPUT"&&n.type!=="checkbox"&&n.type!=="radio"));
+function widgetBind(card,data){
+ for(const n of [card,...card.querySelectorAll("[data-v]")]){
+  const key=n.getAttribute("data-v");if(key===null)continue;
+  const v=key.split(".").reduce((o,k)=>o!==null&&typeof o==="object"?o[k]:undefined,data);if(v===undefined)continue;
+  const kind=n.getAttribute("data-chart");
+  if(kind){const c=/*#if USE_MATTER*/kind==="qr"?widgetMatrix(qrRows(v),21):/*#endif*/kind==="matrix"?widgetMatrix(v,+n.getAttribute("data-size")):null;n.replaceChildren(...(c?[c]:[]))}
+  else if(widgetEditing(n))continue;
+  else if(n.type==="checkbox"||n.type==="radio")n.checked=v===true||v===1||v==="true";
+  else if(widgetField(n))n.value=v===null?"":String(v);
+  else n.textContent=v===null?"":typeof v==="object"?JSON.stringify(v):String(v)}}
+function widgetWire(id,card){
+ card.addEventListener("click",async e=>{const n=e.target.closest("[data-act]");if(!n||!card.contains(n)||widgetField(n))return;n.disabled=true;await widgetAction(id,n.dataset.act,"");n.disabled=false});
+ card.addEventListener("change",async e=>{const n=e.target;if(n.tagName==="SELECT")delete n.dataset.open;if(!widgetField(n)||!n.dataset.act)return;
+  const check=n.type==="checkbox",v=check?String(n.checked):n.value;
+  if(new TextEncoder().encode(v).length>63)return say("Value too long");if(!n.checkValidity())return n.reportValidity();
+  if(check)n.disabled=true;const sent=await widgetAction(id,n.dataset.act,v);if(check){if(!sent)n.checked=!n.checked;n.disabled=false}});
+ card.addEventListener("pointerdown",e=>{if(e.target.tagName==="SELECT")e.target.dataset.open="1"});
+ card.addEventListener("keydown",e=>{if(e.target.tagName!=="SELECT")return;if(["Escape","Enter","Tab"].includes(e.key))delete e.target.dataset.open;else e.target.dataset.open="1"});
+ card.addEventListener("focusout",e=>{if(e.target.tagName==="SELECT")delete e.target.dataset.open})}
+function widgetUpdate(id,entry){widgetBind(entry.card,entry.data);const h=widgetHandlers.get(id);if(h)try{h(entry.data,entry.card)}catch(error){console.error(error)}}
+function widgetInsert(id,entry,markup,revision){
+ const t=document.createElement("template");t.innerHTML=markup;const c=t.content;let card=c.firstElementChild;
+ if(!card||c.childElementCount!==1||[...c.childNodes].some(n=>n.nodeType===3&&n.textContent.trim())){card=document.createElement("div");card.append(c)}
+ card.classList.add("card","widget-card");card.dataset.id=id;
+ card.querySelectorAll('input[type="checkbox"].toggle').forEach(i=>i.classList.add("sw"));
+ widgetHandlers.delete(id);if(entry.card)entry.card.replaceWith(card);else byId("widget-grid").append(card);entry.card=card;entry.m=revision;widgetWire(id,card);
+ widgetInserting=id;try{for(const o of card.querySelectorAll("script")){const s=document.createElement("script");s.textContent=o.textContent;o.replaceWith(s)}}finally{widgetInserting=null}
+ if(entry.data!==undefined)widgetUpdate(id,entry)}
+// The same helpers as the full page, without its charts.
+window.nm={
+ on(id,fn){id=String(id);widgetHandlers.set(id,fn);const e=widgetCards.get(id);if(widgetInserting!==id&&e&&e.card&&e.data!==undefined)widgetUpdate(id,e)},
+ send:(id,name,value="")=>widgetAction(String(id),String(name),String(value)),
+ card:id=>(widgetCards.get(String(id))||{}).card||null,
+ /*#if USE_MATTER*/qr:t=>widgetMatrix(qrRows(t),21),/*#endif*/
+ rows(body,rows){body.replaceChildren(...(Array.isArray(rows)?rows:[]).map(r=>{const tr=document.createElement("tr");for(const v of Array.isArray(r)?r:[r])tr.insertCell().textContent=v===null?"":String(v);return tr}))}};
 async function pollWidgets(){
  clearTimeout(widgetTimer);if(document.hidden||!onPage("home")||widgetPolling)return;
  if(busy){widgetTimer=setTimeout(pollWidgets,1000);return}
  widgetPolling=true;let interval=1000;
  try{
-  const list=(await controllerApi("/api/widgets")).widgets||[],grid=byId("widget-grid"),ids=new Set(list.map(entry=>entry.id));
-  for(const [id,entry] of widgetCards)if(!ids.has(id)){entry.card.remove();widgetCards.delete(id)}
-  const stale=list.filter(entry=>widgetCards.get(entry.id)?.rev!==entry.rev);
-  if(stale.length){
-   widgetChangedAt=Date.now();
-   // Round-robin after the last fetched widget, so one that always changes cannot starve the others.
-   const after=list.findIndex(entry=>entry.id===widgetCursor),next=stale.find(entry=>list.indexOf(entry)>after)||stale[0];widgetCursor=next.id;
-   try{const widget=await controllerApi("/api/widgets/"+encodeURIComponent(next.id)),card=widgetCard(widget,next.id),old=widgetCards.get(next.id);
-    if(old)old.card.replaceWith(card);else grid.append(card);widgetCards.set(next.id,{rev:widget.rev,card})}catch{}
-  }
-  const order=list.map(entry=>widgetCards.get(entry.id)).filter(Boolean).map(entry=>entry.card);
-  if(order.some((card,index)=>grid.children[index]!==card))grid.append(...order);
-  if(stale.length>1||Date.now()-widgetChangedAt<2000)interval=250;
- }catch{for(const entry of widgetCards.values())entry.card.remove();widgetCards.clear();interval=5000}
+  const answer=await controllerApi("/api/widgets/updates/"+widgetRev);
+  if(answer.gen!==widgetGen){
+   // The device restarted: its revisions mean nothing to this page any more.
+   for(const e of widgetCards.values())if(e.card)e.card.remove();widgetCards.clear();widgetHandlers.clear();widgetGen=answer.gen;
+   if(widgetRev){widgetRev=0;interval=0;return}}
+  const list=Array.isArray(answer.widgets)?answer.widgets:[],ids=new Set(list.map(i=>i.id)),data=answer.data&&typeof answer.data==="object"?answer.data:{};
+  for(const [id,e] of widgetCards)if(!ids.has(id)){if(e.card)e.card.remove();widgetCards.delete(id);widgetHandlers.delete(id)}
+  let changed=false,fetches=0,waiting=false;
+  for(const item of list){
+   let e=widgetCards.get(item.id);if(!e)widgetCards.set(item.id,e={});
+   const fresh=Object.prototype.hasOwnProperty.call(data,item.id);if(fresh)e.data=data[item.id];else if(item.d===0)delete e.data;
+   if(e.m!==item.m){if(fetches===2){waiting=true;continue}fetches++;
+    try{widgetInsert(item.id,e,(await request("/api/widgets/markup/"+encodeURIComponent(item.id))).text,item.m);changed=true}catch{}}
+   else if(fresh&&e.card){changed=true;widgetUpdate(item.id,e)}}
+  const grid=byId("widget-grid");
+  list.map(i=>(widgetCards.get(i.id)||{}).card).filter(Boolean).forEach((c,i)=>{if(grid.children[i]!==c)grid.insertBefore(c,grid.children[i]||null)});
+  if(Number.isInteger(answer.rev))widgetRev=answer.rev;if(changed)widgetChangedAt=Date.now();
+  // A partial answer is continued after 250 ms like a change, so catching up keeps the request rate.
+  if(answer.more||waiting||Date.now()-widgetChangedAt<2000)interval=250;
+ }catch{interval=5000}
  finally{widgetPolling=false;if(!document.hidden&&onPage("home"))widgetTimer=setTimeout(pollWidgets,interval)}
 }
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)pollWidgets()});

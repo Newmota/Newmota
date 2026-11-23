@@ -55,7 +55,8 @@ template <std::size_t N> bool copy_field(std::array<char, N>& field, std::string
 
 /** @brief Ids keep to characters that need no escaping in a path or a JSON string. */
 bool valid_id(const std::string_view id) {
-    if (id.empty() || id.size() > kIdCapacity)
+    // "." and ".." would be resolved as path segments by the browser.
+    if (id.empty() || id.size() > kIdCapacity || id == "." || id == "..")
         return false;
     for (const char c : id)
         if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') ||

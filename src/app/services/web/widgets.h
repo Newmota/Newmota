@@ -66,8 +66,8 @@ struct Action {
 
 /**
  * @brief Creates a widget or replaces its markup; its data stays.
- * @param id 1..kIdCapacity characters of `A-Z a-z 0-9 _ - .`, which need no escaping in a
- * path or JSON, so the update answer's size bound holds.
+ * @param id 1..kIdCapacity characters of `A-Z a-z 0-9 _ - .` other than `.` and `..`, which
+ * need no escaping in a path or JSON, so the update answer's size bound holds.
  * @param markup At most kMarkupBytes of HTML; its content is not checked.
  * @param order Display order, or nullptr to keep the current one (0 for a new widget); equal
  * orders keep first-registration order.
