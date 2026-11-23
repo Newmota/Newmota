@@ -68,18 +68,28 @@ Use `Pixels 1` for the onboard LED. The microSD slot shares the display's SPI cl
 and MOSI; this template does not configure the card. The display descriptor and
 wiring have not been qualified on this C5 board.
 
-## ESP-IDF: ESP32-S3-EYE camera
+## ESP-IDF: ESP32-S3-EYE
 
 The ESP32-S3-EYE's OV2640 is wired to GPIO4 (SIOD), GPIO5 (SIOC), GPIO6 (VSYNC), GPIO7 (HREF),
 GPIO13 (PCLK), GPIO15 (XCLK) and D0…D7 on GPIO11, 9, 8, 10, 12, 18, 17, 16; it has no PWDN or
-RESET line. Requires `USE_WEBCAM` and an 8 MiB flash, 8 MiB octal PSRAM build such as
-`esp32s3-qio-opi-8m-8m`; see the [camera guide](src/app/drivers/camera/README.md).
+RESET line. The template also sets the I2S microphone (DIN GPIO2, BCLK GPIO41, WS GPIO42), the
+microSD slot in one-bit SDIO mode (CMD GPIO38, CLK GPIO39, D0 GPIO40) and the 240x240 ST7789
+display on hardware SPI (CLK GPIO21, MOSI GPIO47, CS GPIO44, DC GPIO43, backlight GPIO48).
+Requires an 8 MiB flash, 8 MiB octal PSRAM build such as `esp32s3-qio-opi-8m-8m`, with
+`USE_WEBCAM`, `USE_I2S`, `USE_DISPLAY` and `USE_SDCARD` as needed; see the
+[camera guide](src/app/drivers/camera/README.md).
 
 ```text
 Module 0
-Template {"NAME":"ESP32-S3-EYE","ARCH":"esp32s3","GPIO":[1,1,1,1,5024,5056,5120,5152,5090,5089,5091,5088,5092,5184,1,4992,5095,5094,5093,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],"FLAG":0,"BASE":0}
+Template {"NAME":"ESP32-S3-EYE","ARCH":"esp32s3","GPIO":[1,1,7872,1,5024,5056,5120,5152,5090,5089,5091,5088,5092,5184,1,4992,5095,5094,5093,0,0,736,0,0,0,0,0,8800,8832,8864,7808,7840,800,768,1,1,704,992],"FLAG":0,"BASE":0}
 Restart 1
 ```
+
+Tasmota's template for this board assigns the display to software SPI pins (SSPI) and its
+auto-configuration descriptor names the pins itself. In Newmota the template owns the pins, so
+this template uses the hardware SPI functions, and the generic panel descriptor
+[`ST7789_display.ini`](config/hardware/displaydesc/ST7789_display.ini) takes its pins through `*`.
+Upload it as `/display.ini`, or ship it with the build through `filesystem`.
 
 Then upload [`ov2640.be`](berry/drivers/camera/ov2640.be), add
 `load("ov2640.be")  cam.register(OV2640())` to `autoexec.be`, and use `WcStream 1` for `http://<device>:81/stream`.
