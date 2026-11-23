@@ -444,10 +444,12 @@ BLE_SETTINGS = {
 # Global addresses let controllers on other subnets reach the device; link-local alone is not enough.
 MATTER_SETTINGS = {
     "CONFIG_LWIP_IPV6_AUTOCONFIG": "y",
-    # Matter's Berry callbacks share the main task with commands and settings
-    # writes. Reserve reusable stack space for their temporary buffers.
-    "CONFIG_ESP_MAIN_TASK_STACK_SIZE": "10240",
 }
+# The application task runs commands, the web server's handoff, Berry and its native
+# callbacks. Each feature that nests Berry deeper adds its reserve to the 8 KiB floor:
+# Matter's callbacks keep temporary buffers, and BLE callbacks run Berry inside native code.
+MAIN_TASK_STACK_FLOOR = 8192
+MAIN_TASK_STACK_RESERVES = {"USE_MATTER": 2048, "USE_BLE": 4096}
 
 
 class EspIdfAdapter(PlatformAdapter):
@@ -886,8 +888,10 @@ def native_requirements(
         )
         if environment.idf_version != "6.1":
             sdk_requirements.append("bootloader_support")
-    # Keep the 8 KiB application-task floor unless a selected feature needs more.
-    native_settings: dict[str, str] = {"CONFIG_ESP_MAIN_TASK_STACK_SIZE": "8192"}
+    stack = MAIN_TASK_STACK_FLOOR + sum(
+        reserve for name, reserve in MAIN_TASK_STACK_RESERVES.items() if values.get(name, False)
+    )
+    native_settings: dict[str, str] = {"CONFIG_ESP_MAIN_TASK_STACK_SIZE": str(stack)}
     if any(
         values.get(name, False)
         for name in ("USE_CRYPTO_HW_SHA1", "USE_CRYPTO_HW_SHA256", "USE_CRYPTO_HW_SHA512")

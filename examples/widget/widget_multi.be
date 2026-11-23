@@ -2,8 +2,9 @@
 # Multi Graph Widget Demo - 8 different graph types
 #
 # Port of berry-examples/dashboard/multi_widget.be to the Newmota `widget` module.
-# Only the API differs: widgets are described as data instead of HTML/DSL strings,
-# and a self-rescheduling timer replaces the Tasmota driver tick.
+# Each widget gets its markup once; every 100 ms one of them receives new data.
+# The DSL strings of the original become data-chart elements with the same colours.
+# A self-rescheduling timer replaces the Tasmota driver tick.
 # math.rand() replaces crypto.random(), which Newmota offers only with qualified entropy.
 #################################################################################
 class MULTI_GRAPH_WIDGET
@@ -14,6 +15,8 @@ class MULTI_GRAPH_WIDGET
 
   static BUFFER_SIZE = 32
   static NUM_BUFFERS = 3
+  static GAUGE = 'data-chart="gauge" data-v="v" data-min="0" data-max="100" data-unit="%"'
+                 ' data-stops="0:#00c800,70:#c8a000,90:#c80000"'
 
   def init()
     self.update_index = 0
@@ -30,7 +33,27 @@ class MULTI_GRAPH_WIDGET
       self.data_buffers.push(buffer)
     end
 
+    self.create_widgets()
     self.every_100ms()
+  end
+
+  # Markup once: a title and one chart bound to the data key "v"
+  def create_widgets()
+    import widget
+    var charts = [
+      ["Line", 'data-chart="line" data-v="v" data-color="#ff6464"'],
+      ["Line+Grid", 'data-chart="line" data-v="v" data-color="#64ff64" data-grid'],
+      ["Histogram", 'data-chart="hist" data-v="v" data-color="#6464ff"'],
+      ["Hist+Grid", 'data-chart="hist" data-v="v" data-color="#ffff64" data-grid'],
+      ["Multi-Line", 'data-chart="line" data-v="v" data-color="#ff64ff,#64ffff"'],
+      ["Multi+Grid", 'data-chart="line" data-v="v" data-color="#ff9632,#3296ff" data-grid'],
+      ["Gauge", self.GAUGE],
+      ["Gauge+Value", self.GAUGE]]
+    for i: 0..7
+      var extra = i == 7 ? '<p class="label">Value <b data-v="v"></b> %</p>' : ''
+      widget.set(format("graph%d_widget", i + 1),
+        format('<div class="box w1 h1"><h3>%s</h3><div %s></div>%s</div>', charts[i][0], charts[i][1], extra))
+    end
   end
 
   def every_100ms()
@@ -58,56 +81,19 @@ class MULTI_GRAPH_WIDGET
   def update_next_widget()
     import widget
     var widget_num = (self.update_index % 8) + 1
-    widget.set(format("graph%d_widget", widget_num), self.get_widget_content(widget_num))
-    self.update_index += 1
-  end
-
-  def get_widget_content(widget_num)
-    var part
-    var title = ""
-    self.update_data(widget_num%3)
-
-    if widget_num == 1
-      title = "Line"
-      part = self.build_single_series(false, 0xFF6464, 0)
-    elif widget_num == 2
-      title = "Line+Grid"
-      part = self.build_single_series(true, 0x64FF64, 0)
-    elif widget_num == 3
-      title = "Histogram"
-      part = {"hist": self.data_buffers[1], "color": 0x6464FF}
-    elif widget_num == 4
-      title = "Hist+Grid"
-      part = {"hist": self.data_buffers[1], "color": 0xFFFF64, "grid": true}
-    elif widget_num == 5
-      title = "Multi-Line"
-      part = self.build_multi_series(false, 0xFF64FF, 0x64FFFF, 0, 2)
-    elif widget_num == 6
-      title = "Multi+Grid"
-      part = self.build_multi_series(true, 0xFF9632, 0x3296FF, 0, 2)
-    elif widget_num == 7
-      title = "Gauge"
-      part = self.build_gauge()
-    elif widget_num == 8
-      title = "Gauge+Value"
-      part = self.build_gauge()
+    self.update_data(widget_num % 3)
+    var value
+    if widget_num <= 2
+      value = self.data_buffers[0]
+    elif widget_num <= 4
+      value = self.data_buffers[1]
+    elif widget_num <= 6
+      value = [self.data_buffers[0], self.data_buffers[2]]
+    else
+      value = self.gauge_value
     end
-
-    return {"title": title, "w": 1, "h": 1, "parts": [part]}
-  end
-
-  def build_single_series(grid, color, buffer_idx)
-    return {"line": [{"values": self.data_buffers[buffer_idx], "color": color}], "grid": grid}
-  end
-
-  def build_multi_series(grid, color1, color2, buffer1_idx, buffer2_idx)
-    return {"line": [{"values": self.data_buffers[buffer1_idx], "color": color1},
-                     {"values": self.data_buffers[buffer2_idx], "color": color2}], "grid": grid}
-  end
-
-  def build_gauge()
-    return {"gauge": self.gauge_value, "min": 0, "max": 100, "unit": "%",
-            "stops": [[0, 0x00C800], [70, 0xC8A000], [90, 0xC80000]]}
+    widget.data(format("graph%d_widget", widget_num), {"v": value})
+    self.update_index += 1
   end
 
   def stop()

@@ -2079,10 +2079,16 @@ void WebService::handle(platform::WebExchange& exchange, const std::uint32_t now
         }
 #endif
 #if USE_BERRY
-    } else if (!post && path == "/api/widgets") {
+    } else if (!post && path.substr(0, 21) == "/api/widgets/updates/") {
+        // The Home page's question: what changed after the revision I have seen?
+        std::uint32_t since = 0;
+        if (!support::parse_unsigned_decimal(path.substr(21), UINT32_MAX, since)) {
+            error(response, 400, "Invalid widget revision");
+            return;
+        }
         widgets::note_viewer(now);
-        if (!widgets::write_index(output)) {
-            error(response, 507, "Widget index exceeded response limit");
+        if (!widgets::write_updates(since, output, response.body.size())) {
+            error(response, 507, "Widget updates exceeded response limit");
             return;
         }
     } else if (post && path == "/api/widgets/action") {
@@ -2101,11 +2107,13 @@ void WebService::handle(platform::WebExchange& exchange, const std::uint32_t now
             error(response, 503, "Widget action queue full");
             break;
         }
-    } else if (!post && path.substr(0, 13) == "/api/widgets/") {
-        if (!widgets::write_widget(path.substr(13), output)) {
+    } else if (!post && path.substr(0, 20) == "/api/widgets/markup/") {
+        // Trusted script markup, inserted by the page as HTML; data never travels here.
+        if (!widgets::write_markup(path.substr(20), output)) {
             error(response, 404, "Widget unavailable");
             return;
         }
+        response.content_type = "text/plain; charset=utf-8";
 #endif
 #if USE_WEB_CONSOLE
     } else if (post && path == "/api/console/poll") {

@@ -538,8 +538,8 @@
   .power-combined .sensor-meta{ text-align:center; margin-top:4px; }
 
   /* ---------- chart kit (line / bar / gauge) ----------
-     Reserved UI component library: chart, gauge, and widget styles kept for future cards that
-     drivers or Berry describe with data (value, history, range), never with raw HTML. Classes
+     Reserved UI component library: chart, gauge, and widget styles kept for future cards. Native
+     cards are drawn from data; Berry widget markup uses the same kit through data-chart. Classes
      without a current user are intentional: .gauge-card, .sensor-card.fault, .power-combined,
      .power-metrics, .badge, .radio-row, .radio-opt, .section-label, .color-preset(s), .color-preview, .range-hue, .relay-pulse,
      .pulse-btn-row, .log-time, .tag-mqt. Do not remove them as dead code. */
@@ -552,25 +552,31 @@
   .gauge-card{ display:flex; flex-direction:column; align-items:center; gap:2px; margin-top:14px; padding-top:14px; border-top:1px solid var(--border-soft); }
   .gauge-card .ct{ font-size:12px; }
 
-  /* ---------- widgets (Berry `widget` module) ---------- */
+  /* ---------- widgets (Berry `widget` module) ----------
+     A script's markup becomes one card; these rules are the base its HTML builds on. */
   #widget-grid:not(:empty){ margin-top:14px; }
-  .widget-card{ animation:widget-fresh 1.2s ease-out; }
-  .widget-title{ font-size:13px; font-weight:600; text-align:center; }
-  .widget-text{ font-size:13.5px; color:var(--text-dim); white-space:pre-wrap; word-break:break-word; }
-  .widget-gauge{ display:flex; flex-direction:column; align-items:center; }
-  .widget-gauge .chart{ max-width:240px; }
-  .widget-matrix svg{ display:block; width:100%; max-width:200px; margin:0 auto; }
-  .widget-control{ display:flex; align-items:center; gap:10px; }
-  .widget-control > .sensor-label{ flex:1 1 auto; min-width:0; }
-  .widget-control input[type="text"], .widget-control input[type="number"], .widget-control select{
+  .widget-card.fresh{ animation:widget-fresh 1.2s ease-out; }
+  .widget-title, .widget-card :is(h2, h3, h4){ margin:0; font-size:13px; font-weight:600; text-align:center; }
+  .widget-card p{ margin:0; }
+  .widget-card .value{ font-family:var(--mono); font-size:26px; font-weight:600; }
+  .widget-card .unit{ font-size:14px; color:var(--text-dim); font-weight:400; margin-left:3px; }
+  .widget-card .label{ font-size:13px; color:var(--text-dim); }
+  .widget-card .small{ font-size:11.5px; color:var(--text-faint); }
+  .widget-card .row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .widget-card .row > .label{ flex:1 1 auto; min-width:0; }
+  .widget-card :is(input[type="text"], input[type="number"], select, textarea){
     width:9em; background:var(--bg-raised); border:1px solid var(--border); border-radius:6px;
     padding:6px 8px; color:var(--text); font:inherit; font-size:13px;
   }
-  .widget-control input:focus, .widget-control select:focus{ border-color:var(--accent); outline:none; }
-  .widget-table{ overflow:auto; max-height:calc(var(--h, 1) * 240px); }
-  .widget-table table{ width:100%; border-collapse:collapse; font:12px var(--mono); }
-  .widget-table th{ position:sticky; top:0; background:var(--panel); text-align:left; color:var(--text-dim); }
-  .widget-table th, .widget-table td{ padding:3px 6px; border-bottom:1px solid var(--border-soft); white-space:nowrap; }
+  .widget-card :is(input, select, textarea):focus{ border-color:var(--accent); outline:none; }
+  .widget-card input[type="checkbox"]:not(.switch-input){ accent-color:var(--accent); }
+  .widget-card .scroll{ overflow:auto; max-height:calc(var(--h, 1) * 240px); }
+  .widget-card table{ width:100%; border-collapse:collapse; font:12px var(--mono); }
+  .widget-card th{ position:sticky; top:0; background:var(--panel); text-align:left; color:var(--text-dim); }
+  .widget-card :is(th, td){ padding:3px 6px; border-bottom:1px solid var(--border-soft); white-space:nowrap; }
+  .widget-card [data-chart="gauge"] .chart{ max-width:240px; margin:0 auto; }
+  .widget-card :is([data-chart="qr"], [data-chart="matrix"]) svg{ display:block; width:100%; max-width:200px; margin:0 auto; }
+  .widget-card.w2{ --w:2; } .widget-card.w3{ --w:3; } .widget-card.h2{ --h:2; } .widget-card.h3{ --h:3; }
   @keyframes widget-fresh{ from{ border-top-color:var(--accent); } }
   @media (min-width:861px){
     .widget-card{ grid-column:span var(--w, 1); grid-row:span var(--h, 1); }
@@ -786,7 +792,7 @@
 
   @media (prefers-reduced-motion:reduce){
     *{ transition:none !important; }
-    .widget-card{ animation:none; }
+    .widget-card.fresh{ animation:none; }
   }
 </style>
 </head>
@@ -3748,6 +3754,7 @@ function svgNode(tag, attributes) {
 }
 const finiteNumber = value => typeof value === "number" && isFinite(value);
 function chartColor(color) {
+  if (typeof color === "string" && color) return color;
   return Number.isInteger(color) && color >= 0 && color <= 0xFFFFFF
     ? "#" + color.toString(16).padStart(6, "0") : "var(--accent)";
 }
@@ -3870,14 +3877,16 @@ function gaugeChart(value, min, max, unit, stops) {
   }
   return svg;
 }
-// ---- Widgets: cards described by Berry scripts as data, see /api/widgets.
-const widgetCards = new Map();
-let widgetPolling = false, widgetChangedAt = 0, widgetCursor = "";
-/* Sends a control action; the script answers with a new revision of the widget. A part is
-   addressed by its name, or by its index when it has none. */
-async function widgetAction(id, part, value) {
+// ---- Widgets: Berry scripts supply trusted markup and separate data, see /api/widgets.
+/* The markup comes from the script, written by whoever controls the device, and is inserted as
+   HTML. The data may carry text from anywhere (BLE names, network payloads), so it is only ever
+   written as text, field values or chart numbers. */
+const widgetCards = new Map(), widgetHandlers = new Map();
+let widgetPolling = false, widgetChangedAt = 0, widgetRev = 0, widgetGen = 0, widgetInserting = null;
+/* Sends a control action; the script answers with new data or markup. */
+async function widgetAction(id, name, value) {
   try {
-    await api("/api/widgets/action", id + "\n" + part + "\n" + value);
+    await api("/api/widgets/action", id + "\n" + name + "\n" + value);
     widgetChangedAt = Date.now();
     if (!widgetPolling) pollWidgets();
     return true;
@@ -3886,19 +3895,6 @@ async function widgetAction(id, part, value) {
     return false;
   }
 }
-function widgetControl(label) {
-  const row = document.createElement("label");
-  row.className = "widget-control";
-  const text = document.createElement("span");
-  text.className = "sensor-label";
-  text.textContent = label;
-  row.append(text);
-  return row;
-}
-/* A part's kind is the first of these keys it carries; the script is trusted to send one.
-   "value" comes last because number and input parts carry a value field. Charts keep their
-   height when a widget spans more columns: the drawing gets wider instead. */
-const WIDGET_KINDS = ["text", "line", "hist", "gauge", "matrix", "qr", "button", "toggle", "number", "input", "select", "table", "value"];
 /* A dot matrix, dark on white in every theme so a camera can read it. Rows are integers whose top
    bit is the leftmost dot. A margin of four dots gives a QR code the quiet zone it needs. */
 function matrixChart(rows, size) {
@@ -3995,210 +3991,261 @@ function qrRows(text) {
   return dark.map(row => row.reduce((a, v) => a * 2 + v, 0));
 }
 
-function widgetPart(part, span, id, index) {
-  const node = document.createElement("div");
-  node.className = "widget-part";
-  const width = 300 * span, height = 110;
-  const address = typeof part.name === "string" ? part.name : String(index);
-  const kind = WIDGET_KINDS.find(key => key in part);
-  if (kind === "text") {
-    node.className += part.small ? " sensor-meta" : " widget-text";
-    node.textContent = String(part.text);
-  } else if (kind === "value") {
-    if (part.label) {
-      const label = document.createElement("div");
-      label.className = "sensor-label";
-      label.textContent = part.label;
-      node.append(label);
-    }
-    const value = document.createElement("div");
-    value.className = "sensor-value";
-    value.textContent = String(part.value);
-    const unit = document.createElement("span");
-    unit.className = "sensor-unit";
-    unit.textContent = part.unit || "";
-    value.append(unit);
-    node.append(value);
-  } else if (kind === "line" || kind === "hist") {
-    const options = {grid: part.grid, labels: part.labels, min: part.min, max: part.max};
-    const chart = kind === "line"
-      ? lineChart(Array.isArray(part.line) ? part.line : [], width, height, options)
-      : histChart(Array.isArray(part.hist) ? part.hist : [], part.color, width, height, options);
-    if (chart) node.append(chart);
-  } else if (kind === "gauge") {
-    node.className += " widget-gauge";
-    node.append(gaugeChart(part.gauge, part.min, part.max, part.unit, part.stops));
-    if (part.label) {
-      const label = document.createElement("div");
-      label.className = "sensor-label";
-      label.textContent = part.label;
-      node.append(label);
-    }
-  } else if (kind === "matrix") {
-    node.className += " widget-matrix";
-    node.append(matrixChart(part.matrix, part.size));
-  } else if (kind === "qr") {
-    node.className += " widget-matrix";
-    node.append(matrixChart(qrRows(part.qr), 21));
-  } else if (kind === "button") {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "btn btn-sm";
-    button.textContent = String(part.button);
-    button.addEventListener("click", async () => {
-      button.disabled = true;
-      await widgetAction(id, address, "");
-      button.disabled = false;
+const widgetField = node => node.tagName === "INPUT" || node.tagName === "SELECT" || node.tagName === "TEXTAREA";
+/* A field the user types into, or a select whose menu is open, keeps its value until left. */
+function widgetEditing(node) {
+  if (node !== document.activeElement) return false;
+  return node.tagName === "SELECT" ? !!node.dataset.open
+    : node.tagName === "TEXTAREA" || (node.tagName === "INPUT" && node.type !== "checkbox" && node.type !== "radio");
+}
+// "a.b" reaches into nested maps.
+const widgetValue = (data, key) => key.split(".").reduce((value, part) =>
+  value !== null && typeof value === "object" ? value[part] : undefined, data);
+const widgetList = text => (text || "").split(",").map(item => item.trim()).filter(Boolean);
+const WIDGET_COLORS = ["var(--accent)", "var(--warn)", "var(--text-dim)", "var(--danger)"];
+/* Chart options come from the element's attributes; a gauge's value may also be a map carrying
+   value, min, max, unit and stops, for ranges that move. */
+function widgetChartNode(node, kind, value) {
+  const attribute = name => node.getAttribute("data-" + name);
+  const number = name => {
+    const text = attribute(name);
+    return text !== null && text !== "" && isFinite(+text) ? +text : undefined;
+  };
+  const colors = widgetList(attribute("color"));
+  const width = Math.max(160, Math.round(node.getBoundingClientRect().width) || 300);
+  const height = number("height") || 110;
+  const options = {grid: node.hasAttribute("data-grid"), labels: widgetList(attribute("labels")),
+    min: number("min"), max: number("max")};
+  if (kind === "line") {
+    const list = Array.isArray(value) ? value : [];
+    const series = list.length && list.every(item => item === null || typeof item === "number") ? [list] : list;
+    return lineChart(series.map((entry, index) => Array.isArray(entry)
+      ? {values: entry, color: colors[index] || WIDGET_COLORS[index % 4]}
+      : {values: entry && entry.values, color: entry && entry.color !== undefined ? entry.color : colors[index] || WIDGET_COLORS[index % 4]}),
+      width, height, options);
+  }
+  if (kind === "hist") return histChart(Array.isArray(value) ? value : [], colors[0], width, height, options);
+  if (kind === "gauge") {
+    const spec = value !== null && typeof value === "object" ? value : {value};
+    const stops = Array.isArray(spec.stops) ? spec.stops : widgetList(attribute("stops")).map(stop => {
+      const [threshold, color] = stop.split(":");
+      return [+threshold, color];
     });
-    node.append(button);
-  } else if (kind === "toggle") {
-    const row = widgetControl(String(part.toggle));
-    const input = document.createElement("input");
-    input.type = "checkbox";
-    input.className = "switch-input visually-hidden-input";
-    input.checked = part.state === true;
+    return gaugeChart(spec.value, finiteNumber(spec.min) ? spec.min : number("min"),
+      finiteNumber(spec.max) ? spec.max : number("max"),
+      typeof spec.unit === "string" ? spec.unit : attribute("unit") || "", stops);
+  }
+  if (kind === "qr") return matrixChart(qrRows(value), 21);
+  if (kind === "matrix") return matrixChart(value, number("size"));
+  return null;
+}
+/* Writes the data into the card: charts for data-chart, values for fields, text otherwise. */
+function widgetBind(card, data) {
+  for (const node of [card, ...card.querySelectorAll("[data-v]")]) {
+    const key = node.getAttribute("data-v");
+    if (key === null) continue;
+    const value = widgetValue(data, key);
+    if (value === undefined) continue;
+    const kind = node.getAttribute("data-chart");
+    if (kind) {
+      const chart = widgetChartNode(node, kind, value);
+      node.replaceChildren(...(chart ? [chart] : []));
+    } else if (widgetEditing(node)) {
+      continue;
+    } else if (node.type === "checkbox" || node.type === "radio") {
+      node.checked = value === true || value === 1 || value === "true";
+    } else if (widgetField(node)) {
+      node.value = value === null ? "" : String(value);
+    } else {
+      node.textContent = value === null ? "" : typeof value === "object" ? JSON.stringify(value) : String(value);
+    }
+  }
+}
+/* data-act controls send their action: a button "", a checkbox "true"/"false", a field its value.
+   The page changes no control on its own; the script confirms through its next data. */
+function widgetWire(id, card) {
+  card.addEventListener("click", async event => {
+    const node = event.target.closest("[data-act]");
+    if (!node || !card.contains(node) || widgetField(node)) return;
+    node.disabled = true;
+    await widgetAction(id, node.dataset.act, "");
+    node.disabled = false;
+  });
+  card.addEventListener("change", async event => {
+    const node = event.target;
+    if (node.tagName === "SELECT") delete node.dataset.open;
+    if (!widgetField(node) || !node.dataset.act) return;
+    const check = node.type === "checkbox";
+    const value = check ? String(node.checked) : node.value;
+    // The device accepts 63 UTF-8 bytes per value.
+    if (bytes(value) > 63) return setStatus(NEWMOTA_I18N.widgetTooLong);
+    if (!node.checkValidity()) return node.reportValidity();
+    if (check) node.disabled = true;
+    const sent = await widgetAction(id, node.dataset.act, value);
+    if (check) {
+      if (!sent) node.checked = !node.checked;
+      node.disabled = false;
+    }
+  });
+  // A select keeps focus after its menu closes, so only an open menu counts as editing.
+  card.addEventListener("pointerdown", event => {
+    if (event.target.tagName === "SELECT") event.target.dataset.open = "1";
+  });
+  card.addEventListener("keydown", event => {
+    if (event.target.tagName !== "SELECT") return;
+    if (["Escape", "Enter", "Tab"].includes(event.key)) delete event.target.dataset.open;
+    else event.target.dataset.open = "1";
+  });
+  card.addEventListener("focusout", event => {
+    if (event.target.tagName === "SELECT") delete event.target.dataset.open;
+  });
+}
+function widgetUpdate(id, entry, fresh) {
+  widgetBind(entry.card, entry.data);
+  const handler = widgetHandlers.get(id);
+  if (handler) {
+    try {
+      handler(entry.data, entry.card);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  if (!fresh) return;
+  entry.card.classList.remove("fresh");
+  void entry.card.offsetWidth;
+  entry.card.classList.add("fresh");
+}
+/* The markup's single root element becomes the card; anything else is wrapped in one. Scripts
+   inserted as HTML do not run, so each is re-created once the card is in the page. */
+function widgetInsert(id, entry, markup, revision) {
+  const template = document.createElement("template");
+  template.innerHTML = markup;
+  const content = template.content;
+  let card = content.firstElementChild;
+  const loose = [...content.childNodes].some(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+  if (!card || content.childElementCount !== 1 || loose) {
+    card = document.createElement("div");
+    card.append(content);
+  }
+  card.classList.add("sensor-card", "widget-card");
+  card.dataset.id = id;
+  card.querySelectorAll("button:not([class])").forEach(button => { button.className = "btn btn-sm"; });
+  // <input type="checkbox" class="toggle"> inside a label draws as the page's switch.
+  card.querySelectorAll('input[type="checkbox"].toggle').forEach(input => {
+    input.classList.add("switch-input", "visually-hidden-input");
     const knob = document.createElement("span");
     knob.className = "switch";
-    const thumb = document.createElement("span");
-    thumb.className = "switch-thumb";
-    knob.append(thumb);
-    input.addEventListener("change", async () => {
-      input.disabled = true;
-      if (!await widgetAction(id, address, input.checked ? "true" : "false")) input.checked = !input.checked;
-      input.disabled = false;
-    });
-    row.append(input, knob);
-    node.append(row);
-  } else if (kind === "number" || kind === "input") {
-    const row = widgetControl(String(part[kind]));
-    const input = document.createElement("input");
-    if (kind === "number") {
-      input.type = "number";
-      for (const key of ["min", "max", "step"]) if (finiteNumber(part[key])) input[key] = String(part[key]);
-      if (!finiteNumber(part.step)) input.step = "any";
-      if (finiteNumber(part.value)) input.value = String(part.value);
-    } else {
-      input.type = "text";
-      input.maxLength = 63;
-      if (typeof part.value === "string") input.value = part.value;
-      // maxLength counts UTF-16 units; the device accepts 63 UTF-8 bytes.
-      input.addEventListener("input", () =>
-        input.setCustomValidity(bytes(input.value) > 63 ? NEWMOTA_I18N.widgetTooLong : ""));
+    knob.append(document.createElement("span"));
+    knob.firstChild.className = "switch-thumb";
+    input.after(knob);
+  });
+  widgetHandlers.delete(id);
+  if (entry.card) entry.card.replaceWith(card);
+  else eb("widget-grid").append(card);
+  entry.card = card;
+  entry.m = revision;
+  widgetWire(id, card);
+  // nm.on() from these scripts waits for the one update below.
+  widgetInserting = id;
+  try {
+    for (const old of card.querySelectorAll("script")) {
+      const script = document.createElement("script");
+      script.textContent = old.textContent;
+      old.replaceWith(script);
     }
-    input.addEventListener("change", () => {
-      if (!input.checkValidity()) return input.reportValidity();
-      widgetAction(id, address, input.value);
-    });
-    row.append(input);
-    if (kind === "number" && part.unit) {
-      const unit = document.createElement("span");
-      unit.className = "sensor-unit";
-      unit.textContent = part.unit;
-      row.append(unit);
-    }
-    node.append(row);
-  } else if (kind === "select") {
-    const row = widgetControl(String(part.select));
-    const select = document.createElement("select");
-    (Array.isArray(part.options) ? part.options : []).forEach((option, value) => {
-      select.append(new Option(String(option), String(value)));
-    });
-    if (Number.isInteger(part.selected)) select.value = String(part.selected);
-    // A select keeps focus after its menu closes, so only an open menu counts as editing.
-    const open = () => { select.dataset.open = "1"; };
-    const close = () => { delete select.dataset.open; };
-    select.addEventListener("pointerdown", open);
-    select.addEventListener("keydown", event =>
-      ["Escape", "Enter", "Tab"].includes(event.key) ? close() : open());
-    select.addEventListener("blur", close);
-    select.addEventListener("change", () => {
-      close();
-      widgetAction(id, address, select.value);
-    });
-    row.append(select);
-    node.append(row);
-  } else if (kind === "table") {
-    node.className += " widget-table";
-    const table = document.createElement("table");
-    if (Array.isArray(part.columns)) {
-      const head = table.createTHead().insertRow();
-      for (const column of part.columns) {
-        const cell = document.createElement("th");
-        cell.textContent = String(column);
-        head.append(cell);
-      }
-    }
-    const body = table.createTBody();
-    for (const row of Array.isArray(part.table) ? part.table : []) {
-      const line = body.insertRow();
-      for (const value of Array.isArray(row) ? row : []) line.insertCell().textContent = String(value);
-    }
-    node.append(table);
+  } finally {
+    widgetInserting = null;
   }
-  return node;
+  if (entry.data !== undefined) widgetUpdate(id, entry, false);
 }
-/* A widget is not replaced while the user types into one of its fields or has a select open. */
-function widgetEditing(card) {
-  const active = document.activeElement;
-  return !!active && card.contains(active) && ((active.tagName === "SELECT" && !!active.dataset.open) ||
-    (active.tagName === "INPUT" && (active.type === "text" || active.type === "number")));
-}
-function widgetCard(widget) {
-  const card = document.createElement("div");
-  card.className = "sensor-card widget-card";
-  card.style.setProperty("--w", widget.w || 1);
-  card.style.setProperty("--h", widget.h || 1);
-  if (widget.title) {
-    const title = document.createElement("div");
-    title.className = "widget-title";
-    title.textContent = widget.title;
-    card.append(title);
+/* Base code for widget scripts. nm.on(id, fn) calls fn(data, card) after every data update. */
+const nm = window.nm = {
+  on(id, fn) {
+    widgetHandlers.set(String(id), fn);
+    const entry = widgetCards.get(String(id));
+    if (widgetInserting !== String(id) && entry && entry.card && entry.data !== undefined) widgetUpdate(String(id), entry, false);
+  },
+  send: (id, name, value = "") => widgetAction(String(id), String(name), String(value)),
+  card: id => (widgetCards.get(String(id)) || {}).card || null,
+  line: (series, options = {}) => lineChart(Array.isArray(series) && series.every(item => typeof item === "number" || item === null)
+    ? [{values: series, color: options.color}] : series, options.width || 300, options.height || 110, options),
+  hist: (values, options = {}) => histChart(values, options.color, options.width || 300, options.height || 110, options),
+  gauge: (value, options = {}) => gaugeChart(value, options.min, options.max, options.unit, options.stops),
+  qr: text => matrixChart(qrRows(text), 21),
+  // Rows of plain values; every cell is text, so names from the radio cannot become markup.
+  rows(body, rows) {
+    body.replaceChildren(...(Array.isArray(rows) ? rows : []).map(row => {
+      const line = document.createElement("tr");
+      for (const value of Array.isArray(row) ? row : [row]) line.insertCell().textContent = value === null ? "" : String(value);
+      return line;
+    }));
   }
-  const span = [1, 2, 3].includes(widget.w) ? widget.w : 1;
-  (Array.isArray(widget.parts) ? widget.parts : []).forEach((part, index) =>
-    card.append(widgetPart(part, span, String(widget.id), index)));
-  return card;
-}
-/* Fetches the index and at most one changed widget per poll, so a busy script cannot exceed the
-   session request budget; polls every 250 ms while widgets change, otherwise once a second.
-   The changed widget is chosen round-robin after the last one fetched, so a widget that changes
-   on every poll, or one that fails to load, cannot keep the others from updating. */
+};
+/* One question: what changed after the revision this page has seen? Markup is fetched only for
+   widgets whose markup revision differs, at most two per question, so many widgets or a script
+   that resets its markup often cannot exceed the session request budget. Asks every 250 ms
+   while widgets change, otherwise once a second; the next question only after the previous
+   answer. A markup fetch that fails is retried with the next question. */
 function pollWidgets() {
   clearTimeout(widgetTimer);
   if (eb("app").hidden || document.hidden || widgetPolling || !onHome()) return;
   widgetPolling = true;
   let interval = 1000;
-  json("/api/widgets").then(async data => {
-    const list = Array.isArray(data.widgets) ? data.widgets : [];
-    const grid = eb("widget-grid"), ids = new Set(list.map(entry => entry.id));
+  json("/api/widgets/updates/" + widgetRev).then(async answer => {
+    if (answer.gen !== widgetGen) {
+      // The device restarted: its revisions mean nothing to this page any more.
+      for (const entry of widgetCards.values()) if (entry.card) entry.card.remove();
+      widgetCards.clear();
+      widgetHandlers.clear();
+      widgetGen = answer.gen;
+      if (widgetRev) {
+        widgetRev = 0;
+        interval = 0;
+        return;
+      }
+    }
+    const list = Array.isArray(answer.widgets) ? answer.widgets : [];
+    const ids = new Set(list.map(item => item.id));
     for (const [id, entry] of widgetCards) if (!ids.has(id)) {
-      entry.card.remove();
+      if (entry.card) entry.card.remove();
       widgetCards.delete(id);
+      widgetHandlers.delete(id);
     }
-    const stale = list.filter(entry => !widgetCards.has(entry.id) ||
-      (widgetCards.get(entry.id).rev !== entry.rev && !widgetEditing(widgetCards.get(entry.id).card)));
-    if (stale.length) {
-      widgetChangedAt = Date.now();
-      const after = list.findIndex(entry => entry.id === widgetCursor);
-      const next = stale.find(entry => list.indexOf(entry) > after) || stale[0];
-      widgetCursor = next.id;
-      try {
-        const widget = await json("/api/widgets/" + encodeURIComponent(next.id));
-        const card = widgetCard(widget), old = widgetCards.get(next.id);
-        // Typing may have started while the fetch was in flight; keep the field and retry later.
-        if (!old || !widgetEditing(old.card)) {
-          if (old) old.card.replaceWith(card);
-          else grid.append(card);
-          widgetCards.set(next.id, {rev: widget.rev, card});
+    const data = answer.data !== null && typeof answer.data === "object" ? answer.data : {};
+    let changed = false, fetches = 0, waiting = false;
+    for (const item of list) {
+      let entry = widgetCards.get(item.id);
+      if (!entry) widgetCards.set(item.id, entry = {});
+      const fresh = Object.prototype.hasOwnProperty.call(data, item.id);
+      if (fresh) entry.data = data[item.id];
+      // A widget removed and set again between two questions has no data yet.
+      else if (item.d === 0) delete entry.data;
+      if (entry.m !== item.m) {
+        if (fetches === 2) {
+          waiting = true;
+          continue;
         }
-      } catch (error) {}
+        fetches++;
+        try {
+          widgetInsert(item.id, entry, await api("/api/widgets/markup/" + encodeURIComponent(item.id)), item.m);
+          changed = true;
+        } catch (error) {}
+      } else if (fresh && entry.card) {
+        changed = true;
+        widgetUpdate(item.id, entry, true);
+      }
     }
-    const order = list.map(entry => widgetCards.get(entry.id)).filter(Boolean).map(entry => entry.card);
-    if (order.some((card, index) => grid.children[index] !== card)) grid.append.apply(grid, order);
-    if (stale.length > 1 || Date.now() - widgetChangedAt < 2000) interval = 250;
+    // Only cards out of place move, so the others keep focus and scroll position.
+    const grid = eb("widget-grid");
+    list.map(item => (widgetCards.get(item.id) || {}).card).filter(Boolean).forEach((card, index) => {
+      if (grid.children[index] !== card) grid.insertBefore(card, grid.children[index] || null);
+    });
+    if (Number.isInteger(answer.rev)) widgetRev = answer.rev;
+    if (changed) widgetChangedAt = Date.now();
+    if (answer.more) interval = 0;
+    else if (waiting) interval = 250;
+    else if (Date.now() - widgetChangedAt < 2000) interval = 250;
   }).catch(() => {
-    for (const entry of widgetCards.values()) entry.card.remove();
-    widgetCards.clear();
     interval = 5000;
   }).finally(() => {
     widgetPolling = false;

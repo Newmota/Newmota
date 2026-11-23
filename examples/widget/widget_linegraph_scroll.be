@@ -2,9 +2,9 @@
 # Demo Graph Widget - Live data stream
 #
 # Port of berry-examples/dashboard/linegraph_scroll.be to the Newmota `widget` module.
-# Only the API differs: the legacy widget fetched new data from its own script every
-# 250 ms while the dashboard was open; here a 250 ms timer updates the widget while
-# widget.viewers() reports an open dashboard, and the page redraws it.
+# The legacy widget fetched new data from its own script every 250 ms; here the
+# markup is set once and a 250 ms timer sends only the data while widget.viewers()
+# reports an open dashboard. The page draws it; the widget needs no JS of its own.
 # math.rand() replaces crypto.random(), which Newmota offers only with qualified entropy.
 #################################################################################
 class DEMO_GRAPH_WIDGET
@@ -12,12 +12,19 @@ class DEMO_GRAPH_WIDGET
   static BUFFER_SIZE = 64
 
   def init()
+    import widget
     self.data_buffer = []
     # Initialize with some random data
     for i: 0..(self.BUFFER_SIZE-1)
       self.data_buffer.push(0)
     end
-    self.send_widget()
+    widget.set("demo_graph", '<div class="box w2 h2"><h3>Live Data Stream</h3>'
+      '<div data-chart="line" data-v="graph" data-color="#00ff80" data-grid data-height="160"></div>'
+      '<div class="row">'
+        '<p><span class="label">Current</span><br><span class="value" data-v="current">--</span></p>'
+        '<p><span class="label">Average</span><br><span class="value" data-v="avg">--</span></p>'
+        '<p><span class="label">Peak</span><br><span class="value" data-v="max">--</span></p>'
+      '</div></div>')
     self.tick()
   end
 
@@ -37,6 +44,7 @@ class DEMO_GRAPH_WIDGET
   end
 
   def send_data()
+    import widget
     self.update_data()
     var current = self.data_buffer[size(self.data_buffer)-1]
     var sum = 0
@@ -48,16 +56,8 @@ class DEMO_GRAPH_WIDGET
       end
     end
     var avg = real(sum) / real(size(self.data_buffer))
-    self.send_widget(current, format("%.1f", avg), max_val)
-  end
-
-  def send_widget(current, avg, max_val)
-    import widget
-    widget.set("demo_graph", {"title": "Live Data Stream", "w": 2, "h": 2, "parts": [
-      {"line": [{"values": self.data_buffer, "color": 0x00FF80}], "grid": true},
-      {"value": current != nil ? current : "--", "label": "Current"},
-      {"value": avg != nil ? avg : "--", "label": "Average"},
-      {"value": max_val != nil ? max_val : "--", "label": "Peak"}]})
+    widget.data("demo_graph", {"graph": self.data_buffer, "current": current,
+                               "avg": format("%.1f", avg), "max": max_val})
   end
 
   def stop()

@@ -2,9 +2,9 @@
 # Air Conditioner Controller Dashboard - Simple Version
 #
 # Port of berry-examples/dashboard/ac_mockup.be to the Newmota `widget` module.
-# Only the API differs: widgets are described as data instead of HTML/DSL strings,
-# and a self-rescheduling timer replaces the Tasmota driver tick. Inline HTML colour
-# markers in the first title become a text part.
+# Each widget gets its markup once and then only new data; DSL strings become
+# data-chart elements. The mode widget drops the original's solid colour bar and colours
+# its value instead. A self-rescheduling timer replaces the Tasmota driver tick.
 # math.rand() replaces crypto.random(), which Newmota offers only with qualified entropy.
 #################################################################################
 class AC_CONTROLLER
@@ -35,6 +35,7 @@ class AC_CONTROLLER
 
     self.init_temperature_history()
 
+    self.create_widgets()
     self.every_second()
   end
 
@@ -171,83 +172,49 @@ class AC_CONTROLLER
     end
   end
 
+  # Markup once. The first widget keeps the original's coloured markers in its text;
+  # the mode widget colours its value from a few lines of its own script.
+  def create_widgets()
+    import widget
+    widget.set("graph1_widget", '<div class="box w2 h1"><h3>🌡️ Temperature (24h)</h3>'
+      '<p class="label"><span style="color:#ff9632">●</span> Inside <b data-v="inside"></b> °C'
+      ' · <span style="color:#32c8ff">●</span> Outside <b data-v="outside"></b> °C</p>'
+      '<div data-chart="line" data-v="history" data-color="#ff9632,#32c8ff" data-grid'
+      ' data-labels="00:00,04:00,08:00,12:00,16:00,20:00,24:00"></div></div>')
+    widget.set("graph2_widget", '<div class="box w1 h1"><h3>🎯 Target Temperature</h3>'
+      '<div data-chart="gauge" data-v="target"></div></div>')
+    widget.set("graph3_widget", '<div class="box w1 h1"><h3>⚙️ Operation Mode</h3>'
+      '<p class="value ac-mode" data-v="mode" style="text-align:center"></p>'
+      '<p class="label" style="text-align:center">Inside <b data-v="inside"></b> °C | Outside <b data-v="outside"></b> °C</p>'
+      '<script>nm.on("graph3_widget", (data, card) => {'
+      'card.querySelector(".ac-mode").style.color = "#" + (data.color >>> 0).toString(16).padStart(6, "0");'
+      '});</script></div>')
+  end
+
   def update_next_widget()
     import widget
     var widget_num = (self.update_index % 3) + 1
-    widget.set(format("graph%d_widget", widget_num), self.get_widget_content(widget_num))
+    widget.data(format("graph%d_widget", widget_num), self.get_widget_data(widget_num))
     self.update_index += 1
   end
 
-  def get_widget_content(widget_num)
-    var parts = []
-    var title = ""
-    var w = 1
-
+  def get_widget_data(widget_num)
+    var inside = format("%.1f", self.current_temp_inside)
+    var outside = format("%.1f", self.current_temp_outside)
     if widget_num == 1
-      # Temperature History (2x1)
-      title = "🌡️ Temperature (24h)"
-      w = 2
-      parts.push({"text": format("Inside %.1f°C · Outside %.1f°C",
-                                 self.current_temp_inside, self.current_temp_outside)})
-
-      # Show labels every 4 hours across the 96 data points (24 hours, 15-min intervals)
-      var time_labels = ["00:00", "04:00", "08:00", "12:00", "16:00", "20:00", "24:00"]
-
-      parts.push({"line": [{"values": self.buffer_to_decimal(self.temp_inside_buffer), "color": 0xFF9632},
-                           {"values": self.buffer_to_decimal(self.temp_outside_buffer), "color": 0x32C8FF}],
-                  "labels": time_labels, "grid": true})
-
+      return {"inside": inside, "outside": outside,
+              "history": [self.buffer_to_decimal(self.temp_inside_buffer),
+                          self.buffer_to_decimal(self.temp_outside_buffer)]}
     elif widget_num == 2
-      # Target Temperature Gauge (1x1)
-      title = "🎯 Target Temperature"
-
-      var inside = self.current_temp_inside
-      var target = self.target_temp
-
-      var stop1 = int(inside - 5)
-      var stop2 = int(inside - 2)
-      var stop3 = int(inside + 2)
-      var stop4 = int(inside + 5)
-
-      parts.push({"gauge": target, "min": int(inside - 8), "max": int(inside + 8), "unit": "°C",
-                  "stops": [[stop1, 0x6496FF], [stop2, 0x64FF96], [stop3, 0xFFC864], [stop4, 0xFF6432]]})
-
-    elif widget_num == 3
-      # Operation Mode (1x1)
-      title = "⚙️ Operation Mode"
-
-      var mode_text = ""
-      var mode_color = 0
-
-      if self.operation_mode == "cooling"
-        mode_text = "COOLING"
-        mode_color = 0x6496FF
-      elif self.operation_mode == "heating"
-        mode_text = "HEATING"
-        mode_color = 0xFF9632
-      elif self.operation_mode == "venting"
-        mode_text = "VENTING"
-        mode_color = 0x64FF96
-      elif self.operation_mode == "drying"
-        mode_text = "DRYING"
-        mode_color = 0xFFC864
-      else
-        mode_text = "OFF"
-        mode_color = 0x969696
-      end
-
-      var mode_values = []
-      for i: 0..29
-        mode_values.push(100)
-      end
-
-      parts.push({"hist": mode_values, "color": mode_color})
-      parts.push({"value": mode_text})
-      parts.push({"text": format("Inside: %.1f°C | Outside: %.1f°C",
-                                 self.current_temp_inside, self.current_temp_outside)})
+      # The range follows the inside temperature, so min, max and stops travel as data
+      var t = self.current_temp_inside
+      return {"target": {"value": self.target_temp, "min": int(t - 8), "max": int(t + 8), "unit": "°C",
+              "stops": [[int(t - 5), 0x6496FF], [int(t - 2), 0x64FF96], [int(t + 2), 0xFFC864], [int(t + 5), 0xFF6432]]}}
     end
-
-    return {"title": title, "w": w, "h": 1, "parts": parts}
+    var modes = {"cooling": ["COOLING", 0x6496FF], "heating": ["HEATING", 0xFF9632],
+                 "venting": ["VENTING", 0x64FF96], "drying": ["DRYING", 0xFFC864]}
+    var mode = modes.find(self.operation_mode, ["OFF", 0x969696])
+    return {"mode": mode[0], "color": mode[1], "inside": inside, "outside": outside}
   end
 
   def buffer_to_decimal(buffer)

@@ -2,10 +2,11 @@
 # Widget for the BLE scanner
 #
 # Port of berry-examples/dashboard/scanner.be to the Newmota `widget` and `BLE` modules.
-# Only the APIs differ:
-# - the widget is described as data; its controls call on_action() instead of
-#   requesting /m32 from inline JavaScript, so the filters run here and only
-#   matching rows are sent (at most MAX_ROWS, to stay within one widget);
+# As in the original, the widget brings its own markup and script and filters in the
+# browser. What differs:
+# - the markup is set once; the device list travels as data, so device names from the
+#   radio reach the page only as text (nm.rows), never as markup;
+# - "Clear results" and "Active scanning" use data-act instead of fetching /m32;
 # - widget.viewers() replaces the page's init and loop requests;
 # - BLE.adv_cb() takes no buffer: the advertisement is in BLE.buffer, with the
 #   payload from offset 8 and its length in BLE.len;
@@ -20,10 +21,36 @@ class SCAN_WIDGET
   var scan_timer, scan_result, active_scan
   var update_table, stop_scan
   var ble_down
-  var igCC, igCV, igRC, igRV, igTC, igTV, fiSUC, fiSUV, fiSDC, fiSDV
 
-  static MAX_ROWS = 30
   static MAX_RESULTS = 100
+  static MARKUP = '<div class="box w2 h2"><h3>BLE scanner</h3>'
+    '<label class="row"><span class="label">Active scanning</span>'
+      '<input type="checkbox" class="toggle" data-act="act" data-v="act"></label>'
+    '<p class="small scan-log"></p>'
+    '<label class="row"><input type="checkbox" data-f="igCC"><span class="label">Ignore CID (in HEX)</span><input type="text" data-f="igCV" size="8"></label>'
+    '<label class="row"><input type="checkbox" data-f="igRC"><span class="label">Ignore weaker RSSI</span><input type="number" data-f="igRV" min="-99" max="0"></label>'
+    '<label class="row"><input type="checkbox" data-f="igTC"><span class="label">Ignore (Address) Type</span><input type="number" data-f="igTV" min="0" max="4"></label>'
+    '<label class="row"><input type="checkbox" data-f="fiSUC"><span class="label">Filter Service UUID</span><input type="text" data-f="fiSUV" size="8"></label>'
+    '<label class="row"><input type="checkbox" data-f="fiSDC"><span class="label">Filter Service Data</span><input type="text" data-f="fiSDV" size="8"></label>'
+    '<p><button data-act="clear">Clear results</button></p>'
+    '<div class="scroll"><table><thead><tr><th>MAC</th><th>Type</th><th>SVC_D</th><th>CID</th>'
+      '<th>SVC_U</th><th>Name</th><th>RSSI</th></tr></thead><tbody></tbody></table></div>'
+    '<script>(() => {'
+      'const card = nm.card("scan1"), f = name => card.querySelector("[data-f=" + name + "]");'
+      'let data = {rows: [], total: 0};'
+      'const draw = () => {'
+        'const on = name => f(name).checked, val = name => f(name).value;'
+        'const rows = data.rows.filter(r => !((on("igTC") && +val("igTV") === +r[1]) ||'
+          '(on("igCC") && val("igCV").includes(r[3])) || (on("igRC") && +val("igRV") > r[6]) ||'
+          '(on("fiSDC") && val("fiSDV") !== r[2]) || (on("fiSUC") && val("fiSUV") !== r[4])));'
+        'nm.rows(card.querySelector("tbody"), rows);'
+        'card.querySelector(".scan-log").textContent = "Showing " + rows.length + "/" + data.rows.length +'
+          '" devices" + (data.total > data.rows.length ? ", newest " + data.rows.length + " of " + data.total + " sent" : "");'
+      '};'
+      'card.addEventListener("input", draw);'
+      'card.addEventListener("change", draw);'
+      'nm.on("scan1", value => { data = value; draw(); });'
+    '})();</script></div>'
 
   def init()
       import widget
@@ -32,19 +59,11 @@ class SCAN_WIDGET
       self.stop_scan = false
       self.active_scan = newmota.cmd("BLEActive")['BLEActive'] == 1
       self.ble_down = true
-      self.igCC = false
-      self.igCV = ""
-      self.igRC = false
-      self.igRV = -99
-      self.igTC = false
-      self.igTV = 0
-      self.fiSUC = false
-      self.fiSUV = ""
-      self.fiSDC = false
-      self.fiSDV = ""
+      self.update_table = false
 
-      self.init_widget()
-      widget.on("scan1", /part, value -> self.on_action(part, value))
+      widget.set("scan1", self.MARKUP)
+      self.send_rows()
+      widget.on("scan1", /name, value -> self.on_action(name, value))
       self.loop()
   end
 
@@ -75,7 +94,7 @@ class SCAN_WIDGET
           self.ble_down = false
         end
         if self.update_table==true
-            self.init_widget()
+            self.send_rows()
             self.update_table = false
         end
       end
@@ -83,37 +102,17 @@ class SCAN_WIDGET
       newmota.set_timer(1000, /-> self.loop(), "scan_widget")
   end
 
-  # Replaces the page's 'clear', 'act' and filter handlers.
-  def on_action(part, value)
-      var on = value == "true"
-      if part == "clear"
+  # Replaces the page's 'clear' and 'act' requests; the filters stay in the browser.
+  def on_action(name, value)
+      if name == "clear"
         log("M32: clear",2)
-        self.scan_result = [];
-      elif part == "act"
+        self.scan_result = []
+      elif name == "act"
+        var on = value == "true"
         newmota.cmd(on ? "BLEActive 1" : "BLEActive 0")
         self.active_scan = on
-      elif part == "igCC"
-        self.igCC = on
-      elif part == "igCV"
-        self.igCV = value
-      elif part == "igRC"
-        self.igRC = on
-      elif part == "igRV"
-        self.igRV = int(value)
-      elif part == "igTC"
-        self.igTC = on
-      elif part == "igTV"
-        self.igTV = int(value)
-      elif part == "fiSUC"
-        self.fiSUC = on
-      elif part == "fiSUV"
-        self.fiSUV = value
-      elif part == "fiSDC"
-        self.fiSDC = on
-      elif part == "fiSDV"
-        self.fiSDV = value
       end
-      self.init_widget()
+      self.send_rows()
   end
 
  def add_to_result()
@@ -161,7 +160,7 @@ class SCAN_WIDGET
           end
           i+=len+1
       end
-      log(entry,4)
+      log(str(entry),4)
       if match == true
         self.scan_result.insert(idx,entry)
       else
@@ -173,63 +172,26 @@ class SCAN_WIDGET
       self.update_table=true
   end
 
-  # The filter of the legacy page script, applied before the rows are sent.
-  def get_rows()
-      import string
-      var rows = []
-      for entry: self.scan_result
-          var svc_d = format("%04x", entry['SVC_DATA'])
-          var cid = format("%04x", entry['CID'])
-          var svc_u = format("%04x", entry['SVC_UUID'])
-          if (self.igTC == true && self.igTV == entry['Type']) || (self.igCC == true && string.find(self.igCV, cid) >= 0) || (self.igRC == true && self.igRV > entry['RSSI'])
-            continue
-          end
-          if (self.fiSDC == true && self.fiSDV != svc_d) || (self.fiSUC == true && self.fiSUV != svc_u)
-            continue
-          end
-          rows.push([entry['MAC'].tohex(), format("%i", entry['Type']), svc_d, cid, svc_u, entry['Name'], entry['RSSI']])
-      end
-      return rows
-  end
-
-  # A widget is at most 3968 bytes of JSON, so long names can lower the row count further.
-  def init_widget()
-    var rows = self.get_rows()
-    var listed = size(rows) < self.MAX_ROWS ? size(rows) : self.MAX_ROWS
+  # One widget's data is at most 2816 bytes of JSON, so long lists send only their newest
+  # rows: as many as fit, halving the count until they do.
+  def send_rows()
+    import widget
+    var rows = []
+    for entry: self.scan_result
+      rows.push([entry['MAC'].tohex(), entry['Type'], format("%04x", entry['SVC_DATA']),
+                 format("%04x", entry['CID']), format("%04x", entry['SVC_UUID']), entry['Name'], entry['RSSI']])
+    end
+    var listed = size(rows)
     while true
       try
-        self.send_widget(rows, listed)
+        var sent = listed > 0 ? rows[size(rows)-listed..size(rows)-1] : []
+        widget.data("scan1", {"act": self.active_scan, "rows": sent, "total": size(rows)})
         break
       except 'value_error'
         if listed == 0 raise 'value_error', 'scanner widget too large' end
         listed = listed / 2
       end
     end
-    log("M32: Init Widget", 4)
-  end
-
-  def send_widget(rows, listed)
-    import widget
-    var shown = format("Showing %i/%i devices", size(rows), size(self.scan_result))
-    if listed < size(rows)
-      shown += format(", first %i listed", listed)
-    end
-    rows = listed > 0 ? rows[0..listed-1] : []
-    widget.set("scan1", {"title": "BLE scanner", "w": 2, "h": 2, "parts": [
-      {"toggle": "Active scanning", "name": "act", "state": self.active_scan},
-      {"text": shown, "small": true},
-      {"toggle": "Ignore CID (in HEX)", "name": "igCC", "state": self.igCC},
-      {"input": "CID", "name": "igCV", "value": self.igCV},
-      {"toggle": "Ignore weaker RSSI", "name": "igRC", "state": self.igRC},
-      {"number": "RSSI", "name": "igRV", "value": self.igRV, "min": -99, "max": 0},
-      {"toggle": "Ignore (Address) Type", "name": "igTC", "state": self.igTC},
-      {"number": "Type", "name": "igTV", "value": self.igTV, "min": 0, "max": 4},
-      {"toggle": "Filter Service UUID", "name": "fiSUC", "state": self.fiSUC},
-      {"input": "Service UUID", "name": "fiSUV", "value": self.fiSUV},
-      {"toggle": "Filter Service Data", "name": "fiSDC", "state": self.fiSDC},
-      {"input": "Service Data", "name": "fiSDV", "value": self.fiSDV},
-      {"button": "Clear results", "name": "clear"},
-      {"table": rows, "columns": ["MAC", "Type", "SVC_D", "CID", "SVC_U", "Name", "RSSI"]}]})
   end
 end
 

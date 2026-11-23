@@ -601,20 +601,23 @@ class Matter_Device
     try
       import widget
       var committed = size(self.fabrics) - (self.pending != nil ? 1 : 0)
-      var parts = [{'value': committed, 'label': "Fabrics"}]
+      var html = '<div><h3>Matter</h3><p class="label">Fabrics</p><p class="value" data-v="fabrics"></p>'
+      var data = {'fabrics': committed}
       if self.window != nil
-        parts.push({'value': self.pairing_code(), 'label': "Pairing code"})
-        var qr = self.qr_code()
-        parts.push({'qr': qr})
-        parts.push({'text': qr, 'small': true})
+        html += '<p class="label">Pairing code</p><p class="value" data-v="code"></p>'
+                '<div data-chart="qr" data-v="qr"></div><p class="small" data-v="qr"></p>'
+        data['code'] = self.pairing_code()
+        data['qr'] = self.qr_code()
       else
-        parts.push({'button': "Open commissioning window", 'name': "open"})
+        html += '<button data-act="open">Open commissioning window</button>'
       end
       if size(self.fabrics) > 0
-        parts.push({'button': self.reset_armed ? "Really remove all fabrics?" : "Remove all fabrics", 'name': "reset"})
+        html += self.reset_armed ? '<button data-act="reset">Really remove all fabrics?</button>'
+                                 : '<button data-act="reset">Remove all fabrics</button>'
       end
-      widget.set("matter", {'title': "Matter", 'parts': parts})
-      widget.on("matter", / part, value -> self.card_action(part))
+      widget.set("matter", html + '</div>')
+      widget.data("matter", data)
+      widget.on("matter", / name, value -> self.card_action(name))
     except ..
     end
   end

@@ -20,6 +20,6 @@ namespace newmota {
 void remove_widget_module();
 /** @brief Reports whether a control action waits for delivery. */
 [[nodiscard]] bool widget_module_pending();
-/** @brief Native protected entry that delivers one action as `callback(part, value)`. */
+/** @brief Native protected entry that delivers one action as `callback(name, value)`. */
 int dispatch_widget_action(bvm* vm);
 } // namespace newmota
