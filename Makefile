@@ -30,6 +30,23 @@ BEARSSL_OBJ = $(patsubst src/%.c,build/host/crypto/%.o,$(BEARSSL_SRC))
 # Vendored sources keep -Wall -Wextra without the project's -Wconversion/-Werror
 # pair, which rejects BearSSL's fixed-width arithmetic.
 BEARSSL_CFLAGS = -std=c11 -Wall -Wextra $(addprefix -D,$(filter %=1,$(BEARSSL_HOST)))
+# The pinned supplicant's SAE code, built on the host against the BearSSL hostap backend.
+HOSTAP_IDF := .sdk/esp-idf-v5.5/components
+HOSTAP := $(HOSTAP_IDF)/wpa_supplicant
+HOSTAP_SRC := $(addprefix $(HOSTAP)/src/,common/sae.c common/dragonfly.c utils/common.c \
+	utils/wpabuf.c utils/wpa_debug.c crypto/sha256.c crypto/sha256-kdf.c crypto/sha256-prf.c \
+	crypto/sha1.c crypto/sha1-pbkdf2.c crypto/md5.c crypto/aes-wrap.c crypto/aes-unwrap.c \
+	crypto/aes-omac1.c crypto/aes-siv.c crypto/aes-ctr.c crypto/dh_groups.c)
+HOSTAP_BACKEND := src/platform/crypto/hostap_sae_crypto.c src/platform/crypto/hostap_symmetric_bearssl.c
+HOSTAP_SDK_INC := $(addprefix $(HOSTAP)/,src src/utils src/crypto port/include include \
+	esp_supplicant/include esp_supplicant/src) $(addprefix $(HOSTAP_IDF)/,esp_wifi/include \
+	esp_wifi/include/local esp_event/include esp_netif/include \
+	esp_wifi/wifi_apps/roaming_app/include esp_hw_support/include)
+HOSTAP_DEFS := -std=gnu11 -fsanitize=address,undefined -DESP_PLATFORM -DESP_SUPPLICANT \
+	-DCONFIG_WPA3_SAE -DCONFIG_SAE_H2E -DCONFIG_SAE -DCONFIG_ECC -DCONFIG_SHA256 \
+	-DCONFIG_CRYPTO_INTERNAL -DCONFIG_NO_STDOUT_DEBUG -DBR_LOMUL=1
+HOSTAP_CFLAGS := $(HOSTAP_DEFS) -Itools/tests/crypto/hostap $(addprefix -I,$(HOSTAP_SDK_INC)) \
+	-I$(BEARSSL_ROOT)/src -I$(BEARSSL_ROOT)/extensions
 CRYPTO_KAT_HDR := tools/tests/crypto/crypto_kat.h
 CRYPTO_KAT_SRC := tools/tests/crypto/crypto_kat_main.cpp \
 	tools/tests/crypto/crypto_hash_kat.cpp \
@@ -114,6 +131,10 @@ test-crypto:
 		tools/tests/crypto/crypto_random_test.cpp src/platform/esp-idf/crypto_random.cpp \
 		-o build/host/crypto-random-test
 	@build/host/crypto-random-test
+	@if [ -f $(HOSTAP)/src/common/sae.c ]; then \
+		$(MAKE) --no-print-directory build/host/hostap-sae-test build/host/hostap-bignum-fuzz && \
+		build/host/hostap-sae-test 200; \
+	else echo "hostap SAE test: skipped (no $(HOSTAP))"; fi
 	@PYTHONPATH=tools $(PYTHON) -m unittest discover -s tools/tests/crypto -p 'test_*.py'
 
 # Rebuild this small host baseline each invocation so headers, compiler flags,
@@ -124,6 +145,23 @@ force-crypto-host:
 build/host/crypto/%.o: src/%.c force-crypto-host
 	@mkdir -p $(dir $@)
 	@$(HOST_CC) $(BEARSSL_CFLAGS) -I $(BEARSSL_ROOT)/src -Isrc/third_party/bearssl/extensions -c $< -o $@
+
+# Vendored hostap sources build with -w; the backend keeps the project's warning set and is
+# compiled once for both drivers.
+HOSTAP_BACKEND_OBJ := $(patsubst src/platform/crypto/%.c,build/host/hostap/%.o,$(HOSTAP_BACKEND))
+
+build/host/hostap/%.o: src/platform/crypto/%.c force-crypto-host
+	@mkdir -p $(dir $@)
+	@$(HOST_CC) $(HOSTAP_DEFS) -Wall -Wextra -Wconversion -Werror -isystem tools/tests/crypto/hostap \
+		$(addprefix -isystem ,$(HOSTAP_SDK_INC)) -I$(BEARSSL_ROOT)/src -I$(BEARSSL_ROOT)/extensions \
+		-c $< -o $@
+
+build/host/hostap-sae-test: tools/tests/crypto/hostap_sae_test.c $(HOSTAP_BACKEND_OBJ) $(BEARSSL_OBJ) force-crypto-host
+	@$(HOST_CC) $(HOSTAP_CFLAGS) -w $(HOSTAP_SRC) $< $(HOSTAP_BACKEND_OBJ) $(BEARSSL_OBJ) -o $@
+
+build/host/hostap-bignum-fuzz: tools/tests/crypto/hostap_bignum_fuzz.c build/host/hostap/hostap_sae_crypto.o $(BEARSSL_OBJ) force-crypto-host
+	@$(HOST_CC) $(HOSTAP_CFLAGS) -w $< $(HOSTAP)/src/utils/wpabuf.c build/host/hostap/hostap_sae_crypto.o \
+		$(BEARSSL_OBJ) -o $@
 
 build/host/crypto-primitives-test: $(BEARSSL_OBJ) $(CRYPTO_KAT_SRC) $(CRYPTO_KAT_HDR) force-crypto-host
 	@mkdir -p $(dir $@)

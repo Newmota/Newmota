@@ -292,6 +292,16 @@ OPTIONAL_FEATURES = {
         ("app/services/mqtt/ha_discovery.cpp",), dependencies=("USE_MQTT",)
     ),
     "USE_CRYPTO_HW_P256": FeatureSpec((), platforms=("esp",), crypto=("EC",)),
+    # WPA3-SAE on BearSSL through the ESP-IDF fork's CONFIG_ESP_WIFI_EXTERNAL_CRYPTO, with the
+    # supplicant's MD5, SHA-1, SHA-256 and AES on BearSSL too; SAE-PK (P-256 keys) and OWE STA
+    # use the backend's EC key and ECDH functions.
+    "USE_WIFI_WPA3_BEARSSL": FeatureSpec(
+        ("platform/crypto/hostap_sae_crypto.c", "platform/crypto/hostap_symmetric_bearssl.c"),
+        dependencies=("USE_WIFI",),
+        roles=("application", "safeboot"),
+        platforms=("esp",),
+        crypto=("EC", "MD5", "SHA1", "SHA224_SHA256", "AES"),
+    ),
     "USE_CRYPTO_HW_AES": FeatureSpec((), platforms=("esp", "bouffalo", "amebad"), crypto=("AES",)),
     "USE_CRYPTO_HW_SHA1": FeatureSpec((), platforms=("esp", "bouffalo"), crypto=("SHA1",)),
     "USE_CRYPTO_HW_SHA256": FeatureSpec(
@@ -1159,6 +1169,14 @@ def crypto_selection(
     for name, spec in OPTIONAL_FEATURES.items():
         if values is not None and values.get(name):
             primitives.update(spec.crypto)
+    # The ESP-IDF fork leaves the SDK's application-side image hash (bootloader_sha256_*)
+    # to the application when no requirement links mbedTLS; Newmota supplies it with
+    # BearSSL SHA-256 (src/platform/esp-idf/sdk_image_sha256.c).
+    if environment.platform == "esp" and values is not None:
+        from newmota.platforms.esp.build import links_sdk_mbedtls
+
+        if not links_sdk_mbedtls(environment, values):
+            primitives.add("SHA224_SHA256")
     while True:
         expanded = primitives | {
             dep for name in primitives for dep in CRYPTO_PRIMITIVE_DEPENDENCIES.get(name, ())

@@ -228,6 +228,18 @@ failure, including an ESP AES result equal to its input (the SDK's fault-injecti
 stops execution while retaining ownership, because BearSSL has no error return.
 Hardware AES replaces its software key schedule and rounds together. Hash buffering,
 padding and serialization, and AES mode chaining remain in the BearSSL interface layer.
+The providers drive the SDK's HAL under its crypto locks themselves and do not need the
+SDK's mbedTLS component; only the ESP32's block AES engine still goes through the mbedTLS
+port while mbedTLS is linked, because that driver keeps its lock private.
+
+`USE_WIFI_WPA3_BEARSSL` (ESP, experimental, needs the Newmota ESP-IDF fork) runs
+WPA3-Personal on BearSSL instead of mbedTLS: SAE group 19 with hunting-and-pecking and
+hash-to-element, as station and SoftAP, plus SAE-PK (access point keys on P-256 only) and
+OWE as station. The point arithmetic, ECDSA verify and ECDH use BearSSL's P-256 provider,
+so `USE_CRYPTO_HW_P256` also serves them. With the
+fork, an image links the SDK's mbedTLS only when a feature needs it (HTTPS, or WPA3 without
+this option); Compact images link none. Builds against an ESP-IDF without the fork, and
+environments built without WPA3 (below 4 MB flash, C5/C6/C61 Safeboot), reject the option.
 
 ## SDK logging
 

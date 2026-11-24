@@ -132,15 +132,40 @@ if(NEWMOTA_USE_ETHERNET AND NOT EXISTS "$ENV{IDF_PATH}/components/esp_eth/src/sp
   )
 endif()
 
+# The ESP-IDF fork builds without mbedtls when no requirement selects it. bootloader_support
+# then leaves its application-side image hash to the application, which uses BearSSL.
+idf_build_get_property(newmota_build_components BUILD_COMPONENTS)
+if(NOT mbedtls IN_LIST newmota_build_components)
+  if(NOT NEWMOTA_USE_CRYPTO_SHA224_SHA256)
+    # links_sdk_mbedtls() in tools/newmota/platforms/esp/build.py predicted mbedTLS.
+    message(FATAL_ERROR "The build links no mbedTLS, but BearSSL SHA-256 for the SDK's image hash was not selected")
+  endif()
+  idf_component_get_property(newmota_bootloader_support_dir bootloader_support COMPONENT_DIR)
+  set(newmota_sdk_image_sha256 "${NEWMOTA_ROOT}/src/platform/esp-idf/sdk_image_sha256.c")
+  target_sources(${COMPONENT_LIB} PRIVATE "${newmota_sdk_image_sha256}")
+  set_property(SOURCE "${newmota_sdk_image_sha256}" APPEND PROPERTY INCLUDE_DIRECTORIES
+    "${newmota_bootloader_support_dir}/private_include")
+  # bootloader_support is linked after main; keep the definitions in the link.
+  target_link_options(${COMPONENT_LIB} INTERFACE "LINKER:-u,bootloader_sha256_start")
+endif()
+
 target_compile_features(${COMPONENT_LIB} PRIVATE cxx_std_17)
 if(NEWMOTA_USE_CRYPTO)
   target_include_directories(${COMPONENT_LIB} PRIVATE ${NEWMOTA_CRYPTO_INCLUDE_DIRS})
   target_compile_definitions(${COMPONENT_LIB} PRIVATE ${NEWMOTA_CRYPTO_DEFINES})
 endif()
-if(NEWMOTA_USE_CRYPTO_HW_SHA1 OR NEWMOTA_USE_CRYPTO_HW_SHA256 OR NEWMOTA_USE_CRYPTO_HW_SHA512 OR NEWMOTA_USE_CRYPTO_HW_AES)
-  # Use the pinned SDK's shared lock/clock owner, also used by native TLS and Wi-Fi.
-  idf_component_get_property(newmota_mbedtls_dir mbedtls COMPONENT_DIR)
-  target_include_directories(${COMPONENT_LIB} PRIVATE "${newmota_mbedtls_dir}/port/include")
+if(NEWMOTA_USE_WIFI_WPA3_BEARSSL)
+  # The hostap crypto.h backend builds against the supplicant's private headers.
+  idf_component_get_property(newmota_wpa_dir wpa_supplicant COMPONENT_DIR)
+  set_property(SOURCE "${NEWMOTA_ROOT}/src/platform/crypto/hostap_sae_crypto.c"
+    "${NEWMOTA_ROOT}/src/platform/crypto/hostap_symmetric_bearssl.c" APPEND PROPERTY
+    INCLUDE_DIRECTORIES "${newmota_wpa_dir}/src" "${newmota_wpa_dir}/src/utils")
+  # wpa_supplicant is linked after main; keep the backend objects in the link.
+  target_link_options(${COMPONENT_LIB} INTERFACE "LINKER:-u,crypto_bignum_init" "LINKER:-u,sha1_vector")
+endif()
+if(mbedtls IN_LIST newmota_build_components)
+  # The ESP32 hardware AES provider then shares the SDK driver's private engine lock.
+  target_compile_definitions(${COMPONENT_LIB} PRIVATE NEWMOTA_SDK_MBEDTLS=1)
 endif()
 target_compile_options(${COMPONENT_LIB} PRIVATE
   $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>

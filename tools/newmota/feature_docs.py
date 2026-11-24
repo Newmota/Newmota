@@ -84,6 +84,11 @@ FEATURE_DOCS: dict[str, tuple[str, str]] = {
         "Core services",
         "BearSSL P-256 on the ESP ECC engine or MPI field multiplication (qualification pending).",
     ),
+    "USE_WIFI_WPA3_BEARSSL": (
+        "Network and time",
+        "WPA3-SAE, SAE-PK (P-256) and OWE STA on BearSSL instead of mbedTLS (ESP-IDF fork, "
+        "qualification pending).",
+    ),
     # Network and time
     "USE_WIFI": ("Network and time", "Wi-Fi and the network stack."),
     "USE_WIFI_POWER": ("Network and time", "WifiPower transmit power control."),

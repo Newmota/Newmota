@@ -34,6 +34,7 @@ from newmota.model import (
     BoardDefinition,
     BuildContext,
     BuildError,
+    esp_sdk_key,
     Environment,
     NativeConfigSpec,
     PackageResult,
@@ -896,12 +897,14 @@ def native_requirements(
         values.get(name, False)
         for name in ("USE_CRYPTO_HW_SHA1", "USE_CRYPTO_HW_SHA256", "USE_CRYPTO_HW_SHA512")
     ):
-        sdk_requirements.append("mbedtls")
+        # The providers take the SDK's esp_security lock and clock and drive the HAL
+        # directly. When mbedTLS is linked anyway, its SHA uses the same engine owner.
+        sdk_requirements.extend(("esp_security", "esp_hw_support", "hal"))
         native_settings["CONFIG_MBEDTLS_HARDWARE_SHA"] = "y"
     if values.get("USE_CRYPTO_HW_P256", False):
         sdk_requirements.extend(("esp_security", "esp_hw_support", "hal"))
     if values.get("USE_CRYPTO_HW_AES", False):
-        sdk_requirements.append("mbedtls")
+        sdk_requirements.extend(("esp_security", "esp_hw_support", "hal"))
         native_settings["CONFIG_MBEDTLS_HARDWARE_AES"] = "y"
     if values.get("USE_WEBCAM", False) or values.get("USE_CSI_WEBCAM", False):
         # The stream servers' listener, control and client sockets (three MJPEG viewers) come on
@@ -974,7 +977,6 @@ def native_requirements(
         sdk_requirements.append("esp_psram")
     if environment.console == "usb-serial-jtag":
         sdk_requirements.append("esp_driver_usb_serial_jtag")
-    wpa3_removed = False
     if values["USE_WIFI"]:
         sdk_requirements.extend(
             (
@@ -993,14 +995,8 @@ def native_requirements(
                 "CONFIG_WIFI_RMT_ENTERPRISE_SUPPORT": "n",
             }
         )
-        # These Wi-Fi drivers also need WPA3 removed from Safeboot to fit the
-        # fixed 832 KiB recovery slot used by Tasmota's 4 MiB layout.
-        if environment.flash_kb < WPA3_MINIMUM_FLASH_KB or (
-            environment.chip in {"esp32c5", "esp32c6", "esp32c61"}
-            and environment.role == "safeboot"
-        ):
+        if _wpa3_removed(environment):
             native_settings.update(dict.fromkeys(WPA3_SETTINGS, "n"))
-            wpa3_removed = True
     if any(
         values.get(name, False)
         for name in ("USE_DISPLAY", "USE_ETHERNET", "USE_WS2812", "USE_SDCARD")
@@ -1069,20 +1065,37 @@ def native_requirements(
             )
     if environment.role == "safeboot":
         sources.append("platform/esp-idf/recovery_update_writer.cpp")
-    if (
-        wpa3_removed
-        and not values.get("USE_WEB_HTTPS", False)
-        and not any(
-            values.get(name, False)
-            for name in ("USE_CRYPTO_HW_SHA1", "USE_CRYPTO_HW_SHA256", "USE_CRYPTO_HW_SHA512")
+    # WPA3-SAE on BearSSL: the ESP-IDF fork's external crypto backend, with the
+    # symmetric primitives, SAE-PK (P-256 keys) and OWE STA on BearSSL too.
+    sae_bearssl, wifi_internal_crypto = _wifi_crypto(environment, values)
+    if sae_bearssl:
+        if not _sdk_is_fork(environment):
+            # The stock supplicant would link its mbedTLS adapter next to the backend.
+            raise BuildError(
+                "USE_WIFI_WPA3_BEARSSL needs an ESP-IDF with CONFIG_ESP_WIFI_EXTERNAL_CRYPTO "
+                "(the Newmota fork)"
+            )
+        sdk_requirements.append("wpa_supplicant")
+        native_settings.update(
+            {
+                "CONFIG_ESP_WIFI_EXTERNAL_CRYPTO": "y",
+            }
         )
-    ):
+    if values["USE_WIFI"] and not wifi_internal_crypto and not sae_bearssl:
+        # The supplicant's mbedTLS backend. The ESP-IDF fork no longer requires mbedtls
+        # from wpa_supplicant, bootloader_support, nvs_flash or esp_http_server, so a
+        # build without this requirement (and without HTTPS) links no mbedTLS at all.
+        sdk_requirements.append("mbedtls")
+    if wifi_internal_crypto:
         # Without WPA3, Enterprise and TLS the supplicant's built-in WPA2 crypto
         # suffices and is smaller than the MbedTLS/PSA crypto that its MbedTLS
         # backend pulls in through the cipher and md tables. Keep SHA-1 on that
         # internal path as well; otherwise wpa_supplicant's sha1_vector hook is
-        # left undefined when MbedTLS crypto is disabled. The hardware SHA
-        # options need CONFIG_MBEDTLS_HARDWARE_SHA, which disables that path.
+        # left undefined when MbedTLS crypto is disabled. A stock ESP-IDF drops that
+        # internal SHA-1 under CONFIG_MBEDTLS_HARDWARE_SHA, so the setting stays off
+        # here even with USE_CRYPTO_HW_SHA*: those providers drive the HAL themselves.
+        # mbedTLS, linked on a stock ESP-IDF for the SDK's image hash, then hashes in
+        # software; the fork links no mbedTLS on this path.
         native_settings.update(
             {
                 "CONFIG_ESP_WIFI_MBEDTLS_CRYPTO": "n",
@@ -1133,6 +1146,48 @@ def native_target_issue(board: BoardDefinition) -> str | None:
     target = board.chip.sdk_target
     expected = sdk / "components" / "soc" / target
     return None if expected.is_dir() else f"missing ESP-IDF target {expected.relative_to(ROOT)}"
+
+
+def _wpa3_removed(environment: Environment) -> bool:
+    """These Wi-Fi drivers also need WPA3 removed from Safeboot to fit the fixed 832 KiB
+    recovery slot used by Tasmota's 4 MiB layout."""
+    return environment.flash_kb < WPA3_MINIMUM_FLASH_KB or (
+        environment.chip in {"esp32c5", "esp32c6", "esp32c61"} and environment.role == "safeboot"
+    )
+
+
+def _wifi_crypto(environment: Environment, values: Mapping[str, bool]) -> tuple[bool, bool]:
+    """(WPA3-SAE on BearSSL, supplicant without its mbedTLS backend) for a Wi-Fi build."""
+    if not values.get("USE_WIFI", False):
+        return False, False
+    wpa3_removed = _wpa3_removed(environment)
+    sae_bearssl = values.get("USE_WIFI_WPA3_BEARSSL", False)
+    if sae_bearssl and wpa3_removed:
+        # The option would only add dead SAE code, and with HTTPS its symmetric
+        # primitives would collide with the supplicant's mbedTLS adapter.
+        raise BuildError(
+            f"USE_WIFI_WPA3_BEARSSL: {environment.name} builds without WPA3 "
+            f"(flash below {WPA3_MINIMUM_FLASH_KB} KB, or C5/C6/C61 Safeboot)"
+        )
+    internal = (wpa3_removed or sae_bearssl) and not values.get("USE_WEB_HTTPS", False)
+    return sae_bearssl, internal
+
+
+def _sdk_is_fork(environment: Environment) -> bool:
+    """The Newmota ESP-IDF fork: mbedTLS optional, supplicant crypto from the application."""
+    sdk = load_sdk_version(esp_sdk_key(environment.idf_version)).source
+    return _has_kconfig_symbol(sdk / "components" / "esp_wifi" / "Kconfig", "ESP_WIFI_EXTERNAL_CRYPTO")
+
+
+def links_sdk_mbedtls(environment: Environment, values: Mapping[str, bool]) -> bool:
+    """Whether the image links the SDK's mbedTLS. A stock ESP-IDF always does
+    (bootloader_support, nvs_flash and wpa_supplicant require it). On the fork only HTTPS
+    and the supplicant's mbedTLS backend select it; without it the application supplies
+    the SDK's image hash (src/platform/esp-idf/sdk_image_sha256.c)."""
+    if not _sdk_is_fork(environment) or values.get("USE_WEB_HTTPS", False):
+        return True
+    sae_bearssl, internal = _wifi_crypto(environment, values)
+    return values.get("USE_WIFI", False) and not (internal or sae_bearssl)
 
 
 def _has_kconfig_symbol(path: Path, symbol: str) -> bool:

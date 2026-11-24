@@ -11,7 +11,9 @@
 
 /** @file
  * @brief SHA compression using the SDK's shared crypto lock and clock lifecycle.
- * Only resumable engines are supported. The original ESP32 cannot restore an
+ * Calls esp_security and the SHA HAL directly, exactly as the SDK's own engine driver
+ * (mbedtls/port/sha/core) does, so it coexists with that driver when mbedTLS is linked
+ * and needs no mbedTLS component when it is not. Only resumable engines are supported. The original ESP32 cannot restore an
  * arbitrary chaining state and cannot meet BearSSL's hash contract this way.
  */
 #include "newmota/platform/crypto_hash.h"
@@ -19,18 +21,17 @@
 
 #include "inner.h"
 #include "newmota_crypto.h"
+#include "esp_crypto_lock.h"
+#include "esp_crypto_periph_clk.h"
 #include "esp_timer.h"
+#include "hal/sha_hal.h"
 #include "hal/sha_ll.h"
 #include "sdkconfig.h"
-#include "sha/sha_core.h"
 #include "soc/soc_caps.h"
 #include <stdlib.h>
 
 #if !SOC_SHA_SUPPORT_RESUME
 #error "BearSSL hardware SHA requires arbitrary digest-state restoration"
-#endif
-#if !CONFIG_MBEDTLS_HARDWARE_SHA
-#error "BearSSL hardware SHA requires the SDK hardware SHA owner"
 #endif
 #if USE_CRYPTO_HW_SHA1 && !SOC_SHA_SUPPORT_SHA1
 #error "Selected target has no SHA-1 engine"
@@ -63,25 +64,27 @@ static void wait_idle(void) {
 static void compress(
     esp_sha_type mode, const unsigned char* buf, size_t num, uint32_t* state, size_t block_len) {
     uint32_t block[32];
-    esp_sha_acquire_hardware();
+    esp_crypto_sha_aes_lock_acquire();
+    esp_crypto_sha_enable_periph_clk(true);
     wait_idle();
-    esp_sha_set_mode(mode);
-    esp_sha_write_digest_state(mode, state);
+    sha_hal_set_mode(mode);
+    sha_hal_write_digest(mode, state);
     for (size_t i = 0; i < num; ++i, buf += block_len) {
 #if CONFIG_IDF_TARGET_ARCH_RISCV
         /* Tasmota's driver saw RISC-V engines overrun past eight continued blocks;
            checkpoint the state the same way. */
         if (i > 0 && (i & 7) == 0) {
-            esp_sha_read_digest_state(mode, state);
-            esp_sha_write_digest_state(mode, state);
+            sha_hal_read_digest(mode, state);
+            sha_hal_write_digest(mode, state);
         }
 #endif
         memcpy(block, buf, block_len);
-        esp_sha_block(mode, block, false);
+        sha_hal_hash_block(mode, block, block_len / 4, false);
         wait_idle();
     }
-    esp_sha_read_digest_state(mode, state);
-    esp_sha_release_hardware();
+    sha_hal_read_digest(mode, state);
+    esp_crypto_sha_enable_periph_clk(false);
+    esp_crypto_sha_aes_lock_release();
     nm_crypto_zero(block, block_len);
 }
 
