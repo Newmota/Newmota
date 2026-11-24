@@ -8,4 +8,4 @@
 setuptools==71.0.0
 click==8.1.7
 cryptography==44.0.1
-esptool==4.12.0
+esptool==4.14.0
