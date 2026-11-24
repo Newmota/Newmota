@@ -1,6 +1,6 @@
 name = "ESP-IDF"
 version = "v5.5.5"
-revision = "b774170ff46c393eeb5e495ea37936038d3f4f4f"
+revision = "32eed4b7e47ee58f7db9b4833d2f0a74744a53f1"
 programmer = "esptool"
 programmer_version = "4.12.0"
 programmer_status = "active"
