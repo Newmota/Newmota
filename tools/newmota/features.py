@@ -1497,7 +1497,7 @@ def feature_values(environment: Environment, layout: LayoutFacts | None = None) 
         and not use_hosted  # the supplicant runs on the ESP-Hosted companion
         and environment.platform == "esp"
         and environment.sdk_key == "esp-idf"  # the 5.5 track; only it has the fork
-        and esp_keeps_wpa3(environment)
+        and esp_keeps_wpa3(environment, bearssl=True)
     ):
         from newmota.crypto import HARDWARE_CRYPTO_TARGETS
 

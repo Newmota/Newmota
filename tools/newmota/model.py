@@ -328,14 +328,17 @@ class PlatformAdapter(ABC):
         """Create qualified full and OTA firmware, or report unqualified."""
 
 
-# WPA3 reaches ESP builds through ESP-IDF's WPA supplicant. Builds below 4 MiB flash, and the
-# C5, C6 and C61 Safeboot images (which must fit the fixed 832 KiB recovery slot of Tasmota's
-# 4 MiB layout), are built without it.
+# WPA3 reaches ESP builds through ESP-IDF's WPA supplicant. Builds below 4 MiB flash are built
+# without it. The C5, C6 and C61 Safeboot images fit the fixed 832 KiB recovery slot of
+# Tasmota's 4 MiB layout with WPA3 only when the supplicant runs on BearSSL.
 WPA3_MINIMUM_FLASH_KB = 4096
+WPA3_BEARSSL_ONLY_SAFEBOOT_CHIPS = frozenset({"esp32c5", "esp32c6", "esp32c61"})
 
 
-def esp_keeps_wpa3(environment: Environment) -> bool:
-    """Whether an ESP build keeps WPA3."""
-    return environment.flash_kb >= WPA3_MINIMUM_FLASH_KB and not (
-        environment.chip in {"esp32c5", "esp32c6", "esp32c61"} and environment.role == "safeboot"
+def esp_keeps_wpa3(environment: Environment, bearssl: bool) -> bool:
+    """Whether an ESP build keeps WPA3, with its supplicant on BearSSL or on mbedTLS."""
+    if environment.flash_kb < WPA3_MINIMUM_FLASH_KB:
+        return False
+    return bearssl or not (
+        environment.chip in WPA3_BEARSSL_ONLY_SAFEBOOT_CHIPS and environment.role == "safeboot"
     )

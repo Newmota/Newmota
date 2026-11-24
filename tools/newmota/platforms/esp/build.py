@@ -995,7 +995,7 @@ def native_requirements(
                 "CONFIG_WIFI_RMT_ENTERPRISE_SUPPORT": "n",
             }
         )
-        if _wpa3_removed(environment):
+        if _wpa3_removed(environment, values):
             native_settings.update(dict.fromkeys(WPA3_SETTINGS, "n"))
     if any(
         values.get(name, False)
@@ -1105,14 +1105,15 @@ def native_requirements(
             }
         )
     if environment.role == "safeboot" and (
-        environment.chip == "esp32c3"
+        environment.chip in {"esp32c3", "esp32c5", "esp32c6"}
         or (environment.idf_version == "6.1" and environment.chip == "esp32s3")
     ):
         # Preserve WPA3-Personal and H2E in the recovery image, but omit SAE-PK,
         # OWE, WPA3 SoftAP, and MbedTLS self-tests. Newmota does not expose OWE,
         # configures its recovery AP as open/WPA2, and does not invoke MbedTLS
         # self-tests. SAE-PK otherwise pulls public-key parsing into the fixed
-        # 0xD0000 Safeboot partition on these targets.
+        # 0xD0000 Safeboot partition on these targets; the C6 image does not fit
+        # with it.
         native_settings.update(
             {
                 "CONFIG_ESP_WIFI_ENABLE_SAE_PK": "n",
@@ -1148,15 +1149,15 @@ def native_target_issue(board: BoardDefinition) -> str | None:
     return None if expected.is_dir() else f"missing ESP-IDF target {expected.relative_to(ROOT)}"
 
 
-def _wpa3_removed(environment: Environment) -> bool:
-    return not esp_keeps_wpa3(environment)
+def _wpa3_removed(environment: Environment, values: Mapping[str, bool]) -> bool:
+    return not esp_keeps_wpa3(environment, values.get("USE_WIFI_WPA3_BEARSSL", False))
 
 
 def _wifi_crypto(environment: Environment, values: Mapping[str, bool]) -> tuple[bool, bool]:
     """(WPA3-SAE on BearSSL, supplicant without its mbedTLS backend) for a Wi-Fi build."""
     if not values.get("USE_WIFI", False):
         return False, False
-    wpa3_removed = _wpa3_removed(environment)
+    wpa3_removed = _wpa3_removed(environment, values)
     sae_bearssl = values.get("USE_WIFI_WPA3_BEARSSL", False)
     if sae_bearssl and values.get("USE_ESP_HOSTED", False):
         raise BuildError(
@@ -1168,7 +1169,7 @@ def _wifi_crypto(environment: Environment, values: Mapping[str, bool]) -> tuple[
         # primitives would collide with the supplicant's mbedTLS adapter.
         raise BuildError(
             f"USE_WIFI_WPA3_BEARSSL: {environment.name} builds without WPA3 "
-            f"(flash below 4 MB, or C5/C6/C61 Safeboot)"
+            f"(flash below 4 MB)"
         )
     internal = (wpa3_removed or sae_bearssl) and not values.get("USE_WEB_HTTPS", False)
     return sae_bearssl, internal

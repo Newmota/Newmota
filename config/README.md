@@ -241,11 +241,13 @@ OWE as station. The point arithmetic, ECDSA verify and ECDH use BearSSL's P-256 
 so `USE_CRYPTO_HW_P256` also serves them. With the
 fork, an image links the SDK's mbedTLS only when a feature needs it (HTTPS, or WPA3 without
 this option); Compact images link none. Builds against an ESP-IDF without the fork, and
-environments built without WPA3 (below 4 MB flash, C5/C6/C61 Safeboot) and ESP-Hosted
+environments built without WPA3 (below 4 MB flash) and ESP-Hosted
 chips (P4), whose companion runs the supplicant, reject the option.
 
 It is on by default, application and Safeboot, in every ESP environment on ESP-IDF 5.5 that
-keeps WPA3 and has its own Wi-Fi radio. Set `USE_WIFI_WPA3_BEARSSL: false` in `features` to
+keeps WPA3 and has its own Wi-Fi radio. The C5, C6 and C61 Safeboot images keep WPA3 only
+with this option: with the mbedTLS supplicant they do not fit the 832 KiB recovery slot.
+C3, C5 and C6 Safeboot leave out SAE-PK, OWE and WPA3 SoftAP. Set `USE_WIFI_WPA3_BEARSSL: false` in `features` to
 build the SDK's mbedTLS supplicant instead.
 
 ## SDK logging
