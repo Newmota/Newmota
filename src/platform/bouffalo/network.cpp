@@ -262,7 +262,8 @@ WifiCapabilities wifi_capabilities() {
 }
 
 /** @brief Starts one BL602 station connection with DHCP enabled. */
-NetworkResult connect_wifi(const std::string_view ssid, const std::string_view password) {
+NetworkResult connect_wifi(
+    const std::string_view ssid, const std::string_view password, const WifiJoin /*join*/) {
     if (state.load() == WifiState::initializing) {
         return NetworkResult::busy;
     }

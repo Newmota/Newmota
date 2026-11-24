@@ -87,9 +87,14 @@ struct WifiSnapshot final {
     AccessPointState access_point{AccessPointState::disabled};
 };
 
+/** @brief Tasmota's time limit for a new network to connect: WifiTest always uses it, and a
+ *  platform may give web setup more. */
+inline constexpr std::uint32_t kWifiCredentialTestTimeoutMilliseconds = 9'000;
+
 /** @brief Native Wi-Fi combinations that the adapter can keep alive together. */
 struct WifiCapabilities final {
     bool station_access_point{};
+    std::uint32_t credential_test_timeout_ms{kWifiCredentialTestTimeoutMilliseconds};
 };
 
 /** @brief Station link details for Tasmota's STATE Wifi block. */
@@ -180,8 +185,15 @@ inline constexpr std::uint32_t device_id_from_mac(const std::uint8_t* const mac)
 [[nodiscard]] NetworkResult set_hostname(std::string_view hostname);
 /** @brief Reports whether STA and SoftAP can remain active during a test. */
 [[nodiscard]] WifiCapabilities wifi_capabilities();
+/** @brief Which access point a station connection attempt joins. */
+enum class WifiJoin : std::uint8_t {
+    strongest,   ///< Scan every channel and join the strongest matching access point.
+    first_found, ///< Join the first matching access point the scan finds, as Tasmota does.
+};
+
 /** @brief Starts one asynchronous station connection attempt. */
-[[nodiscard]] NetworkResult connect_wifi(std::string_view ssid, std::string_view password);
+[[nodiscard]] NetworkResult connect_wifi(
+    std::string_view ssid, std::string_view password, WifiJoin join = WifiJoin::strongest);
 /** @brief Starts one asynchronous scan of visible access points. */
 [[nodiscard]] NetworkResult wifi_scan_start();
 /**

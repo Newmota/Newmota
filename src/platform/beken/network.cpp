@@ -145,7 +145,8 @@ WifiCapabilities wifi_capabilities() {
 }
 
 /** @brief Configures a DHCP station and starts the Beken connection task. */
-NetworkResult connect_wifi(const std::string_view ssid, const std::string_view password) {
+NetworkResult connect_wifi(
+    const std::string_view ssid, const std::string_view password, const WifiJoin /*join*/) {
     if (ssid.empty() || ssid.size() > kMaximumWifiSsidLength || password.size() > 64) {
         return NetworkResult::failed;
     }

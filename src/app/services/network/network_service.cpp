@@ -25,7 +25,6 @@ namespace newmota {
 namespace {
 
 constexpr std::uint32_t kConnectTimeoutMilliseconds = 20'000;
-constexpr std::uint32_t kWifiTestTimeoutMilliseconds = 9'000;
 constexpr std::uint32_t kWifiTestIdleRestartMilliseconds = 180'000;
 constexpr std::uint32_t kOnboardingHandoffMilliseconds = 500;
 constexpr std::uint32_t kApRetryMilliseconds = 1'000;
@@ -68,7 +67,9 @@ void NetworkService::initialize(const std::uint32_t now) {
         AddLog(LogLevel::error, "WIF: native hostname rejected");
     }
     enabled_ = true;
-    station_access_point_supported_ = platform::wifi_capabilities().station_access_point;
+    const auto capabilities = platform::wifi_capabilities();
+    station_access_point_supported_ = capabilities.station_access_point;
+    wifi_test_timeout_ms_ = capabilities.credential_test_timeout_ms;
     slot_ = settings_.preferred_wifi_slot();
     attempted_slots_ = 0U;
     attempted_ = false;
@@ -234,15 +235,15 @@ void NetworkService::poll_link(const std::uint32_t now) {
                 return;
             }
         }
+        // Only web onboarding defers its join; it scans every channel like a normal connect.
         const auto result = join(candidate_ssid_.data(), candidate_password_.data());
         if (result != platform::NetworkResult::success) {
             fail_provisioning(ProvisioningFailure::connect_failed);
             return;
         }
         candidate_connect_started_ = true;
-        provisioning_deadline_ =
-            now + (candidate_update_web_password_ ? kConnectTimeoutMilliseconds
-                                                  : kWifiTestTimeoutMilliseconds);
+        provisioning_deadline_ = now + (candidate_update_web_password_ ? kConnectTimeoutMilliseconds
+                                                                       : wifi_test_timeout_ms_);
     }
     const auto snapshot = platform::wifi_snapshot();
     access_point_ = snapshot.access_point == platform::AccessPointState::active;
@@ -366,14 +367,14 @@ void NetworkService::poll_link(const std::uint32_t now) {
     connect(now);
 }
 
-platform::NetworkResult NetworkService::join(
-    const std::string_view ssid, const std::string_view password) {
+platform::NetworkResult NetworkService::join(const std::string_view ssid,
+    const std::string_view password, const platform::WifiJoin selection) {
 #if USE_TASMOTA_STATE
     station_ssid_.fill('\0');
     std::copy_n(
         ssid.data(), std::min(ssid.size(), station_ssid_.size() - 1U), station_ssid_.data());
 #endif
-    return platform::connect_wifi(ssid, password);
+    return platform::connect_wifi(ssid, password, selection);
 }
 
 /** @brief Starts the selected configured SSID slot. */
@@ -603,8 +604,13 @@ platform::NetworkResult NetworkService::begin_provisioning_test(const std::strin
     candidate_update_web_password_ = update_web_password;
     const bool defer_connect =
         owner == CredentialTestOwner::onboarding && !station_access_point_supported_;
+    // The WifiTest command joins the first matching access point within Tasmota's 9 s. Web
+    // setup scans every channel and joins the strongest, which takes longer on dual-band chips.
+    const bool command = owner == CredentialTestOwner::command;
     const auto result = defer_connect ? platform::NetworkResult::success
-                                      : join(candidate_ssid_.data(), candidate_password_.data());
+                                      : join(candidate_ssid_.data(), candidate_password_.data(),
+                                            command ? platform::WifiJoin::first_found
+                                                    : platform::WifiJoin::strongest);
     if (result == platform::NetworkResult::success) {
         active_test_owner_ = owner;
         if (owner == CredentialTestOwner::command) {
@@ -615,10 +621,11 @@ platform::NetworkResult NetworkService::begin_provisioning_test(const std::strin
             provisioning_failure_ = ProvisioningFailure::none;
         }
         candidate_connect_started_ = !defer_connect;
-        provisioning_deadline_ = defer_connect
-                                     ? now + kOnboardingHandoffMilliseconds
-                                     : now + (update_web_password ? kConnectTimeoutMilliseconds
-                                                                  : kWifiTestTimeoutMilliseconds);
+        provisioning_deadline_ =
+            defer_connect ? now + kOnboardingHandoffMilliseconds
+                          : now + (update_web_password ? kConnectTimeoutMilliseconds
+                                      : command ? platform::kWifiCredentialTestTimeoutMilliseconds
+                                                : wifi_test_timeout_ms_);
         restart_scheduled_ = false;
     } else {
         candidate_ssid_.fill('\0');

@@ -257,10 +257,12 @@ class NetworkService final {
     std::array<char, 33> station_ssid_{};
 #endif
     /** @brief Starts a station join and remembers its SSID for STATE. */
-    [[nodiscard]] platform::NetworkResult join(std::string_view ssid, std::string_view password);
+    [[nodiscard]] platform::NetworkResult join(std::string_view ssid, std::string_view password,
+        platform::WifiJoin selection = platform::WifiJoin::strongest);
     bool access_point_{};
     bool access_point_ready_{};
     bool station_access_point_supported_{};
+    std::uint32_t wifi_test_timeout_ms_{platform::kWifiCredentialTestTimeoutMilliseconds};
     AccessPointPurpose access_point_purpose_{AccessPointPurpose::none};
     ProvisioningState provisioning_state_{ProvisioningState::idle};
     ProvisioningFailure provisioning_failure_{ProvisioningFailure::none};

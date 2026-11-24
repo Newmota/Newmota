@@ -140,7 +140,8 @@ WifiCapabilities wifi_capabilities() {
 }
 
 /** @brief Starts an asynchronous CYW43 station connection. */
-NetworkResult connect_wifi(const std::string_view ssid, const std::string_view password) {
+NetworkResult connect_wifi(
+    const std::string_view ssid, const std::string_view password, const WifiJoin /*join*/) {
     if (!initialized || ssid.empty() || ssid.size() > kMaximumWifiSsidLength ||
         password.size() > 64) {
         return NetworkResult::failed;

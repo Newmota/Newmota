@@ -211,11 +211,17 @@ NetworkResult set_wifi_tx_power(const std::uint8_t tenths_dbm) {
 
 /** @brief ESP-IDF supports concurrent APSTA operation on the configured radio. */
 WifiCapabilities wifi_capabilities() {
+#if CONFIG_IDF_TARGET_ESP32C5
+    // Web setup scans every channel; on the ESP32-C5 a WPA2 join on 5 GHz took about 24 s.
+    return {true, 30'000};
+#else
     return {true};
+#endif
 }
 
 /** @brief Replaces the RAM-only station credentials and starts connecting. */
-NetworkResult connect_wifi(const std::string_view ssid, const std::string_view password) {
+NetworkResult connect_wifi(
+    const std::string_view ssid, const std::string_view password, const WifiJoin join) {
     if (ssid.empty() || ssid.size() > kMaximumWifiSsidLength || password.size() > 64) {
         return NetworkResult::failed;
     }
@@ -225,7 +231,8 @@ NetworkResult connect_wifi(const std::string_view ssid, const std::string_view p
     wifi_config_t config{};
     copy_field(config.sta.ssid, ssid);
     copy_field(config.sta.password, password);
-    config.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
+    // A fast scan stops at the first matching access point; sort_method applies to full scans.
+    config.sta.scan_method = join == WifiJoin::first_found ? WIFI_FAST_SCAN : WIFI_ALL_CHANNEL_SCAN;
     config.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
     config.sta.threshold.authmode = WIFI_AUTH_OPEN;
     (void)esp_wifi_disconnect();
