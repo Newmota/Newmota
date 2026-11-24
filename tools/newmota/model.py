@@ -326,3 +326,16 @@ class PlatformAdapter(ABC):
     @abstractmethod
     def package(self) -> PackageResult:
         """Create qualified full and OTA firmware, or report unqualified."""
+
+
+# WPA3 reaches ESP builds through ESP-IDF's WPA supplicant. Builds below 4 MiB flash, and the
+# C5, C6 and C61 Safeboot images (which must fit the fixed 832 KiB recovery slot of Tasmota's
+# 4 MiB layout), are built without it.
+WPA3_MINIMUM_FLASH_KB = 4096
+
+
+def esp_keeps_wpa3(environment: Environment) -> bool:
+    """Whether an ESP build keeps WPA3."""
+    return environment.flash_kb >= WPA3_MINIMUM_FLASH_KB and not (
+        environment.chip in {"esp32c5", "esp32c6", "esp32c61"} and environment.role == "safeboot"
+    )

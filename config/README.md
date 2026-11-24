@@ -175,8 +175,10 @@ and `USE_CRYPTO_HW_SHA512` selects SHA-384 and SHA-512. `USE_CRYPTO_HW_AES` sele
 AES key sizes and BearSSL CBC, CTR and CTR-CBC modes, including their use by GCM/CCM.
 They also include the corresponding BearSSL primitives. Unsupported targets reject the
 selection at build time. Each selected provider uses hardware for every block operation,
-with no runtime software fallback; unselected providers use BearSSL software. These options are off by default and need device
-qualification before deployment. They do not select the SDK's HTTPS implementation.
+with no runtime software fallback; unselected providers use BearSSL software. ESP builds that
+run WPA3 on BearSSL (see below) turn on `USE_CRYPTO_HW_SHA1`, `USE_CRYPTO_HW_SHA256` and
+`USE_CRYPTO_HW_P256` where the target has them; the other options are off by default and need
+device qualification before deployment. They do not select the SDK's HTTPS implementation.
 
 | Target | SHA-1, SHA-224/256 | SHA-384/512 | AES-128/192/256 |
 | --- | --- | --- | --- |
@@ -232,14 +234,19 @@ The providers drive the SDK's HAL under its crypto locks themselves and do not n
 SDK's mbedTLS component; only the ESP32's block AES engine still goes through the mbedTLS
 port while mbedTLS is linked, because that driver keeps its lock private.
 
-`USE_WIFI_WPA3_BEARSSL` (ESP, experimental, needs the Newmota ESP-IDF fork) runs
+`USE_WIFI_WPA3_BEARSSL` (ESP, needs the Newmota ESP-IDF fork) runs
 WPA3-Personal on BearSSL instead of mbedTLS: SAE group 19 with hunting-and-pecking and
 hash-to-element, as station and SoftAP, plus SAE-PK (access point keys on P-256 only) and
 OWE as station. The point arithmetic, ECDSA verify and ECDH use BearSSL's P-256 provider,
 so `USE_CRYPTO_HW_P256` also serves them. With the
 fork, an image links the SDK's mbedTLS only when a feature needs it (HTTPS, or WPA3 without
 this option); Compact images link none. Builds against an ESP-IDF without the fork, and
-environments built without WPA3 (below 4 MB flash, C5/C6/C61 Safeboot), reject the option.
+environments built without WPA3 (below 4 MB flash, C5/C6/C61 Safeboot) and ESP-Hosted
+chips (P4), whose companion runs the supplicant, reject the option.
+
+It is on by default, application and Safeboot, in every ESP environment on ESP-IDF 5.5 that
+keeps WPA3 and has its own Wi-Fi radio. Set `USE_WIFI_WPA3_BEARSSL: false` in `features` to
+build the SDK's mbedTLS supplicant instead.
 
 ## SDK logging
 

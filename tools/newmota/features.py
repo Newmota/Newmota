@@ -9,7 +9,7 @@ from pathlib import Path
 
 from newmota.feature_docs import dependency_reason, unavailable_reason
 from newmota.host import write_if_changed
-from newmota.model import ROOT, BuildError, Environment
+from newmota.model import ROOT, BuildError, Environment, esp_keeps_wpa3
 from newmota.package import LayoutFacts
 
 AUDIO_MINIMUM_FLASH_KB = 4096
@@ -291,7 +291,9 @@ OPTIONAL_FEATURES = {
     "USE_HA_DISCOVERY": FeatureSpec(
         ("app/services/mqtt/ha_discovery.cpp",), dependencies=("USE_MQTT",)
     ),
-    "USE_CRYPTO_HW_P256": FeatureSpec((), platforms=("esp",), crypto=("EC",)),
+    "USE_CRYPTO_HW_P256": FeatureSpec(
+        (), roles=("application", "safeboot"), platforms=("esp",), crypto=("EC",)
+    ),
     # WPA3-SAE on BearSSL through the ESP-IDF fork's CONFIG_ESP_WIFI_EXTERNAL_CRYPTO, with the
     # supplicant's MD5, SHA-1, SHA-256 and AES on BearSSL too; SAE-PK (P-256 keys) and OWE STA
     # use the backend's EC key and ECDH functions.
@@ -300,12 +302,17 @@ OPTIONAL_FEATURES = {
         dependencies=("USE_WIFI",),
         roles=("application", "safeboot"),
         platforms=("esp",),
-        crypto=("EC", "MD5", "SHA1", "SHA224_SHA256", "AES"),
+        crypto=("EC", "ECDSA_VERIFY", "MD5", "SHA1", "SHA224_SHA256", "AES"),
     ),
     "USE_CRYPTO_HW_AES": FeatureSpec((), platforms=("esp", "bouffalo", "amebad"), crypto=("AES",)),
-    "USE_CRYPTO_HW_SHA1": FeatureSpec((), platforms=("esp", "bouffalo"), crypto=("SHA1",)),
+    "USE_CRYPTO_HW_SHA1": FeatureSpec(
+        (), roles=("application", "safeboot"), platforms=("esp", "bouffalo"), crypto=("SHA1",)
+    ),
     "USE_CRYPTO_HW_SHA256": FeatureSpec(
-        (), platforms=("esp", "bouffalo"), crypto=("SHA224_SHA256",)
+        (),
+        roles=("application", "safeboot"),
+        platforms=("esp", "bouffalo"),
+        crypto=("SHA224_SHA256",),
     ),
     "USE_CRYPTO_HW_SHA512": FeatureSpec(
         (), platforms=("esp", "bouffalo"), crypto=("SHA384_SHA512",)
@@ -1482,6 +1489,21 @@ def feature_values(environment: Environment, layout: LayoutFacts | None = None) 
             for name, spec in OPTIONAL_FEATURES.items()
         }
     )
+    # ESP Wi-Fi builds on ESP-IDF 5.5 that keep WPA3 run it on BearSSL, with the hardware SHA-1,
+    # SHA-256 and P-256 providers the target has. Both are off elsewhere and can be turned off
+    # per build.
+    if (
+        use_wifi
+        and not use_hosted  # the supplicant runs on the ESP-Hosted companion
+        and environment.platform == "esp"
+        and environment.sdk_key == "esp-idf"  # the 5.5 track; only it has the fork
+        and esp_keeps_wpa3(environment)
+    ):
+        from newmota.crypto import HARDWARE_CRYPTO_TARGETS
+
+        values["USE_WIFI_WPA3_BEARSSL"] = True
+        for name in ("USE_CRYPTO_HW_SHA1", "USE_CRYPTO_HW_SHA256", "USE_CRYPTO_HW_P256"):
+            values[name] = environment.sdk_target in HARDWARE_CRYPTO_TARGETS[name]
     overrides = environment.features
     if not isinstance(overrides, dict):
         raise BuildError("features must be a mapping of USE_* names to booleans")

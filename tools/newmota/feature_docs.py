@@ -86,8 +86,8 @@ FEATURE_DOCS: dict[str, tuple[str, str]] = {
     ),
     "USE_WIFI_WPA3_BEARSSL": (
         "Network and time",
-        "WPA3-SAE, SAE-PK (P-256) and OWE STA on BearSSL instead of mbedTLS (ESP-IDF fork, "
-        "qualification pending).",
+        "WPA3-SAE, SAE-PK (P-256) and OWE STA on BearSSL instead of mbedTLS (ESP-IDF fork; "
+        "default on ESP-IDF 5.5 chips with their own radio).",
     ),
     # Network and time
     "USE_WIFI": ("Network and time", "Wi-Fi and the network stack."),

@@ -35,6 +35,7 @@ from newmota.model import (
     BuildContext,
     BuildError,
     esp_sdk_key,
+    esp_keeps_wpa3,
     Environment,
     NativeConfigSpec,
     PackageResult,
@@ -61,7 +62,6 @@ def python_constraints(sdk_key: str) -> Path:
 # feature switch disabled below 4 MiB; v6.1 has both ESP_WIFI and WIFI_RMT
 # Kconfig switches, and leaving the remote-driver defaults enabled retains the
 # WPA3 crypto code even when the ESP_WIFI switches are off.
-WPA3_MINIMUM_FLASH_KB = 4096
 WPA3_SETTINGS = (
     "CONFIG_ESP_WIFI_ENABLE_WPA3_SAE",
     "CONFIG_ESP_WIFI_ENABLE_SAE_PK",
@@ -1149,11 +1149,7 @@ def native_target_issue(board: BoardDefinition) -> str | None:
 
 
 def _wpa3_removed(environment: Environment) -> bool:
-    """These Wi-Fi drivers also need WPA3 removed from Safeboot to fit the fixed 832 KiB
-    recovery slot used by Tasmota's 4 MiB layout."""
-    return environment.flash_kb < WPA3_MINIMUM_FLASH_KB or (
-        environment.chip in {"esp32c5", "esp32c6", "esp32c61"} and environment.role == "safeboot"
-    )
+    return not esp_keeps_wpa3(environment)
 
 
 def _wifi_crypto(environment: Environment, values: Mapping[str, bool]) -> tuple[bool, bool]:
@@ -1162,12 +1158,17 @@ def _wifi_crypto(environment: Environment, values: Mapping[str, bool]) -> tuple[
         return False, False
     wpa3_removed = _wpa3_removed(environment)
     sae_bearssl = values.get("USE_WIFI_WPA3_BEARSSL", False)
+    if sae_bearssl and values.get("USE_ESP_HOSTED", False):
+        raise BuildError(
+            f"USE_WIFI_WPA3_BEARSSL: {environment.name} reaches Wi-Fi through ESP-Hosted, "
+            "whose companion runs the supplicant"
+        )
     if sae_bearssl and wpa3_removed:
         # The option would only add dead SAE code, and with HTTPS its symmetric
         # primitives would collide with the supplicant's mbedTLS adapter.
         raise BuildError(
             f"USE_WIFI_WPA3_BEARSSL: {environment.name} builds without WPA3 "
-            f"(flash below {WPA3_MINIMUM_FLASH_KB} KB, or C5/C6/C61 Safeboot)"
+            f"(flash below 4 MB, or C5/C6/C61 Safeboot)"
         )
     internal = (wpa3_removed or sae_bearssl) and not values.get("USE_WEB_HTTPS", False)
     return sae_bearssl, internal
