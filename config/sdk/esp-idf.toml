@@ -1,5 +1,6 @@
 name = "ESP-IDF"
 version = "v5.5.5"
+repository = "https://github.com/Newmota/esp-idf.git"
 revision = "32eed4b7e47ee58f7db9b4833d2f0a74744a53f1"
 programmer = "esptool"
 programmer_version = "4.14.0"

@@ -10,13 +10,21 @@ to see the full CLI. Platform ownership and extension rules are in the
 make uv-setup                 # lockfile-pinned Python tools, including blflashcommand
 make setup ENV=esp32c2-2m     # SDK and tools for one environment
 make setup PLATFORM=esp       # one platform; PLATFORM=all for every platform
-make sdk-check                # verify every SDK checkout against its pin
+make sdk-check                # verify every installed SDK against its pin
+make sdk-fetch                # download every pinned SDK archive, for offline builds
+make sdk-checkout SDK=beken   # git checkout in .sdk/ for SDK patch work
 ```
 
 Setup is optional: a build installs what it needs. SDK installers need a host Python 3.10 or
 newer outside the project virtual environment. `PLATFORM=esp` and `PLATFORM=all` prepare both
 pinned ESP-IDF tracks (5.5 and 6.1); `make sdk-check` without arguments requires
-`make setup PLATFORM=all`.
+`make setup PLATFORM=all` or `make sdk-fetch`.
+
+SDKs come as stripped, checksummed release archives of the pinned commits, built by
+[Newmota/sdk-archives](https://github.com/Newmota/sdk-archives) and extracted read-only into
+`~/.newmota/sdk/`. An SDK patch goes to its Newmota fork first: `make sdk-checkout SDK=<key>`,
+commit and push in the fork, publish an archive with the sdk-archives workflow, then update
+`revision`, `archive` and `archive_sha256` in `config/sdk/<key>.toml` in one Newmota commit.
 
 ## Catalog
 

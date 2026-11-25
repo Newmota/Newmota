@@ -31,7 +31,7 @@ BEARSSL_OBJ = $(patsubst src/%.c,build/host/crypto/%.o,$(BEARSSL_SRC))
 # pair, which rejects BearSSL's fixed-width arithmetic.
 BEARSSL_CFLAGS = -std=c11 -Wall -Wextra $(addprefix -D,$(filter %=1,$(BEARSSL_HOST)))
 # The pinned supplicant's SAE code, built on the host against the BearSSL hostap backend.
-# The path comes from the SDK resolver (submodule checkout or extracted archive), queried once
+# The path comes from the SDK resolver (extracted archive or .sdk/ checkout), queried once
 # and only by the targets that use it.
 HOSTAP_QUERY = $(eval HOSTAP_QUERY := $(shell PYTHONPATH=tools $(PYTHON) -c 'from newmota.host import load_sdk_version; s = load_sdk_version("esp-idf"); print(s.source / "components", s.mode)'))$(HOSTAP_QUERY)
 HOSTAP_IDF = $(word 1,$(HOSTAP_QUERY))
@@ -62,7 +62,7 @@ ifneq ($(strip $(SDK_PYTHON)),)
 export NEWMOTA_SETUP_PYTHON := $(SDK_PYTHON)
 endif
 
-.PHONY: setup sdk-check uv-setup list config validate-catalog build test test-host test-crypto all clangd format-cpp format-check-cpp probe backup flash flash-monitor update flash-only flash-only-monitor monitor clean help $(ENV_TARGETS) $(BOARD_ONLY_TARGETS)
+.PHONY: setup sdk-check sdk-checkout sdk-fetch uv-setup list config validate-catalog build test test-host test-crypto all clangd format-cpp format-check-cpp probe backup flash flash-monitor update flash-only flash-only-monitor monitor clean help $(ENV_TARGETS) $(BOARD_ONLY_TARGETS)
 
 setup:
 	@$(NEWMOTA) setup \
@@ -71,7 +71,14 @@ setup:
 		$(if $(DRY_RUN),--dry-run,)
 
 sdk-check:
-	@$(NEWMOTA) sdk-check
+	@$(NEWMOTA) sdk-check $(SDK)
+
+sdk-checkout:
+	@test -n "$(SDK)" || { echo "usage: make sdk-checkout SDK=<esp-idf|esp-idf-v6.1|bouffalo|beken|amebad|pico-sdk>"; exit 2; }
+	@$(NEWMOTA) sdk-checkout $(SDK) $(if $(DRY_RUN),--dry-run,)
+
+sdk-fetch:
+	@$(NEWMOTA) sdk-fetch $(SDK) $(if $(DRY_RUN),--dry-run,)
 
 uv-setup:
 	@if [ -n "$(UV)" ]; then uv sync --locked; else echo "uv not found — install it from https://docs.astral.sh/uv/"; exit 1; fi
@@ -241,7 +248,9 @@ help:
 	@echo "  make setup PLATFORM=all            # set up all five platforms"
 	@echo "  make setup ENV=esp32c2-2m          # install only the tools needed by one env"
 	@echo "  make setup ... SDK_PYTHON=/path    # override the host Python used by SDK installers"
-	@echo "  make sdk-check                     # verify SDK checkouts against config/sdk/*.toml"
+	@echo "  make sdk-check                     # verify installed SDKs against config/sdk/*.toml"
+	@echo "  make sdk-fetch                     # download every pinned SDK archive (offline use)"
+	@echo "  make sdk-checkout SDK=bouffalo     # git checkout in .sdk/ for SDK patch work"
 	@echo "  make list                          # list supported and personal environments"
 	@echo "  make config                        # browse checked-in chips, boards, and environments"
 	@echo "  make validate-catalog              # validate supported and personal config"

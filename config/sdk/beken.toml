@@ -1,5 +1,6 @@
 name = "framework-beken-bdk"
 version = "3.0.78"
+repository = "https://github.com/Newmota/framework-beken-bdk.git"
 revision = "2d886cd8b1a76efb511e1c22e749f5b403e4a8c9"
 source = "beken-bdk"
 archive = "https://github.com/Newmota/sdk-archives/releases/download/beken-3.0.78-2d886cd8-p1/beken-3.0.78-2d886cd8-p1.tar.xz"

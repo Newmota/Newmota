@@ -17,13 +17,16 @@ may refer only to its own platform directory; platforms are never inferred from 
 
 A build combines the native defaults with board requirements and environment settings and
 writes the result below `build/work/<environment>/config/` in the repository root. It never
-edits checked-in defaults or the SDK checkouts under `.sdk/`.
+edits checked-in defaults or the SDK sources.
 
-Each `sdk/<key>.toml` pins one SDK commit. It may also pin a stripped release archive with
-`archive` (an https `.tar.xz` URL) and `archive_sha256`. Setup then installs that archive into
-`~/.newmota/sdk/` (read-only; `NEWMOTA_SDK_PATH` moves it) instead of the `.sdk/` submodule.
-An initialized `.sdk/` checkout always wins, for SDK patch work; `NEWMOTA_SDK_MODE=checkout` or
-`archive` forces one source; `archive` affects only SDKs that pin an archive.
+Each `sdk/<key>.toml` pins one SDK commit of its `repository` and a stripped release archive of
+that commit (`archive`, an https `.tar.xz` URL from
+[Newmota/sdk-archives](https://github.com/Newmota/sdk-archives), and `archive_sha256`). Builds
+install the archive into `~/.newmota/sdk/` (read-only; `NEWMOTA_SDK_PATH` moves it); downloads
+are kept beside it for offline re-extraction. For SDK patch work, `make sdk-checkout SDK=<key>`
+clones the pinned commit into `.sdk/<source>` (ignored by git); an existing checkout wins over the
+archive. `NEWMOTA_SDK_MODE=checkout` or `archive` forces one source; `archive` affects only SDKs
+that pin an archive.
 
 Run `make validate-catalog` after changing anything here. It checks every chip, board,
 environment, matrix, native default, partition selection, and hardware definition without

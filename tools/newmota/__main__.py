@@ -148,6 +148,34 @@ def command_sdk_check(args: argparse.Namespace) -> int:
     return sdk_main(args.sdk, as_json=args.json)
 
 
+def command_sdk_checkout(args: argparse.Namespace) -> int:
+    import subprocess
+
+    from .host import SdkVersionError, sdk_checkout
+    from .model import SetupUnavailable
+
+    try:
+        sdk_checkout(args.sdk, args.dry_run)
+    except (OSError, SdkVersionError, SetupUnavailable, subprocess.CalledProcessError) as error:
+        print(f"sdk-checkout failed: {error}", file=sys.stderr)
+        return 1
+    return 0
+
+
+def command_sdk_fetch(args: argparse.Namespace) -> int:
+    import subprocess
+
+    from .host import SDK_NAMES, SdkVersionError, sdk_fetch
+    from .model import SetupUnavailable
+
+    try:
+        sdk_fetch(tuple(args.sdk) if args.sdk else SDK_NAMES, args.dry_run)
+    except (OSError, SdkVersionError, SetupUnavailable, subprocess.CalledProcessError) as error:
+        print(f"sdk-fetch failed: {error}", file=sys.stderr)
+        return 1
+    return 0
+
+
 def command_device(args: argparse.Namespace) -> None:
     from . import device
 
@@ -226,6 +254,22 @@ def parser() -> argparse.ArgumentParser:
     sdk.add_argument("sdk", nargs="*", metavar="SDK", help=", ".join(SDK_NAMES))
     sdk.add_argument("--json", action="store_true", help="write machine-readable pins")
     sdk.set_defaults(handler=command_sdk_check)
+
+    checkout = commands.add_parser(
+        "sdk-checkout", help="clone a pinned SDK into .sdk/ for SDK patch work"
+    )
+    checkout.add_argument("sdk", choices=SDK_NAMES, metavar="SDK", help=", ".join(SDK_NAMES))
+    checkout.add_argument(
+        "--dry-run", action="store_true", help="show commands without running them"
+    )
+    checkout.set_defaults(handler=command_sdk_checkout)
+
+    fetch = commands.add_parser(
+        "sdk-fetch", help="download every pinned SDK archive for offline use"
+    )
+    fetch.add_argument("sdk", nargs="*", metavar="SDK", help=", ".join(SDK_NAMES))
+    fetch.add_argument("--dry-run", action="store_true", help="show commands without running them")
+    fetch.set_defaults(handler=command_sdk_fetch)
 
     device_commands = {
         "probe": "inspect a target and physical flash",

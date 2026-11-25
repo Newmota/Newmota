@@ -522,10 +522,11 @@ class SdkVersion:
     source_name: str | None
     archive: str | None = None
     archive_sha256: str | None = None
+    repository: str | None = None
 
     @property
     def checkout(self) -> Path:
-        """The submodule checkout under .sdk/, used for SDK patch work."""
+        """The optional git checkout under .sdk/ (make sdk-checkout), used for SDK patch work."""
         return SDK_SOURCE_DIR / (self.source_name or self.key)
 
     @property
@@ -608,7 +609,7 @@ def load_sdk_version(key: str) -> SdkVersion:
         "programmer_version",
         "programmer_status",
     }
-    optional = {"programmer_sha256", "source", "archive", "archive_sha256"}
+    optional = {"programmer_sha256", "source", "archive", "archive_sha256", "repository"}
     missing = required - values.keys()
     extra = values.keys() - required - optional
     if missing:
@@ -644,6 +645,9 @@ def load_sdk_version(key: str) -> SdkVersion:
             raise SdkVersionError(
                 f"{path.relative_to(ROOT)} archive_sha256 must be a lowercase SHA-256"
             )
+    repository = values.get("repository")
+    if repository is not None and not repository.startswith("https://"):
+        raise SdkVersionError(f"{path.relative_to(ROOT)} repository must be an https URL")
     if status == "unselected" and (
         values["programmer"] != "unselected" or values["programmer_version"] != "unselected"
     ):
@@ -662,6 +666,7 @@ def load_sdk_version(key: str) -> SdkVersion:
         values.get("source"),
         archive,
         archive_sha256,
+        repository,
     )
 
 
@@ -695,7 +700,7 @@ def checked_out_revision(sdk: SdkVersion) -> str:
         ).stdout.strip()
     except (OSError, subprocess.CalledProcessError) as error:
         raise SdkVersionError(
-            f"{display_path(sdk.source)} is not initialized; run make setup for its platform"
+            f"{display_path(sdk.source)} is not a git checkout; run make sdk-checkout SDK={sdk.key}"
         ) from error
 
 
@@ -714,19 +719,69 @@ def check_sdk_versions(keys: tuple[str, ...] = SDK_NAMES) -> list[SdkVersion]:
 
 
 def ensure_sdk_source(key: str, dry_run: bool) -> SdkVersion:
-    """Install the pinned SDK source: the .sdk/ submodule or the checksummed release archive."""
+    """Install the pinned SDK source: the checksummed release archive, or verify a .sdk/ checkout."""
     sdk = load_sdk_version(key)
     print(f"SDK mode:          {sdk.mode}")
     if sdk.mode == "checkout":
-        run(
-            ["git", "submodule", "update", "--init", "--recursive", display_path(sdk.checkout)],
-            dry_run=dry_run,
-        )
+        if not (sdk.checkout / ".git").exists():
+            raise SetupUnavailable(
+                f"{display_path(sdk.checkout)} is not checked out; run make sdk-checkout SDK={key}"
+            )
     else:
         install_sdk_archive(sdk, dry_run)
     if not dry_run:
         check_sdk_version(key)
     return sdk
+
+
+def sdk_checkout(key: str, dry_run: bool) -> SdkVersion:
+    """Clone the pinned SDK commit into .sdk/<source> for patch work; an existing one is kept."""
+    sdk = load_sdk_version(key)
+    if sdk.repository is None:
+        raise SdkVersionError(f"config/sdk/{key}.toml pins no repository")
+    target = sdk.checkout
+    if (target / ".git").exists():
+        print(f"{display_path(target)} already exists; it is used as is (checkout mode).")
+        return sdk
+    if target.exists() and any(target.iterdir()):
+        raise SdkVersionError(f"{display_path(target)} exists and is not a git checkout")
+    # A partial clone: history and trees now, file contents only for the checked-out commit.
+    run(
+        ["git", "clone", "--filter=blob:none", "--no-checkout", sdk.repository, str(target)],
+        dry_run=dry_run,
+    )
+    if not dry_run:
+        present = subprocess.run(
+            ["git", "-C", str(target), "cat-file", "-e", f"{sdk.revision}^{{commit}}"],
+            check=False,
+            capture_output=True,
+        )
+        if present.returncode != 0:
+            run(["git", "-C", str(target), "fetch", "origin", sdk.revision])
+    run(
+        ["git", "-C", str(target), "-c", "advice.detachedHead=false", "checkout", "--detach"]
+        + [sdk.revision],
+        dry_run=dry_run,
+    )
+    if dry_run or (target / ".gitmodules").is_file():
+        run(
+            ["git", "-C", str(target), "submodule", "update", "--init", "--recursive"],
+            dry_run=dry_run,
+        )
+    if not dry_run:
+        check_sdk_version(key)
+        print(f"{display_path(target)} is at {sdk.revision[:12]}; builds now use this checkout.")
+    return sdk
+
+
+def sdk_fetch(keys: tuple[str, ...], dry_run: bool) -> None:
+    """Download and extract the pinned release archives, for offline builds."""
+    for key in keys:
+        sdk = load_sdk_version(key)
+        if sdk.archive is None:
+            print(f"{sdk.name}: no archive pinned; use make sdk-checkout SDK={key}")
+            continue
+        install_sdk_archive(sdk, dry_run)
 
 
 def _require_lzma() -> None:

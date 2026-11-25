@@ -1,5 +1,6 @@
 name = "BouffaloSDK"
 version = "2.3.34"
+repository = "https://github.com/Newmota/bouffalo_sdk.git"
 revision = "c330172ded791d9d7ba26c3a7c442194da8ff92b"
 archive = "https://github.com/Newmota/sdk-archives/releases/download/bouffalo-2.3.34-c330172d-p1/bouffalo-2.3.34-c330172d-p1.tar.xz"
 archive_sha256 = "01aa1a8abf587a10e059f6a88572d8857118076600bfb0d0cf47ddad1da0e4a9"
