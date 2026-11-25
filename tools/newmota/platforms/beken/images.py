@@ -299,7 +299,9 @@ def resolve_layout(environment: Environment, sdk: SdkVersion, work_dir: Path) ->
                 raise BekenLayoutError("Beken layout native.table must name a table within flash")
             table_bytes = sizes[str(table)]
         native_regions = _read_native_regions(native_source, table_bytes, environment.sdk_target)
-        source_files.append(native_source.relative_to(ROOT))
+        # Recorded at its checkout path in both SDK modes, so the layout identity is mode-independent.
+        sdk_relative = native_source.relative_to(sdk.source.resolve())
+        source_files.append(sdk.checkout.relative_to(ROOT) / sdk_relative)
     elif "partition_source" in native:
         raise BekenLayoutError("Beken layout names both native.partition_source and native.regions")
     vendor = document.get("vendor")

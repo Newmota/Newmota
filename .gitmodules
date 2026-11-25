@@ -7,7 +7,7 @@
 	branch = newmota/v6.1
 [submodule "sdk/beken-bdk"]
 	path = .sdk/beken-bdk
-	url = https://github.com/Staars/framework-beken-bdk.git
+	url = https://github.com/Newmota/framework-beken-bdk.git
 [submodule "sdk/amebad"]
 	path = .sdk/amebad
 	url = https://github.com/Staars/ameba-rtos-d.git

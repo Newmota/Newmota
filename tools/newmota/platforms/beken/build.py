@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 from collections.abc import Mapping
@@ -390,13 +391,31 @@ class BekenAdapter(PlatformAdapter):
         self.filesystem_image = context.work_dir / "generated" / "littlefs.bin"
 
     def prepare(self) -> None:
-        if self.context.native_config.changed:
+        # make compares timestamps only, so objects built from another SDK source would be reused.
+        self.context.work_dir.mkdir(parents=True, exist_ok=True)
+        sdk_marker = self.context.work_dir / "beken-sdk.json"
+        sdk_identity = {
+            "key": self.context.sdk.key,
+            "revision": self.context.sdk.revision,
+            "source": str(self.context.sdk.source.resolve()),
+        }
+        previous_sdk = None
+        if sdk_marker.is_file():
+            previous_sdk = json.loads(sdk_marker.read_text(encoding="utf-8"))
+        elif self.native.exists():
+            previous_sdk = {}
+        sdk_changed = previous_sdk is not None and previous_sdk != sdk_identity
+        if sdk_changed:
+            print("Discarding Beken build tree after SDK selection change.")
+        elif self.context.native_config.changed:
             print("Discarding stale Beken build tree after native config change.")
+        if sdk_changed or self.context.native_config.changed:
             shutil.rmtree(self.native, ignore_errors=True)
             shutil.rmtree(
                 self.overlay / "apps" / "newmota" / "output",
                 ignore_errors=True,
             )
+        sdk_marker.write_text(json.dumps(sdk_identity, indent=2) + "\n", encoding="utf-8")
         profile = resolve_target_profile(self.context.environment, self.context.sdk)
         self.overlay, staged_files = _prepare_overlay(self.context, profile)
         self.source_map = {
