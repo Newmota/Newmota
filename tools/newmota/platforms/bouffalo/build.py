@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import sys
 from collections.abc import Mapping
@@ -67,7 +68,7 @@ class ToolchainSpec:
 
 
 BOUFFALO_TOOLCHAIN_RELEASE = (
-    "https://github.com/Staars/bouffalo-toolchain-macos-arm64/releases/download/v1.0.30"
+    "https://github.com/Newmota/bouffalo-toolchain-macos-arm64/releases/download/v1.0.30"
 )
 # All archives are root-layout install trees (bin/ at the top level), so they
 # use the bundle installer rather than the one-top-level-directory toolchain
@@ -167,35 +168,53 @@ def _prepare_config(native: Path, context: BuildContext) -> None:
         settings["CONFIG_BACKTRACE"] = "n"
     settings["CONFIG_PROJECT_SDK_VERSION"] = f'"{context.sdk.version}"'
     config_input = generated / "autoconfig.input"
-    config_lines = [
-        f"CHIP={environment.sdk_target}",
-        f"BOARD={environment.sdk_board}",
-        *(f"{key}={value}" for key, value in sorted(settings.items())),
-    ]
-    write_if_changed(config_input, "\n".join(config_lines) + "\n")
-
     sdk = context.sdk.source
     config_environment = cross_build_environment()
     config_environment["BL_SDK_BASE"] = str(sdk)
-    run(
-        [
-            sys.executable,
-            str(sdk / "tools" / "kconfig" / "config_seed.py"),
-            "--defconfig",
-            str(config_input),
-            "--kconfig",
-            str(sdk / "Kconfig"),
-            "--def-out",
-            str(generated / "autoconfig.def"),
-            "--cmake-out",
-            str(generated / "autoconfig.cmake"),
-            "--header-out",
-            str(generated / "autoconfig.h"),
-            "--make-out",
-            str(generated / "autoconfig.mk"),
-        ],
-        environment=config_environment,
+
+    def seed() -> None:
+        config_lines = [
+            f"CHIP={environment.sdk_target}",
+            f"BOARD={environment.sdk_board}",
+            *(f"{key}={value}" for key, value in sorted(settings.items())),
+        ]
+        write_if_changed(config_input, "\n".join(config_lines) + "\n")
+        run(
+            [
+                sys.executable,
+                str(sdk / "tools" / "kconfig" / "config_seed.py"),
+                "--defconfig",
+                str(config_input),
+                "--kconfig",
+                str(sdk / "Kconfig"),
+                "--def-out",
+                str(generated / "autoconfig.def"),
+                "--cmake-out",
+                str(generated / "autoconfig.cmake"),
+                "--header-out",
+                str(generated / "autoconfig.h"),
+                "--make-out",
+                str(generated / "autoconfig.mk"),
+            ],
+            environment=config_environment,
+        )
+
+    seed()
+    # The image packer copies boot2 with its mode and then rewrites the copy, which fails for the
+    # read-only SDK archive cache. Stage a writable copy under its own name (the output keeps it).
+    boot2 = _autoconfig_value(generated / "autoconfig.cmake", "CONFIG_BOARD_BOOT2FILE")
+    if not boot2 or not Path(boot2).is_file():
+        raise BuildError(f"Bouffalo Kconfig names no boot2 image: {boot2!r}")
+    copy_if_changed(Path(boot2), context.work_dir / "project" / Path(boot2).name)
+    settings["CONFIG_OVERRIDE_BOOT2FILE"] = Path(boot2).name
+    seed()
+
+
+def _autoconfig_value(path: Path, key: str) -> str | None:
+    match = re.search(
+        rf'^set\({re.escape(key)} "([^"]*)"\)$', path.read_text(encoding="utf-8"), re.MULTILINE
     )
+    return match.group(1) if match else None
 
 
 def _cmake_cache_value(cache: Path, key: str) -> str | None:

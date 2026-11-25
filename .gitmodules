@@ -1,6 +1,6 @@
 [submodule "sdk/bouffalo"]
 	path = .sdk/bouffalo
-	url = https://github.com/Staars/bouffalo_sdk.git
+	url = https://github.com/Newmota/bouffalo_sdk.git
 [submodule "sdk/esp-idf"]
 	path = .sdk/esp-idf-v6.1
 	url = https://github.com/Newmota/esp-idf.git
