@@ -499,7 +499,8 @@ class SdkVersion:
     def mode(self) -> str:
         """checkout when .sdk/<source> is initialized or no archive is pinned, else archive.
 
-        NEWMOTA_SDK_MODE=checkout|archive forces one mode.
+        NEWMOTA_SDK_MODE=checkout|archive forces one mode; archive applies only to SDKs that pin
+        an archive, the others stay on their checkout.
         """
         forced = os.environ.get("NEWMOTA_SDK_MODE", "").strip()
         if forced:
@@ -508,7 +509,7 @@ class SdkVersion:
                     f"NEWMOTA_SDK_MODE must be checkout or archive, not '{forced}'"
                 )
             if forced == "archive" and self.archive is None:
-                raise SdkVersionError(f"NEWMOTA_SDK_MODE=archive, but {self.key} pins no archive")
+                return "checkout"
             return forced
         if self.archive is None or (self.checkout / ".git").exists():
             return "checkout"
