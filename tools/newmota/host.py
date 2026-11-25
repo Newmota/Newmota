@@ -9,6 +9,7 @@ import platform as host_platform
 import re
 import shlex
 import shutil
+import stat
 import subprocess
 import sys
 import tarfile
@@ -417,8 +418,12 @@ def copy_if_changed(source: Path, destination: Path) -> str:
     if not destination.is_file() or source.read_bytes() != destination.read_bytes():
         destination.parent.mkdir(parents=True, exist_ok=True)
         # A changed checkout may carry older mtimes: changed bytes must look new to make.
+        if destination.is_file() and not os.access(destination, os.W_OK):
+            destination.chmod(destination.stat().st_mode | stat.S_IWUSR)
         shutil.copyfile(source, destination)
         shutil.copymode(source, destination)
+        # Copies from the read-only SDK archive cache stay editable in the work tree.
+        destination.chmod(destination.stat().st_mode | stat.S_IWUSR)
     return str(destination)
 
 
@@ -426,6 +431,41 @@ def copy_tree(source: Path, destination: Path) -> None:
     """Stage a header tree without touching identical files."""
 
     shutil.copytree(source, destination, dirs_exist_ok=True, copy_function=copy_if_changed)
+    make_owner_writable(destination)
+
+
+def make_owner_writable(tree: Path) -> None:
+    """Give a copied tree back its owner write bit; copies of the archive cache are read-only."""
+
+    for directory, _, files in os.walk(tree):
+        for path in (Path(directory), *(Path(directory) / name for name in files)):
+            if not path.is_symlink():
+                mode = path.stat().st_mode
+                if not mode & stat.S_IWUSR:
+                    path.chmod(mode | stat.S_IWUSR)
+
+
+def link_tree(source: Path, destination: Path, skip_suffixes: frozenset[str] = frozenset()) -> None:
+    """Mirror source as real directories holding one symlink per file.
+
+    Build outputs written beside a source then land in the mirror, not in the SDK.
+    """
+
+    for directory, directories, files in os.walk(source):
+        relative = Path(directory).relative_to(source)
+        target = destination / relative
+        target.mkdir(parents=True, exist_ok=True)
+        for name in directories:
+            if (Path(directory) / name).is_symlink():
+                link = target / name
+                if not link.is_symlink():
+                    link.symlink_to(Path(directory) / name, target_is_directory=True)
+        for name in files:
+            if Path(name).suffix in skip_suffixes or name == ".DS_Store":
+                continue
+            link = target / name
+            if not link.is_symlink() and not link.exists():
+                link.symlink_to(Path(directory) / name)
 
 
 def sha256(path: Path) -> str:

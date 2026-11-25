@@ -1,6 +1,8 @@
 name = "Realtek AmebaD SDK"
 version = "snapshot-2026-06-18-newmota.4"
 revision = "31b352b95967f95c6b250e7be5a198b059bf9ac8"
+archive = "https://github.com/Newmota/sdk-archives/releases/download/amebad-snapshot-2026-06-18-newmota.4-31b352b9-p1/amebad-snapshot-2026-06-18-newmota.4-31b352b9-p1.tar.xz"
+archive_sha256 = "25a71125361a5520317c1aa17eaa56081496cee90a4e3d8614b1136bdbe4618a"
 programmer = "newmota-amebad-python"
 programmer_version = "0.2.0"
 programmer_status = "active"

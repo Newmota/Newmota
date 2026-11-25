@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import shutil
@@ -32,7 +33,9 @@ from newmota.host import (
     find_ccache,
     host_key,
     install_archive_toolchain,
+    link_tree,
     load_sdk_version,
+    make_owner_writable,
     run,
     run_build,
     sha256,
@@ -94,6 +97,8 @@ TOOLCHAINS = {
 PROGRAMMER_NAME = "newmota-amebad-python"
 PROGRAMMER_SOURCE = Path(__file__).with_name("uploader.py")
 OTA_CHECKSUM_SOURCE = Path("tools/newmota/ota_checksum.c")
+# Objects the vendor makefiles leave beside sources in an SDK checkout; never mirrored.
+AMEBAD_BUILD_OUTPUTS = frozenset({".o", ".d", ".su"})
 OTA_CHECKSUM_BINARY = "newmota_ota_checksum"
 COMPILER_GATE_SOURCE = Path(__file__).with_name("compiler_gate.c")
 COMPILER_GATE_BINARY = "newmota_compiler_gate"
@@ -525,19 +530,30 @@ def _prepare_project(
     overlay = context.work_dir / "overlay"
     project_source = sdk.source / "project" / sdk_board
     project = overlay / "project" / project_source.name
-    revision_file = project / ".newmota-sdk-revision"
-    if project.is_dir() and (
-        not revision_file.is_file() or revision_file.read_text().strip() != sdk.revision
-    ):
-        print("Refreshing generated AmebaD project for the pinned SDK revision.")
-        shutil.rmtree(project)
+    # Keyed on the SDK identity: a checkout/archive switch keeps the revision but moves the source.
+    identity = json.dumps(
+        {"key": sdk.key, "revision": sdk.revision, "source": str(sdk.source.resolve())},
+        sort_keys=True,
+    )
+    identity_file = overlay / ".newmota-sdk.json"
+    current = identity_file.read_text(encoding="utf-8") if identity_file.is_file() else None
+    if overlay.is_dir() and current != identity:
+        print("Refreshing generated AmebaD project for the selected SDK.")
+        for name in ("component", "tools", "project"):
+            path = overlay / name
+            if path.is_symlink():
+                path.unlink()
+            elif path.is_dir():
+                shutil.rmtree(path)
     if not project.is_dir():
         overlay.mkdir(parents=True, exist_ok=True)
-        for name in ("component", "tools"):
-            if not (overlay / name).is_symlink():
-                os.symlink(sdk.source / name, overlay / name, target_is_directory=True)
-        shutil.copytree(project_source, project)
-        write_if_changed(revision_file, sdk.revision + "\n")
+        # The vendor makefiles write objects beside many component sources, so component/ is a
+        # per-environment mirror of links, never the SDK itself. tools/ is only read.
+        link_tree(sdk.source / "component", overlay / "component", AMEBAD_BUILD_OUTPUTS)
+        os.symlink(sdk.source / "tools", overlay / "tools", target_is_directory=True)
+        shutil.copytree(project_source, project, symlinks=True)
+        make_owner_writable(project)
+        write_if_changed(identity_file, identity)
     # Reconstruct generated makefiles from SDK inputs when toggling the feature.
     # The native FTL addresses overlap Newmota's OTA layout; BLE uses RAM hooks.
     make_root = Path("GCC-RELEASE/project_hp/asdk/make")
