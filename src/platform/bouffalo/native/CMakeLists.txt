@@ -75,6 +75,9 @@ sdk_add_compile_options(
 if(NOT NEWMOTA_ROOT)
   message(FATAL_ERROR "NEWMOTA_ROOT is required")
 endif()
+if(NOT NEWMOTA_SDK_ROOT)
+  message(FATAL_ERROR "NEWMOTA_SDK_ROOT is required")
+endif()
 foreach(required NEWMOTA_IMAGE_ROLE NEWMOTA_BUILD_DATE NEWMOTA_BUILD_TIME
                   NEWMOTA_FEATURE_DIR NEWMOTA_HARDWARE_DIR
                   NEWMOTA_BERRY_GENERATED_DIR NEWMOTA_FILESYSTEM_OFFSET
@@ -163,9 +166,9 @@ sdk_add_include_directories(
   "${NEWMOTA_ROOT}/src/app/include"
   "${NEWMOTA_ROOT}/src/platform/include"
   "${NEWMOTA_ROOT}/src/third_party/littlefs"
-  "${NEWMOTA_ROOT}/.sdk/bouffalo/components/net/lwip/lwip/lwip-port/config"
+  "${NEWMOTA_SDK_ROOT}/components/net/lwip/lwip/lwip-port/config"
   "${NEWMOTA_ROOT}/config/build/bouffalo/${NEWMOTA_CHIP}"
-  "${NEWMOTA_ROOT}/.sdk/bouffalo/examples/boot2_isp/port/${CHIP}"
+  "${NEWMOTA_SDK_ROOT}/examples/boot2_isp/port/${CHIP}"
   "${NEWMOTA_FEATURE_DIR}"
   "${NEWMOTA_HARDWARE_DIR}"
 )

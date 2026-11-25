@@ -19,6 +19,12 @@ A build combines the native defaults with board requirements and environment set
 writes the result below `build/work/<environment>/config/` in the repository root. It never
 edits checked-in defaults or the SDK checkouts under `.sdk/`.
 
+Each `sdk/<key>.toml` pins one SDK commit. It may also pin a stripped release archive with
+`archive` (an https `.tar.xz` URL) and `archive_sha256`. Setup then installs that archive into
+`~/.newmota/sdk/` (read-only; `NEWMOTA_SDK_PATH` moves it) instead of the `.sdk/` submodule.
+An initialized `.sdk/` checkout always wins, for SDK patch work; `NEWMOTA_SDK_MODE=checkout` or
+`archive` forces one source.
+
 Run `make validate-catalog` after changing anything here. It checks every chip, board,
 environment, matrix, native default, partition selection, and hardware definition without
 installing tools or compiling firmware.

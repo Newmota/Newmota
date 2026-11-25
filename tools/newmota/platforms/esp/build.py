@@ -19,6 +19,8 @@ from newmota.host import (
     check_sdk_version,
     command_succeeds,
     cross_build_environment,
+    display_path,
+    ensure_sdk_source,
     find_ccache,
     host_key,
     load_sdk_version,
@@ -34,13 +36,13 @@ from newmota.model import (
     BoardDefinition,
     BuildContext,
     BuildError,
-    esp_sdk_key,
-    esp_keeps_wpa3,
     Environment,
     NativeConfigSpec,
     PackageResult,
     PlatformAdapter,
     SetupUnavailable,
+    esp_keeps_wpa3,
+    esp_sdk_key,
 )
 from newmota.package import LayoutFacts, PackageError
 from newmota.platforms.esp.images import (
@@ -89,6 +91,7 @@ def install_environment(tools_path: Path, sdk_key: str = "esp-idf") -> dict[str,
     for name in (
         "IDF_PATH",
         "IDF_PYTHON_ENV_PATH",
+        "IDF_SKIP_CHECK_SUBMODULES",
         "ESP_IDF_VERSION",
         "PIP_CONFIG_FILE",
         "PIP_CONSTRAINT",
@@ -108,6 +111,9 @@ def install_environment(tools_path: Path, sdk_key: str = "esp-idf") -> dict[str,
     environment["PATH"] = os.pathsep.join((str(base_python.parent), current_path))
     environment["IDF_TOOLS_PATH"] = str(tools_path)
     environment["ESP_PYTHON"] = str(base_python)
+    if load_sdk_version(sdk_key).mode == "archive":
+        # An archive has no .git: IDF's submodule check would run in the Newmota checkout.
+        environment["IDF_SKIP_CHECK_SUBMODULES"] = "1"
     environment["PIP_CONFIG_FILE"] = os.devnull
     environment["PIP_CONSTRAINT"] = str(constraints)
     return environment
@@ -298,14 +304,8 @@ def setup_issue(chips: list[str], sdk_key: str = "esp-idf") -> str | None:
 
 
 def setup_checkout(dry_run: bool, sdk_key: str) -> None:
-    """Initialize and verify a pinned IDF checkout without installing target tools."""
-    sdk = load_sdk_version(sdk_key).source
-    run(
-        ["git", "submodule", "update", "--init", "--recursive", str(sdk.relative_to(ROOT))],
-        dry_run=dry_run,
-    )
-    if not dry_run:
-        check_sdk_version(sdk_key)
+    """Install and verify the pinned IDF source without installing target tools."""
+    ensure_sdk_source(sdk_key, dry_run)
 
 
 def setup(chips: list[str], dry_run: bool, sdk_key: str = "esp-idf") -> None:
@@ -338,16 +338,7 @@ def ensure_flash_tools(sdk_key: str = "esp-idf") -> tuple[SdkVersion, dict[str, 
 
     version = load_sdk_version(sdk_key)
     if not version.source.is_dir():
-        run(
-            [
-                "git",
-                "submodule",
-                "update",
-                "--init",
-                "--recursive",
-                str(version.source.relative_to(ROOT)),
-            ]
-        )
+        ensure_sdk_source(sdk_key, dry_run=False)
     version = check_sdk_version(sdk_key)
     tools_path = Path(os.environ.get("IDF_TOOLS_PATH", Path.home() / ".espressif")).expanduser()
     environment = install_environment(tools_path, sdk_key)
@@ -1146,7 +1137,7 @@ def native_target_issue(board: BoardDefinition) -> str | None:
     sdk = load_sdk_version(board.chip.sdk_key).source
     target = board.chip.sdk_target
     expected = sdk / "components" / "soc" / target
-    return None if expected.is_dir() else f"missing ESP-IDF target {expected.relative_to(ROOT)}"
+    return None if expected.is_dir() else f"missing ESP-IDF target {display_path(expected)}"
 
 
 def _wpa3_removed(environment: Environment, values: Mapping[str, bool]) -> bool:

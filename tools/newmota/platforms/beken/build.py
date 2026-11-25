@@ -19,6 +19,8 @@ from newmota.host import (
     copy_if_changed,
     copy_tree,
     cross_build_environment,
+    display_path,
+    ensure_sdk_source,
     install_arm_none_eabi_toolchain,
     load_sdk_version,
     run,
@@ -100,19 +102,7 @@ def setup(_chips: list[str], dry_run: bool) -> None:
     print(f"Beken SDK source: {sdk}")
     print(f"Beken SDK version: {version.version} ({version.revision[:12]})")
     print(f"Beken tools:      {destination}")
-    run(
-        [
-            "git",
-            "submodule",
-            "update",
-            "--init",
-            "--recursive",
-            str(sdk.relative_to(ROOT)),
-        ],
-        dry_run=dry_run,
-    )
-    if not dry_run:
-        check_sdk_version("beken")
+    ensure_sdk_source("beken", dry_run)
     compiler = install_arm_none_eabi_toolchain(dry_run)
     print(f"Beken compiler:   {compiler}")
 
@@ -643,7 +633,6 @@ def native_requirements(
 
 def native_target_issue(board: BoardDefinition) -> str | None:
     """Read-only check that the pinned SDK contains the selected target."""
-    sdk = ROOT / ".sdk" / board.platform_directory
     target = board.chip.sdk_target
     sdk = load_sdk_version("beken").source
     bdk_root = sdk / "beken378"
@@ -653,10 +642,10 @@ def native_target_issue(board: BoardDefinition) -> str | None:
         return (
             None
             if config.is_file()
-            else f"missing Beken BDK target configuration {config.relative_to(ROOT)}"
+            else f"missing Beken BDK target configuration {display_path(config)}"
         )
     expected = sdk / "platforms" / target
-    return None if expected.is_dir() else f"missing Beken target {expected.relative_to(ROOT)}"
+    return None if expected.is_dir() else f"missing Beken target {display_path(expected)}"
 
 
 def board_issues(board: BoardDefinition) -> list[str]:

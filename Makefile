@@ -31,21 +31,25 @@ BEARSSL_OBJ = $(patsubst src/%.c,build/host/crypto/%.o,$(BEARSSL_SRC))
 # pair, which rejects BearSSL's fixed-width arithmetic.
 BEARSSL_CFLAGS = -std=c11 -Wall -Wextra $(addprefix -D,$(filter %=1,$(BEARSSL_HOST)))
 # The pinned supplicant's SAE code, built on the host against the BearSSL hostap backend.
-HOSTAP_IDF := .sdk/esp-idf-v5.5/components
-HOSTAP := $(HOSTAP_IDF)/wpa_supplicant
-HOSTAP_SRC := $(addprefix $(HOSTAP)/src/,common/sae.c common/dragonfly.c utils/common.c \
+# The path comes from the SDK resolver (submodule checkout or extracted archive), queried once
+# and only by the targets that use it.
+HOSTAP_QUERY = $(eval HOSTAP_QUERY := $(shell PYTHONPATH=tools $(PYTHON) -c 'from newmota.host import load_sdk_version; s = load_sdk_version("esp-idf"); print(s.source / "components", s.mode)'))$(HOSTAP_QUERY)
+HOSTAP_IDF = $(word 1,$(HOSTAP_QUERY))
+HOSTAP_MODE = $(word 2,$(HOSTAP_QUERY))
+HOSTAP = $(HOSTAP_IDF)/wpa_supplicant
+HOSTAP_SRC = $(addprefix $(HOSTAP)/src/,common/sae.c common/dragonfly.c utils/common.c \
 	utils/wpabuf.c utils/wpa_debug.c crypto/sha256.c crypto/sha256-kdf.c crypto/sha256-prf.c \
 	crypto/sha1.c crypto/sha1-pbkdf2.c crypto/md5.c crypto/aes-wrap.c crypto/aes-unwrap.c \
 	crypto/aes-omac1.c crypto/aes-siv.c crypto/aes-ctr.c crypto/dh_groups.c)
 HOSTAP_BACKEND := src/platform/crypto/hostap_sae_crypto.c src/platform/crypto/hostap_symmetric_bearssl.c
-HOSTAP_SDK_INC := $(addprefix $(HOSTAP)/,src src/utils src/crypto port/include include \
+HOSTAP_SDK_INC = $(addprefix $(HOSTAP)/,src src/utils src/crypto port/include include \
 	esp_supplicant/include esp_supplicant/src) $(addprefix $(HOSTAP_IDF)/,esp_wifi/include \
 	esp_wifi/include/local esp_event/include esp_netif/include \
 	esp_wifi/wifi_apps/roaming_app/include esp_hw_support/include)
 HOSTAP_DEFS := -std=gnu11 -fsanitize=address,undefined -DESP_PLATFORM -DESP_SUPPLICANT \
 	-DCONFIG_WPA3_SAE -DCONFIG_SAE_H2E -DCONFIG_SAE -DCONFIG_ECC -DCONFIG_SHA256 \
 	-DCONFIG_CRYPTO_INTERNAL -DCONFIG_NO_STDOUT_DEBUG -DBR_LOMUL=1
-HOSTAP_CFLAGS := $(HOSTAP_DEFS) -Itools/tests/crypto/hostap $(addprefix -I,$(HOSTAP_SDK_INC)) \
+HOSTAP_CFLAGS = $(HOSTAP_DEFS) -Itools/tests/crypto/hostap $(addprefix -I,$(HOSTAP_SDK_INC)) \
 	-I$(BEARSSL_ROOT)/src -I$(BEARSSL_ROOT)/extensions
 CRYPTO_KAT_HDR := tools/tests/crypto/crypto_kat.h
 CRYPTO_KAT_SRC := tools/tests/crypto/crypto_kat_main.cpp \
@@ -134,6 +138,8 @@ test-crypto:
 	@if [ -f $(HOSTAP)/src/common/sae.c ]; then \
 		$(MAKE) --no-print-directory build/host/hostap-sae-test build/host/hostap-bignum-fuzz && \
 		build/host/hostap-sae-test 200; \
+	elif [ "$(HOSTAP_MODE)" = archive ]; then \
+		echo "hostap SAE test: $(HOSTAP) is missing from the ESP-IDF archive" >&2; exit 1; \
 	else echo "hostap SAE test: skipped (no $(HOSTAP))"; fi
 	@PYTHONPATH=tools $(PYTHON) -m unittest discover -s tools/tests/crypto -p 'test_*.py'
 

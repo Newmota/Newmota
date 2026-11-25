@@ -27,6 +27,8 @@ from newmota.host import (
     copy_if_changed,
     copy_tree,
     cross_build_environment,
+    display_path,
+    ensure_sdk_source,
     find_ccache,
     host_key,
     install_archive_toolchain,
@@ -340,17 +342,7 @@ def setup(_chips: list[str], dry_run: bool) -> None:
     print(f"AmebaD SDK version: {version.version} ({version.revision[:12]})")
     print(f"AmebaD programmer: {version.programmer} {version.programmer_version}")
     print(f"AmebaD tools:      {destination}")
-    run(
-        [
-            "git",
-            "submodule",
-            "update",
-            "--init",
-            "--recursive",
-            str(sdk.relative_to(ROOT)),
-        ],
-        dry_run=dry_run,
-    )
+    ensure_sdk_source("amebad", dry_run)
     if not dry_run:
         checked = check_sdk_version("amebad")
         programmer_issue = _programmer_issue(checked)
@@ -1208,13 +1200,13 @@ def native_requirements(
 
 def native_target_issue(board: BoardDefinition) -> str | None:
     """Read-only check that the pinned SDK contains the selected target."""
-    sdk = ROOT / ".sdk" / board.platform_directory
+    sdk = load_sdk_version("amebad").source
     target = board.chip.sdk_target
     project = sdk / "project" / str(board.sdk_board)
     if not project.is_dir():
-        return f"missing AmebaD project {project.relative_to(ROOT)}"
+        return f"missing AmebaD project {display_path(project)}"
     header = sdk / "component" / "soc" / "realtek" / "amebad" / "fwlib" / "include" / f"{target}.h"
-    return None if header.is_file() else f"missing AmebaD target {header.relative_to(ROOT)}"
+    return None if header.is_file() else f"missing AmebaD target {display_path(header)}"
 
 
 def board_issues(board: BoardDefinition) -> list[str]:

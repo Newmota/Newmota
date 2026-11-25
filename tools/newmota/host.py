@@ -13,6 +13,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import urllib.parse
 import urllib.request
 import zipfile
 from collections.abc import Callable
@@ -457,6 +458,8 @@ def source_state() -> dict[str, str | bool]:
 
 SDK_SOURCE_DIR = ROOT / ".sdk"
 SDK_CONFIG_DIR = ROOT / "config" / "sdk"
+SDK_MODES = ("checkout", "archive")
+SDK_ARCHIVE_STAMP = ".newmota-sdk.json"
 SDK_NAMES = ("esp-idf", "esp-idf-v6.1", "bouffalo", "beken", "amebad", "pico-sdk")
 STRING_VALUE = re.compile(r'^([a-z0-9_]+)\s*=\s*"([^"\\]*)"\s*$')
 REVISION = re.compile(r"[0-9a-f]{40}")
@@ -477,10 +480,65 @@ class SdkVersion:
     programmer_status: str
     programmer_sha256: str | None
     source_name: str | None
+    archive: str | None = None
+    archive_sha256: str | None = None
+
+    @property
+    def checkout(self) -> Path:
+        """The submodule checkout under .sdk/, used for SDK patch work."""
+        return SDK_SOURCE_DIR / (self.source_name or self.key)
+
+    @property
+    def archive_dir(self) -> Path | None:
+        """The extracted release archive in the SDK cache, keyed by its checksum."""
+        if self.archive_sha256 is None:
+            return None
+        return sdk_cache_root() / self.key / self.archive_sha256[:16]
+
+    @property
+    def mode(self) -> str:
+        """checkout when .sdk/<source> is initialized or no archive is pinned, else archive.
+
+        NEWMOTA_SDK_MODE=checkout|archive forces one mode.
+        """
+        forced = os.environ.get("NEWMOTA_SDK_MODE", "").strip()
+        if forced:
+            if forced not in SDK_MODES:
+                raise SdkVersionError(
+                    f"NEWMOTA_SDK_MODE must be checkout or archive, not '{forced}'"
+                )
+            if forced == "archive" and self.archive is None:
+                raise SdkVersionError(f"NEWMOTA_SDK_MODE=archive, but {self.key} pins no archive")
+            return forced
+        if self.archive is None or (self.checkout / ".git").exists():
+            return "checkout"
+        return "archive"
 
     @property
     def source(self) -> Path:
-        return SDK_SOURCE_DIR / (self.source_name or self.key)
+        if self.mode == "archive":
+            assert self.archive_dir is not None
+            return self.archive_dir
+        return self.checkout
+
+
+def sdk_cache_root() -> Path:
+    """Extracted SDK archives; NEWMOTA_SDK_PATH overrides ~/.newmota/sdk."""
+    configured = os.environ.get("NEWMOTA_SDK_PATH", str(Path.home() / ".newmota" / "sdk"))
+    return Path(configured).expanduser()
+
+
+def sdk_download_root() -> Path:
+    """Downloaded SDK archives, kept beside the SDK cache for offline re-extraction."""
+    return sdk_cache_root().parent / "downloads"
+
+
+def display_path(path: Path) -> str:
+    """A repository-relative path when inside the checkout, otherwise the absolute path."""
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return str(path)
 
 
 def load_sdk_version(key: str) -> SdkVersion:
@@ -509,7 +567,7 @@ def load_sdk_version(key: str) -> SdkVersion:
         "programmer_version",
         "programmer_status",
     }
-    optional = {"programmer_sha256", "source"}
+    optional = {"programmer_sha256", "source", "archive", "archive_sha256"}
     missing = required - values.keys()
     extra = values.keys() - required - optional
     if missing:
@@ -532,6 +590,19 @@ def load_sdk_version(key: str) -> SdkVersion:
         raise SdkVersionError(
             f"{path.relative_to(ROOT)} programmer_sha256 must be a lowercase SHA-256"
         )
+    archive = values.get("archive")
+    archive_sha256 = values.get("archive_sha256")
+    if (archive is None) != (archive_sha256 is None):
+        raise SdkVersionError(
+            f"{path.relative_to(ROOT)} archive and archive_sha256 must be set together"
+        )
+    if archive is not None:
+        if not archive.startswith("https://") or not archive.endswith(".tar.xz"):
+            raise SdkVersionError(f"{path.relative_to(ROOT)} archive must be an https .tar.xz URL")
+        if not re.fullmatch(r"[0-9a-f]{64}", archive_sha256 or ""):
+            raise SdkVersionError(
+                f"{path.relative_to(ROOT)} archive_sha256 must be a lowercase SHA-256"
+            )
     if status == "unselected" and (
         values["programmer"] != "unselected" or values["programmer_version"] != "unselected"
     ):
@@ -548,10 +619,32 @@ def load_sdk_version(key: str) -> SdkVersion:
         status,
         programmer_sha256,
         values.get("source"),
+        archive,
+        archive_sha256,
     )
 
 
+def _archive_stamp(sdk: SdkVersion) -> dict[str, str]:
+    return {
+        "key": sdk.key,
+        "revision": sdk.revision,
+        "archive": sdk.archive or "",
+        "archive_sha256": sdk.archive_sha256 or "",
+    }
+
+
 def checked_out_revision(sdk: SdkVersion) -> str:
+    if sdk.mode == "archive":
+        stamp = sdk.source / SDK_ARCHIVE_STAMP
+        try:
+            recorded = json.loads(stamp.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as error:
+            raise SdkVersionError(
+                f"{display_path(sdk.source)} is not installed; run make setup for its platform"
+            ) from error
+        if recorded.get("archive_sha256") != sdk.archive_sha256:
+            raise SdkVersionError(f"{display_path(stamp)} does not match the pinned archive")
+        return str(recorded.get("revision", ""))
     try:
         return subprocess.run(
             ["git", "-C", str(sdk.source), "rev-parse", "HEAD"],
@@ -561,7 +654,7 @@ def checked_out_revision(sdk: SdkVersion) -> str:
         ).stdout.strip()
     except (OSError, subprocess.CalledProcessError) as error:
         raise SdkVersionError(
-            f"{sdk.source.relative_to(ROOT)} is not initialized; run make setup for its platform"
+            f"{display_path(sdk.source)} is not initialized; run make setup for its platform"
         ) from error
 
 
@@ -570,14 +663,100 @@ def check_sdk_version(key: str) -> SdkVersion:
     actual = checked_out_revision(sdk)
     if actual != sdk.revision:
         raise SdkVersionError(
-            f"{sdk.source.relative_to(ROOT)} revision mismatch: "
-            f"expected {sdk.revision}, got {actual}"
+            f"{display_path(sdk.source)} revision mismatch: expected {sdk.revision}, got {actual}"
         )
     return sdk
 
 
 def check_sdk_versions(keys: tuple[str, ...] = SDK_NAMES) -> list[SdkVersion]:
     return [check_sdk_version(key) for key in keys]
+
+
+def ensure_sdk_source(key: str, dry_run: bool) -> SdkVersion:
+    """Install the pinned SDK source: the .sdk/ submodule or the checksummed release archive."""
+    sdk = load_sdk_version(key)
+    print(f"SDK mode:          {sdk.mode}")
+    if sdk.mode == "checkout":
+        run(
+            ["git", "submodule", "update", "--init", "--recursive", display_path(sdk.checkout)],
+            dry_run=dry_run,
+        )
+    else:
+        install_sdk_archive(sdk, dry_run)
+    if not dry_run:
+        check_sdk_version(key)
+    return sdk
+
+
+def _require_lzma() -> None:
+    try:
+        import lzma  # noqa: F401
+    except ImportError as error:
+        raise SetupUnavailable(
+            f"{sys.executable} was built without the lzma module, which SDK archives "
+            "(.tar.xz) need; use a Python built with liblzma, for example one installed by uv"
+        ) from error
+
+
+def _make_read_only(root: Path, *, include_root: bool = True) -> None:
+    for directory, _, files in os.walk(root):
+        for name in files:
+            path = Path(directory) / name
+            if not path.is_symlink():
+                path.chmod(path.stat().st_mode & ~0o222)
+        if include_root or Path(directory) != root:
+            Path(directory).chmod(Path(directory).stat().st_mode & ~0o222)
+
+
+def install_sdk_archive(sdk: SdkVersion, dry_run: bool) -> Path:
+    """Download, verify, and extract an SDK release archive into the read-only SDK cache."""
+    assert sdk.archive is not None and sdk.archive_sha256 is not None
+    destination = sdk.archive_dir
+    assert destination is not None
+    if (destination / SDK_ARCHIVE_STAMP).is_file():
+        return destination
+    if destination.exists():
+        raise SetupUnavailable(f"incomplete SDK directory exists: {destination}")
+    archive = sdk_download_root() / Path(urllib.parse.urlparse(sdk.archive).path).name
+    print(f"SDK archive:       {sdk.archive}")
+    print(f"SDK destination:   {destination}")
+    if dry_run:
+        if not archive.is_file():
+            print(f"$ download {sdk.archive} -> {archive}")
+        print(f"$ verify sha256 {sdk.archive_sha256}")
+        print(f"$ extract -> {destination}")
+        return destination
+
+    _require_lzma()
+    if not archive.is_file() or _file_sha256(archive) != sdk.archive_sha256:
+        archive.parent.mkdir(parents=True, exist_ok=True)
+        partial = archive.with_name(archive.name + ".part")
+        _download(sdk.archive, partial)
+        actual_hash = _file_sha256(partial)
+        if actual_hash != sdk.archive_sha256:
+            partial.unlink()
+            raise SetupUnavailable(
+                f"SDK archive checksum mismatch: expected {sdk.archive_sha256}, got {actual_hash}"
+            )
+        partial.replace(archive)
+
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=".newmota-sdk-", dir=destination.parent) as temporary:
+        extracted = Path(temporary) / "extracted"
+        extracted.mkdir()
+        _extract_archive(archive, extracted)
+        contents = list(extracted.iterdir())
+        if len(contents) != 1 or not contents[0].is_dir():
+            raise SetupUnavailable("SDK archive must contain exactly one top-level directory")
+        root = contents[0]
+        (root / SDK_ARCHIVE_STAMP).write_text(
+            json.dumps(_archive_stamp(sdk), indent=2) + "\n", encoding="utf-8"
+        )
+        # A read-only directory cannot be renamed (macOS), so the root follows the rename.
+        _make_read_only(root, include_root=False)
+        root.rename(destination)
+    destination.chmod(destination.stat().st_mode & ~0o222)
+    return destination
 
 
 def sdk_main(keys: list[str], *, as_json: bool = False) -> int:
@@ -590,6 +769,8 @@ def sdk_main(keys: list[str], *, as_json: bool = False) -> int:
                     "name": sdk.name,
                     "version": sdk.version,
                     "revision": sdk.revision,
+                    "mode": sdk.mode,
+                    "source": str(sdk.source),
                     "programmer": {
                         "name": sdk.programmer,
                         "version": sdk.programmer_version,
@@ -602,7 +783,7 @@ def sdk_main(keys: list[str], *, as_json: bool = False) -> int:
             print(json.dumps(document, indent=2))
         else:
             for sdk in versions:
-                print(f"{sdk.name}: {sdk.version} ({sdk.revision[:12]})")
+                print(f"{sdk.name}: {sdk.version} ({sdk.revision[:12]}, {sdk.mode})")
                 print(
                     f"  programmer: {sdk.programmer} {sdk.programmer_version} "
                     f"[{sdk.programmer_status}]"

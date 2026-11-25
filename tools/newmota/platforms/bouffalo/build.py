@@ -20,6 +20,8 @@ from newmota.host import (
     compiler_path,
     copy_if_changed,
     cross_build_environment,
+    display_path,
+    ensure_sdk_source,
     host_key,
     install_archive_bundle,
     load_sdk_version,
@@ -124,17 +126,7 @@ def setup(_chips: list[str], dry_run: bool) -> None:
     print(f"BouffaloSDK source: {sdk}")
     print(f"BouffaloSDK version: {version.version} ({version.revision[:12]})")
     print(f"Bouffalo tools:     {destination}")
-    run(
-        [
-            "git",
-            "submodule",
-            "update",
-            "--init",
-            "--recursive",
-            str(sdk.relative_to(ROOT)),
-        ],
-        dry_run=dry_run,
-    )
+    ensure_sdk_source("bouffalo", dry_run)
     compiler = compiler_path(destination, "riscv64-unknown-elf-")
     install_archive_bundle(
         f"{spec.source}/{spec.archive_name}",
@@ -324,6 +316,7 @@ class BouffaloAdapter(PlatformAdapter):
                 f"-DBUILD_DIR={self.native}",
                 f"-DSDK_DEMO_PATH={self.project}",
                 f"-DNEWMOTA_ROOT={ROOT}",
+                f"-DNEWMOTA_SDK_ROOT={sdk.source}",
                 f"-DNEWMOTA_ENV={item.name}",
                 f"-DNEWMOTA_CHIP={item.chip}",
                 f"-DNEWMOTA_SDK_VERSION={sdk.version}",
@@ -573,13 +566,13 @@ def native_requirements(
 
 def native_target_issue(board: BoardDefinition) -> str | None:
     """Read-only check that the pinned SDK contains the selected target."""
-    sdk = ROOT / ".sdk" / board.platform_directory
+    sdk = load_sdk_version("bouffalo").source
     target = board.chip.sdk_target
     target_dir = sdk / "drivers" / "soc" / target
     if not target_dir.is_dir():
-        return f"missing Bouffalo target {target_dir.relative_to(ROOT)}"
+        return f"missing Bouffalo target {display_path(target_dir)}"
     board_dir = sdk / "bsp" / "board" / str(board.sdk_board)
-    return None if board_dir.is_dir() else f"missing Bouffalo board {board_dir.relative_to(ROOT)}"
+    return None if board_dir.is_dir() else f"missing Bouffalo board {display_path(board_dir)}"
 
 
 def board_issues(board: BoardDefinition) -> list[str]:

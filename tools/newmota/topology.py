@@ -497,7 +497,7 @@ def _pin_label(numbering: str, pin: int) -> str:
 def _source_hashes(topology: ArchitectureTopology, sdk_key: str | None = None) -> dict[str, str]:
     """Hash the reviewed SDK inputs so SDK changes invalidate topology identity."""
 
-    from newmota.host import load_sdk_version
+    from newmota.host import display_path, load_sdk_version
 
     sdk_key = sdk_key or topology.platform_directory
     sdk_root = load_sdk_version(sdk_key).source
@@ -511,7 +511,7 @@ def _source_hashes(topology: ArchitectureTopology, sdk_key: str | None = None) -
         if not source.is_file():
             raise CatalogError(
                 f"{topology.path.relative_to(ROOT)} references missing SDK source "
-                f"{source.relative_to(ROOT)}"
+                f"{display_path(source)}"
             )
         result[str(relative)] = sha256(source)
     return result

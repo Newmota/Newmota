@@ -18,6 +18,8 @@ from newmota.host import (
     check_sdk_version,
     cmake_status,
     cross_build_environment,
+    display_path,
+    ensure_sdk_source,
     find_ccache,
     host_key,
     install_archive_bundle,
@@ -152,19 +154,7 @@ def setup(_chips: list[str], dry_run: bool) -> None:
     print(f"Pico SDK source:  {sdk}")
     print(f"Pico SDK version: {version.version} ({version.revision[:12]})")
     print(f"Pico tools:       {arm_none_eabi_toolchain()}")
-    run(
-        [
-            "git",
-            "submodule",
-            "update",
-            "--init",
-            "--recursive",
-            str(sdk.relative_to(ROOT)),
-        ],
-        dry_run=dry_run,
-    )
-    if not dry_run:
-        check_sdk_version("pico-sdk")
+    ensure_sdk_source("pico-sdk", dry_run)
     compiler = install_arm_none_eabi_toolchain(dry_run)
     print(f"Pico compiler:    {compiler}")
     picotool = _install_picotool(version, dry_run)
@@ -531,17 +521,15 @@ def native_requirements(
 
 def native_target_issue(board: BoardDefinition) -> str | None:
     """Read-only check that the pinned SDK contains the selected target."""
-    sdk = ROOT / ".sdk" / board.platform_directory
+    sdk = load_sdk_version("pico-sdk").source
     target = board.chip.sdk_target
     platform_name = "rp2350" if target.startswith("rp2350-") else target
     platform_dir = sdk / "src" / platform_name
     if not platform_dir.is_dir():
-        return f"missing Pico SDK target {platform_dir.relative_to(ROOT)}"
+        return f"missing Pico SDK target {display_path(platform_dir)}"
     board_header = sdk / "src" / "boards" / "include" / "boards" / f"{board.sdk_board}.h"
     return (
-        None
-        if board_header.is_file()
-        else f"missing Pico SDK board {board_header.relative_to(ROOT)}"
+        None if board_header.is_file() else f"missing Pico SDK board {display_path(board_header)}"
     )
 
 

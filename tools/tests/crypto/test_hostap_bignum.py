@@ -91,7 +91,7 @@ def _case(rng: random.Random) -> tuple[str, str]:
     return f"{op} {_hex(a)} {_hex(b)} {_hex(m)}", e
 
 
-@unittest.skipUnless(FUZZ.is_file(), "build/host/hostap-bignum-fuzz not built (needs .sdk/esp-idf-v5.5)")
+@unittest.skipUnless(FUZZ.is_file(), "build/host/hostap-bignum-fuzz not built (needs the ESP-IDF 5.5 source)")
 class HostapBignumTest(unittest.TestCase):
     def test_operations_match_python_integers(self):
         for seed in (1, 2, 3):
