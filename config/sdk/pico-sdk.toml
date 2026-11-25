@@ -1,6 +1,8 @@
 name = "Pico SDK"
 version = "2.3.1"
 revision = "079c6f39023649b154152db30f1d781e884879bc"
+archive = "https://github.com/Newmota/sdk-archives/releases/download/pico-sdk-2.3.1-079c6f39-p1/pico-sdk-2.3.1-079c6f39-p1.tar.xz"
+archive_sha256 = "7ad1f365e131564e78f2d1fc30fa953fe09ff35e7949e3564c8c0d642312f189"
 programmer = "picotool"
 programmer_version = "2.3.1"
 programmer_status = "active"

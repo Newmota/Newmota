@@ -13,7 +13,7 @@
 	url = https://github.com/Staars/ameba-rtos-d.git
 [submodule ".sdk/pico-sdk"]
 	path = .sdk/pico-sdk
-	url = https://github.com/raspberrypi/pico-sdk.git
+	url = https://github.com/Newmota/pico-sdk.git
 [submodule "sdk/esp-idf-v5.5"]
 	path = .sdk/esp-idf-v5.5
 	url = https://github.com/Newmota/esp-idf.git

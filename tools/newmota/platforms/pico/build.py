@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import stat
@@ -205,10 +206,26 @@ class PicoSdkAdapter(PlatformAdapter):
         self.environment: dict[str, str] = {}
 
     def prepare(self) -> None:
-        if self.context.native_config.changed and self.native.exists():
+        self.context.work_dir.mkdir(parents=True, exist_ok=True)
+        # CMakeCache.txt keeps PICO_SDK_PATH, so a checkout/archive switch needs a fresh tree.
+        sdk_marker = self.context.work_dir / "pico-sdk.json"
+        sdk_identity = {
+            "key": self.context.sdk.key,
+            "revision": self.context.sdk.revision,
+            "source": str(self.context.sdk.source.resolve()),
+        }
+        previous_sdk = None
+        if sdk_marker.is_file():
+            previous_sdk = json.loads(sdk_marker.read_text(encoding="utf-8"))
+        elif self.native.exists():
+            previous_sdk = {}
+        if previous_sdk is not None and previous_sdk != sdk_identity and self.native.exists():
+            print("Discarding Pico SDK build tree after SDK selection change.")
+            shutil.rmtree(self.native)
+        elif self.context.native_config.changed and self.native.exists():
             print("Discarding stale Pico SDK build tree after native config change.")
             shutil.rmtree(self.native)
-        self.context.work_dir.mkdir(parents=True, exist_ok=True)
+        sdk_marker.write_text(json.dumps(sdk_identity, indent=2) + "\n", encoding="utf-8")
 
     def configure(self) -> None:
         sdk = self.context.sdk
@@ -271,6 +288,7 @@ class PicoSdkAdapter(PlatformAdapter):
             "-G",
             "Unix Makefiles",
             "-DCMAKE_BUILD_TYPE=MinSizeRel",
+            f"-DPICO_SDK_PATH={sdk.source}",
             "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
             # Rule messages name each compiled source; run_build keeps them off the terminal.
             "-DCMAKE_RULE_MESSAGES=ON",
