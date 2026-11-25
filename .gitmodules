@@ -3,7 +3,8 @@
 	url = https://github.com/Staars/bouffalo_sdk.git
 [submodule "sdk/esp-idf"]
 	path = .sdk/esp-idf-v6.1
-	url = https://github.com/espressif/esp-idf.git
+	url = https://github.com/Newmota/esp-idf.git
+	branch = newmota/v6.1
 [submodule "sdk/beken-bdk"]
 	path = .sdk/beken-bdk
 	url = https://github.com/Staars/framework-beken-bdk.git

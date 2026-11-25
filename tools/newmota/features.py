@@ -1489,14 +1489,13 @@ def feature_values(environment: Environment, layout: LayoutFacts | None = None) 
             for name, spec in OPTIONAL_FEATURES.items()
         }
     )
-    # ESP Wi-Fi builds on ESP-IDF 5.5 that keep WPA3 run it on BearSSL, with the hardware SHA-1,
-    # SHA-256 and P-256 providers the target has. Both are off elsewhere and can be turned off
-    # per build.
+    # ESP Wi-Fi builds (ESP-IDF 5.5 and 6.1) that keep WPA3 run it on BearSSL, with the hardware
+    # SHA-1, SHA-256 and P-256 providers the target has. Both are off elsewhere and can be turned
+    # off per build.
     if (
         use_wifi
         and not use_hosted  # the supplicant runs on the ESP-Hosted companion
         and environment.platform == "esp"
-        and environment.sdk_key == "esp-idf"  # the 5.5 track; only it has the fork
         and esp_keeps_wpa3(environment, bearssl=True)
     ):
         from newmota.crypto import HARDWARE_CRYPTO_TARGETS
