@@ -70,6 +70,7 @@ void NetworkService::initialize(const std::uint32_t now) {
     const auto capabilities = platform::wifi_capabilities();
     station_access_point_supported_ = capabilities.station_access_point;
     wifi_test_timeout_ms_ = capabilities.credential_test_timeout_ms;
+    command_test_timeout_ms_ = capabilities.command_test_timeout_ms;
     slot_ = settings_.preferred_wifi_slot();
     attempted_slots_ = 0U;
     attempted_ = false;
@@ -621,11 +622,11 @@ platform::NetworkResult NetworkService::begin_provisioning_test(const std::strin
             provisioning_failure_ = ProvisioningFailure::none;
         }
         candidate_connect_started_ = !defer_connect;
-        provisioning_deadline_ =
-            defer_connect ? now + kOnboardingHandoffMilliseconds
-                          : now + (update_web_password ? kConnectTimeoutMilliseconds
-                                      : command ? platform::kWifiCredentialTestTimeoutMilliseconds
-                                                : wifi_test_timeout_ms_);
+        provisioning_deadline_ = defer_connect
+                                     ? now + kOnboardingHandoffMilliseconds
+                                     : now + (update_web_password ? kConnectTimeoutMilliseconds
+                                                 : command        ? command_test_timeout_ms_
+                                                                  : wifi_test_timeout_ms_);
         restart_scheduled_ = false;
     } else {
         candidate_ssid_.fill('\0');

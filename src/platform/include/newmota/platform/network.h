@@ -87,14 +87,15 @@ struct WifiSnapshot final {
     AccessPointState access_point{AccessPointState::disabled};
 };
 
-/** @brief Tasmota's time limit for a new network to connect: WifiTest always uses it, and a
- *  platform may give web setup more. */
+/** @brief Tasmota's time limit for a new network to connect: WifiTest uses it unless a
+ *  platform's join needs longer, and a platform may give web setup more. */
 inline constexpr std::uint32_t kWifiCredentialTestTimeoutMilliseconds = 9'000;
 
 /** @brief Native Wi-Fi combinations that the adapter can keep alive together. */
 struct WifiCapabilities final {
     bool station_access_point{};
     std::uint32_t credential_test_timeout_ms{kWifiCredentialTestTimeoutMilliseconds};
+    std::uint32_t command_test_timeout_ms{kWifiCredentialTestTimeoutMilliseconds};
 };
 
 /** @brief Station link details for Tasmota's STATE Wifi block. */

@@ -263,6 +263,7 @@ class NetworkService final {
     bool access_point_ready_{};
     bool station_access_point_supported_{};
     std::uint32_t wifi_test_timeout_ms_{platform::kWifiCredentialTestTimeoutMilliseconds};
+    std::uint32_t command_test_timeout_ms_{platform::kWifiCredentialTestTimeoutMilliseconds};
     AccessPointPurpose access_point_purpose_{AccessPointPurpose::none};
     ProvisioningState provisioning_state_{ProvisioningState::idle};
     ProvisioningFailure provisioning_failure_{ProvisioningFailure::none};

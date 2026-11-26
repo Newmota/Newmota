@@ -258,7 +258,12 @@ NetworkResult set_wifi_power_save(bool) {
 
 /** @brief BL602 exposes independent station and AP manager interfaces. */
 WifiCapabilities wifi_capabilities() {
+#if defined(BL602)
+    // A BL602 WPA2 join with DHCP took 7.6 to 7.8 s, too close to Tasmota's 9 s.
+    return {true, 12'000, 12'000};
+#else
     return {true};
+#endif
 }
 
 /** @brief Starts one BL602 station connection with DHCP enabled. */
