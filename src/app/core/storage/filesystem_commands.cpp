@@ -15,6 +15,7 @@
 
 #include "core/storage/filesystem.h"
 #include "support/text.h"
+#include "support/number.h"
 
 #include <cstddef>
 #include <string_view>
@@ -109,10 +110,13 @@ bool write_space(CommandOutput& output, const filesystem::Volume volume) {
         (void)output.format("\"Mounted\":true,\"Error\":%d", filesystem::last_error());
         return false;
     }
-    return output.format("\"Mounted\":true,\"Total\":%llu,\"Used\":%llu,\"Free\":%llu",
-        static_cast<unsigned long long>(space.total_bytes),
-        static_cast<unsigned long long>(space.used_bytes),
-        static_cast<unsigned long long>(space.total_bytes - space.used_bytes));
+    return output.format("\"Mounted\":true,\"Total\":%s,\"Used\":%s,\"Free\":%s",
+        newmota::support::decimal(std::uint64_t(space.total_bytes)).text,
+        newmota::support::decimal(std::uint64_t(space.used_bytes)).text,
+        newmota::support::decimal(
+            std::uint64_t(
+                space.used_bytes < space.total_bytes ? space.total_bytes - space.used_bytes : 0U))
+            .text);
 }
 
 /**

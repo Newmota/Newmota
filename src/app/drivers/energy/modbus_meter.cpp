@@ -24,6 +24,7 @@
 #include "core/storage/filesystem.h"
 #include "newmota_features.h"
 #include "newmota/platform/platform.h"
+#include "support/number.h"
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -141,14 +142,16 @@ bool write_user_value(CommandOutput& output, std::int64_t micro, std::uint8_t de
             fraction = 0;
         }
     }
-    if (!output.format("%s%llu", negative ? "-" : "", static_cast<unsigned long long>(whole)))
+    if (!output.format(
+            "%s%s", negative ? "-" : "", newmota::support::decimal(std::uint64_t(whole)).text))
         return false;
     if (!decimals)
         return true;
     /** @brief The rounded fraction already has retained_digits places; scaling it again
      * would erase lower-precision fractional readings. Six-place values need no rounding.
      */
-    if (!output.format(".%0*llu", int(retained_digits), static_cast<unsigned long long>(fraction)))
+    if (!output.format(".%s",
+            newmota::support::digits(std::uint64_t(fraction), 10, unsigned(retained_digits)).text))
         return false;
     constexpr std::string_view zeros{"00000000000000"};
     return decimals <= 6 || output.write(zeros.substr(0, decimals - 6));

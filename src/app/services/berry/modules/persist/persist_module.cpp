@@ -22,6 +22,7 @@ extern "C" {
 #include "be_string.h"
 #include "be_vm.h"
 }
+#include "support/number.h"
 
 namespace {
 namespace fs = newmota::filesystem;
@@ -78,17 +79,15 @@ bool encode(bvm* vm, int index, Buffer& out, unsigned depth) {
     if (be_isstring(vm, index))
         return string_json(vm, index, out);
     if (be_isint(vm, index) || be_isreal(vm, index)) {
-        char number[64];
-        int size;
         if (be_isint(vm, index)) {
-            size = std::snprintf(
-                number, sizeof number, "%lld", static_cast<long long>(be_toint(vm, index)));
-        } else {
-            const auto value = static_cast<double>(be_toreal(vm, index));
-            if (!std::isfinite(value))
-                return false;
-            size = std::snprintf(number, sizeof number, "%.17g", value);
+            const auto number = newmota::support::decimal(std::int64_t(be_toint(vm, index)));
+            return out.append(number.text, number.size);
         }
+        const auto value = static_cast<double>(be_toreal(vm, index));
+        if (!std::isfinite(value))
+            return false;
+        char number[64];
+        const int size = std::snprintf(number, sizeof number, "%.17g", value);
         return size > 0 && static_cast<std::size_t>(size) < sizeof number &&
                out.append(number, static_cast<std::size_t>(size));
     }

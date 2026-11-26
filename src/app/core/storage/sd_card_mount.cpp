@@ -16,6 +16,7 @@
 #include "gpio_ids.h"
 #include "newmota/log.h"
 #include "newmota/platform/sd_card.h"
+#include "support/number.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -82,12 +83,12 @@ void mount_sd_card(const Hardware& hardware) {
                                   ? (space.total_bytes - space.used_bytes) / 1024U
                                   : 0U;
         if (spi)
-            AddLog(LogLevel::info, "UFS: SDCard mounted (SPI bus%u) with %llu kB free",
+            AddLog(LogLevel::info, "UFS: SDCard mounted (SPI bus%u) with %s kB free",
                 static_cast<unsigned>(config.spi_bus) + 1U,
-                static_cast<unsigned long long>(free_kib));
+                newmota::support::decimal(std::uint64_t(free_kib)).text);
         else
-            AddLog(LogLevel::info, "UFS: SDCard mounted (SDIO %u-bit) with %llu kB free",
-                config.d1 >= 0 ? 4U : 1U, static_cast<unsigned long long>(free_kib));
+            AddLog(LogLevel::info, "UFS: SDCard mounted (SDIO %u-bit) with %s kB free",
+                config.d1 >= 0 ? 4U : 1U, newmota::support::decimal(std::uint64_t(free_kib)).text);
         return;
     }
     switch (result) {

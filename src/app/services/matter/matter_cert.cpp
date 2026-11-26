@@ -12,7 +12,9 @@
 #include "services/matter/matter_cert.h"
 
 #include "services/matter/matter_wire.h"
+#include "support/number.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 
@@ -190,8 +192,14 @@ struct Fields {
 
 /** @brief Writes a whole number as DER text in a fixed-width upper-case hexadecimal form. */
 [[nodiscard]] std::size_t hex_text(char* const text, const std::uint64_t value, const int digits) {
-    return static_cast<std::size_t>(
-        std::snprintf(text, 20, "%0*llX", digits, static_cast<unsigned long long>(value)));
+    // Not %0*llX: newlib-nano (Beken) has no long long conversions.
+    // A negative width pads nothing, as snprintf's left-justified field would.
+    const auto formatted =
+        newmota::support::digits(value, 16, digits > 0 ? static_cast<unsigned>(digits) : 0U);
+    const std::size_t length = std::min<std::size_t>(formatted.size, 19U);
+    std::memcpy(text, formatted.text, length);
+    text[length] = '\0';
+    return length;
 }
 
 /** @brief Writes a Name from the DN list starting at offset, in the original order. */

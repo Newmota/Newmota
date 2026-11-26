@@ -1955,19 +1955,20 @@ void WebService::handle(platform::WebExchange& exchange, const std::uint32_t now
                 ",\"boot_loop\":%u", static_cast<unsigned int>(boot_guard().restart().count));
         (void)output.write("},\"filesystem\":{\"mounted\":");
         (void)output.write(filesystem::is_mounted() ? "true" : "false");
-        (void)output.format(",\"available\":%s,\"used\":%llu,\"total\":%llu}",
+        (void)output.format(",\"available\":%s,\"used\":%s,\"total\":%s}",
             filesystem_available ? "true" : "false",
-            static_cast<unsigned long long>(space.used_bytes),
-            static_cast<unsigned long long>(space.total_bytes));
+            newmota::support::decimal(std::uint64_t(space.used_bytes)).text,
+            newmota::support::decimal(std::uint64_t(space.total_bytes)).text);
 #if USE_SDCARD
         // Present in USE_SDCARD builds: the browser shows the card beside the flash volume.
         filesystem::SpaceInfo card{};
         const bool card_available = filesystem::space(card, filesystem::Volume::sd);
-        (void)output.format(",\"sd\":{\"mounted\":%s,\"available\":%s,\"used\":%llu,"
-                            "\"total\":%llu}",
+        (void)output.format(",\"sd\":{\"mounted\":%s,\"available\":%s,\"used\":%s,"
+                            "\"total\":%s}",
             filesystem::is_mounted(filesystem::Volume::sd) ? "true" : "false",
-            card_available ? "true" : "false", static_cast<unsigned long long>(card.used_bytes),
-            static_cast<unsigned long long>(card.total_bytes));
+            card_available ? "true" : "false",
+            newmota::support::decimal(std::uint64_t(card.used_bytes)).text,
+            newmota::support::decimal(std::uint64_t(card.total_bytes)).text);
 #endif
         (void)output.write(",\"web\":{\"secure\":");
         (void)output.write(request.secure ? "true" : "false");

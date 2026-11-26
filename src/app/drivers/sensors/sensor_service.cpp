@@ -20,6 +20,7 @@
 #include "core/command/command.h"
 #include "core/message/message.h"
 #include "newmota/log.h"
+#include "support/number.h"
 #include <cstring>
 #include <algorithm>
 #include <cmath>
@@ -353,10 +354,13 @@ bool number(CommandOutput& output, std::int64_t value, unsigned precision) {
     constexpr std::int64_t divisors[]{1000, 100, 10, 1};
     constexpr unsigned scales[]{1, 10, 100, 1000};
     value = rounded_divide(value, divisors[precision]);
-    const auto magnitude = static_cast<unsigned long long>(value < 0 ? -value : value);
+    // Negating after the shift keeps INT64_MIN defined.
+    const auto magnitude = value < 0 ? std::uint64_t(-(value + 1)) + 1 : std::uint64_t(value);
     if (!precision)
-        return output.format("%s%llu", value < 0 ? "-" : "", magnitude);
-    return output.format("%s%llu.%0*u", value < 0 ? "-" : "", magnitude / scales[precision],
+        return output.format(
+            "%s%s", value < 0 ? "-" : "", newmota::support::decimal(magnitude).text);
+    return output.format("%s%s.%0*u", value < 0 ? "-" : "",
+        newmota::support::decimal(std::uint64_t(magnitude / scales[precision])).text,
         static_cast<int>(precision), static_cast<unsigned>(magnitude % scales[precision]));
 }
 

@@ -92,10 +92,8 @@ void put_integer(bvm* vm, const char* key, bint value) {
 }
 
 void put_wh(bvm* vm, const char* key, std::uint64_t value) {
-    char buffer[24];
-    std::snprintf(buffer, sizeof(buffer), "%llu", static_cast<unsigned long long>(value));
     be_pushstring(vm, key);
-    be_pushstring(vm, buffer);
+    be_pushstring(vm, newmota::support::decimal(value).text);
     (void)be_data_insert(vm, -3);
     be_pop(vm, 2);
 }

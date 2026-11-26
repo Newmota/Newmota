@@ -105,8 +105,8 @@ CommandStatus dispatch_global_temperature(
                                                      : CommandStatus::failed;
     const auto magnitude = celsius < 0 ? -std::int64_t(celsius) : std::int64_t(celsius);
     const auto tenths = (magnitude + 50) / 100;
-    return output.format("{\"GlobalTemp\":%s%lld.%u}", celsius < 0 ? "-" : "",
-               static_cast<long long>(tenths / 10), unsigned(tenths % 10))
+    return output.format("{\"GlobalTemp\":%s%s.%u}", celsius < 0 ? "-" : "",
+               newmota::support::decimal(std::int64_t(tenths / 10)).text, unsigned(tenths % 10))
                ? CommandStatus::handled
                : CommandStatus::failed;
 }

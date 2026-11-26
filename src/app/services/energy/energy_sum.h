@@ -16,6 +16,7 @@
 #pragma once
 #include "services/energy/energy_service.h"
 #include "core/command/command.h"
+#include "support/number.h"
 
 namespace newmota::energy::detail {
 /** @brief Writes one normalized decimal, rounding only the display with ties away from zero.
@@ -47,7 +48,7 @@ inline bool write_decimal(CommandOutput& output, bool minus, std::uint64_t whole
     }
     if (!output.write(minus ? "-" : "") ||
         !(overflow ? output.write("18446744073709551616")
-                   : output.format("%llu", static_cast<unsigned long long>(whole))))
+                   : output.write(newmota::support::decimal(std::uint64_t(whole)).text)))
         return false;
     return !places || output.format(".%0*lu", int(places), static_cast<unsigned long>(fraction));
 }

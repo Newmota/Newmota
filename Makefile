@@ -112,6 +112,7 @@ test-host:
 	@$(call host_test,energy-storage,-fsanitize=address$(COMMA)undefined -fno-omit-frame-pointer $(HOST_APP_INC) src/app/services/energy/energy_storage.cpp src/app/services/energy/energy_types.cpp src/app/services/energy/energy_accounting.cpp src/app/support/text.cpp src/app/support/crc32_portable.cpp tools/tests/energy_storage.cpp)
 	@$(call host_test,ntp-packet,-Isrc/app -Isrc/platform/include src/platform/ntp_packet.cpp tools/tests/ntp_packet.cpp)
 	@$(call host_test,rtc-calendar,-Isrc/app tools/tests/rtc_calendar.cpp)
+	@$(call host_test,number-format,-Isrc/app tools/tests/number_format.cpp)
 	@$(call host_test,ubx-time,-Isrc/app src/app/drivers/gps/ubx_protocol.cpp tools/tests/ubx_time.cpp)
 	@$(call host_test,esp-tasmota-settings,-Isrc/app tools/tests/esp_tasmota_settings.cpp src/app/services/migration/tasmota_settings.cpp)
 	@$(call host_test,url-update-limits,-Isrc/app tools/tests/url_update_limits.cpp)
