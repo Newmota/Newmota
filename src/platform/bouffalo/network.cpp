@@ -14,7 +14,11 @@
  */
 
 #include "newmota/platform/network.h"
+#include "newmota_features.h"
 #include "radio.h"
+#if !defined(BL602) && USE_WIFI_WPA3_BEARSSL
+#include "newmota/log.h"
+#endif
 
 extern "C" {
 #include "FreeRTOS.h"
@@ -377,8 +381,33 @@ WifiState wifi_state() {
 }
 
 /** @brief Returns BL602 station/AP manager state independently. */
+#if !defined(BL602) && USE_WIFI_WPA3_BEARSSL
+// Temporary: remove once a WPA3 user has reported this line.
+/** @brief Logs the BearSSL supplicant task's lowest free stack once per station connection. */
+void log_supplicant_stack(const WifiState station_state) {
+    static bool logged{};
+    if (station_state != WifiState::connected) {
+        logged = false;
+        return;
+    }
+    if (logged)
+        return;
+    logged = true;
+    // libfhost names the supplicant task "WPA"; CONFIG_WIFI6_WPA_STACK_DEPTH sets its size.
+    TaskHandle_t task = xTaskGetHandle("WPA");
+    if (task != nullptr) {
+        AddLog(LogLevel::info, "WIF: supplicant stack free %u of %u B",
+            static_cast<unsigned>(uxTaskGetStackHighWaterMark(task) * sizeof(StackType_t)),
+            static_cast<unsigned>(CONFIG_WIFI6_WPA_STACK_DEPTH * sizeof(StackType_t)));
+    }
+}
+#endif
+
 WifiSnapshot wifi_snapshot() {
     const auto station_state = wifi_state();
+#if !defined(BL602) && USE_WIFI_WPA3_BEARSSL
+    log_supplicant_stack(station_state);
+#endif
     const auto access_point_state = ap_state.load();
     WifiMode mode = WifiMode::off;
     if (station_state != WifiState::disabled && access_point_state == AccessPointState::active) {
