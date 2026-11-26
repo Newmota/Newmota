@@ -25,15 +25,12 @@
 void wpa_psk_cal_thread(beken_thread_arg_t arg);
 
 OSStatus __real_rtos_create_thread(beken_thread_t* thread, uint8_t priority, const char* name,
-                                   beken_thread_function_t function, uint32_t stack_size,
-                                   beken_thread_arg_t arg);
+    beken_thread_function_t function, uint32_t stack_size, beken_thread_arg_t arg);
 OSStatus __wrap_rtos_create_thread(beken_thread_t* thread, uint8_t priority, const char* name,
-                                   beken_thread_function_t function, uint32_t stack_size,
-                                   beken_thread_arg_t arg);
+    beken_thread_function_t function, uint32_t stack_size, beken_thread_arg_t arg);
 
 OSStatus __wrap_rtos_create_thread(beken_thread_t* thread, uint8_t priority, const char* name,
-                                   beken_thread_function_t function, uint32_t stack_size,
-                                   beken_thread_arg_t arg) {
+    beken_thread_function_t function, uint32_t stack_size, beken_thread_arg_t arg) {
     if (function == (beken_thread_function_t)wpa_psk_cal_thread &&
         stack_size < NEWMOTA_PSK_THREAD_STACK_SIZE) {
         stack_size = NEWMOTA_PSK_THREAD_STACK_SIZE;

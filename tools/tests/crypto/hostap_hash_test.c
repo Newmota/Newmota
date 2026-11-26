@@ -65,23 +65,22 @@ int main(void) {
     expect("hmac_sha1 rfc2202-2", mac, "effcdf6ae5eb2fa2d27416d5f184df9c259a7c79");
     hmac_sha256(key20, 20, hi, 8, mac);
     expect("hmac_sha256 rfc4231-1", mac,
-           "b0344c61d8db38535ca8afceaf0bf12b881dc200c9833da726e9376c2e32cff7");
+        "b0344c61d8db38535ca8afceaf0bf12b881dc200c9833da726e9376c2e32cff7");
     hmac_sha384(key20, 20, hi, 8, mac);
     expect("hmac_sha384 rfc4231-1", mac,
-           "afd03944d84895626b0825f4ab46907f15f9dadbe4101ec682aa034c7cebc59c"
-           "faea9ea9076ede7f4af152e8b2fa9cb6");
+        "afd03944d84895626b0825f4ab46907f15f9dadbe4101ec682aa034c7cebc59c"
+        "faea9ea9076ede7f4af152e8b2fa9cb6");
     hmac_sha512(key20, 20, hi, 8, mac);
     expect("hmac_sha512 rfc4231-1", mac,
-           "87aa7cdea5ef619d4ff0b4241a1d6cb02379f4e2ce4ec2787ad0b30545e17cde"
-           "daa833b7d6b8a702038b274eaea3f4e4be9d914eeb61f1702e696c203a126854");
+        "87aa7cdea5ef619d4ff0b4241a1d6cb02379f4e2ce4ec2787ad0b30545e17cde"
+        "daa833b7d6b8a702038b274eaea3f4e4be9d914eeb61f1702e696c203a126854");
     const char* big = "Test Using Larger Than Block-Size Key - Hash Key First";
     hmac_sha256(key131, sizeof(key131), (const u8*)big, strlen(big), mac);
     expect("hmac_sha256 rfc4231-6", mac,
-           "60e431591ee0b67f0d8a26aacbf5b77f8e0bc6213728c5140546040f0ee37f54");
+        "60e431591ee0b67f0d8a26aacbf5b77f8e0bc6213728c5140546040f0ee37f54");
 
     /* Split input equals the single buffer. */
-    const u8* parts[3] = {(const u8*)"what do ya", (const u8*)" want for ",
-                          (const u8*)"nothing?"};
+    const u8* parts[3] = {(const u8*)"what do ya", (const u8*)" want for ", (const u8*)"nothing?"};
     size_t lens[3] = {10, 10, 8};
     hmac_sha1_vector((const u8*)"Jefe", 4, 3, parts, lens, mac);
     expect("hmac_sha1_vector split", mac, "effcdf6ae5eb2fa2d27416d5f184df9c259a7c79");
@@ -96,24 +95,24 @@ int main(void) {
     size_t three = 3;
     sha384_vector(1, &abc, &three, mac);
     expect("sha384 abc", mac,
-           "cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed"
-           "8086072ba1e7cc2358baeca134c825a7");
+        "cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed"
+        "8086072ba1e7cc2358baeca134c825a7");
     sha512_vector(1, &abc, &three, mac);
     expect("sha512 abc", mac,
-           "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a"
-           "2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f");
+        "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a"
+        "2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f");
 
     pbkdf2_sha1("password", (const u8*)"salt", 4, 1, mac, 20);
     expect("pbkdf2 rfc6070-1", mac, "0c60c80f961f0e71f3a9b524af6012062fe037a6");
     pbkdf2_sha1("password", (const u8*)"salt", 4, 2, mac, 20);
     expect("pbkdf2 rfc6070-2", mac, "ea6c014dc72d6f8ccd1ed92ace1d41f0d8de8957");
-    pbkdf2_sha1("passwordPASSWORDpassword", (const u8*)"saltSALTsaltSALTsaltSALTsaltSALTsalt",
-                36, 4096, mac, 25);
+    pbkdf2_sha1("passwordPASSWORDpassword", (const u8*)"saltSALTsaltSALTsaltSALTsaltSALTsalt", 36,
+        4096, mac, 25);
     expect("pbkdf2 rfc6070-5", mac, "3d2eec4fe41c849b80c8d83662c0e44a8b291a964cf2f07038");
     memset(mac, 0x5a, sizeof(mac));
     pbkdf2_sha1("password", (const u8*)"IEEE", 4, 4096, mac, 32);
     expect("pbkdf2 802.11 psk", mac,
-           "f42c6fc52df0ebef9ebb4b90b38a5f902e83fe1b135a70e23aed762e9710a12e");
+        "f42c6fc52df0ebef9ebb4b90b38a5f902e83fe1b135a70e23aed762e9710a12e");
     if (mac[32] != 0x5a) {
         failures++;
         fprintf(stderr, "FAIL pbkdf2 wrote past buflen\n");
