@@ -269,6 +269,18 @@ and its WPA2 PSK thread 2 KiB instead of 1 KiB for PBKDF2.
 Every Beken Wi-Fi build takes the supplicant's random numbers from the hardware TRNG instead
 of the prebuilt `os_get_random()`, which uses unseeded libc `rand()`.
 
+On Bouffalo it is opt-in (off by default) and needs the Newmota BouffaloSDK fork, which
+`config/sdk/bouffalo.toml` pins. On BL616 and BL618DG the fork's `CONFIG_WIFI6_EXTERNAL_CRYPTO`
+builds the Wi-Fi 6 supplicant without its mbedTLS adapter, and the same BearSSL backend as on
+Beken provides SAE, the hashes, HMAC, PBKDF2-SHA1, SHA-384/512 and AES. SAE uses group 19
+only; the mbedTLS backend also offered groups 20 and 21. The supplicant task gets 2048 words
+(8 KiB) instead of the prebuilt library's 1408 (`CONFIG_WIFI6_WPA_STACK_DEPTH`). On BL602 the
+fork's `CONFIG_WIFI4_EXTERNAL_HASH` takes only the supplicant's MD5, SHA-1 and SHA-256 from
+BearSSL; SAE and AES stay on the SDK's `blcrypto_suite`. Without HTTPS a Bouffalo image with the
+option links no mbedTLS (`CONFIG_MBEDTLS` off), and Safeboot checks the image SHA-256 with BearSSL.
+Safeboot environments cannot be inherited by a `user_config` file, so a personal build turns it
+on for the application image only.
+
 ## SDK logging
 
 `SDK_LOG_LEVEL` sets the vendor SDK log level for a build: `none`, `error`, `warn` (default),
