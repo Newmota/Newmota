@@ -22,7 +22,6 @@ CONFIG_WIFI6=y
 CONFIG_FHOST=y
 CONFIG_MACSW_SELECT=default
 CONFIG_MACSW_LOG_NO_PRINT=y
-CONFIG_MBEDTLS=y
 CONFIG_PARTITION=y
 CONFIG_BFLB_MTD=y
 # Safeboot accepts only images whose native header CRC and SHA-256 are checked.

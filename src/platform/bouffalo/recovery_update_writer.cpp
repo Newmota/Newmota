@@ -24,8 +24,15 @@ extern "C" {
 #include "bflb_boot2.h"
 #include "partition.h"
 }
-#if !defined(BL602)
+#if defined(BL602)
+#elif defined(CONFIG_MBEDTLS)
 #include "mbedtls/sha256.h"
+#else
+#include "newmota_features.h"
+#include "bearssl_hash.h"
+#if !USE_CRYPTO_SHA224_SHA256
+#error "Bouffalo Safeboot without mbedTLS needs BearSSL SHA-256"
+#endif
 #endif
 #include "newmota/platform/update_envelope.h"
 #include "support/crc32.h"
@@ -245,7 +252,7 @@ struct bflb_sha_link_s g_update_sha_link_cfg __attribute__((section(".wifi_ram")
     std::memcpy(&context.link_cfg, &g_update_sha_link_cfg, sizeof(g_update_sha_link_cfg));
     bflb_sec_sha_mutex_give();
     return std::memcmp(digest.data(), header + kImageHashOffset, digest.size()) == 0;
-#else
+#elif defined(CONFIG_MBEDTLS)
     // Wi-Fi6 runs from cached SRAM. Use the SDK software implementation so
     // SHA padding/context buffers do not cross the BL602-only DMA contract.
     mbedtls_sha256_context context;
@@ -279,6 +286,22 @@ struct bflb_sha_link_s g_update_sha_link_cfg __attribute__((section(".wifi_ram")
     }
     mbedtls_sha256_free(&context);
     return success && std::memcmp(digest.data(), header + kImageHashOffset, digest.size()) == 0;
+#else
+    // Without mbedTLS (USE_WIFI_WPA3_BEARSSL, no HTTPS) the same software hash runs on BearSSL.
+    br_sha256_context context;
+    br_sha256_init(&context);
+    const auto length = read_u32(header + kImageLengthOffset);
+    std::array<std::uint8_t, kChunkSize> buffer{};
+    std::array<std::uint8_t, 32> digest{};
+    for (std::uint32_t offset = 0; offset < length;) {
+        const auto count = std::min<std::uint32_t>(length - offset, buffer.size());
+        if (bflb_flash_read(address + kSectorSize + offset, buffer.data(), count) != 0)
+            return false;
+        br_sha256_update(&context, buffer.data(), count);
+        offset += count;
+    }
+    br_sha256_out(&context, digest.data());
+    return std::memcmp(digest.data(), header + kImageHashOffset, digest.size()) == 0;
 #endif
 }
 

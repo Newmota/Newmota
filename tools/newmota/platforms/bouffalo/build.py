@@ -569,6 +569,31 @@ def native_requirements(
         sources.append("platform/lwip/tcp_stream.cpp")
     if values.get("USE_WEB", False) or values.get("USE_RECOVERY_WEB", False):
         sources.append("platform/bouffalo/web.cpp")
+    if values.get("USE_WIFI_WPA3_BEARSSL", False):
+        if environment.sdk_target == "bl602":
+            # The fork's CONFIG_WIFI4_EXTERNAL_HASH takes the supplicant's MD5, SHA-1 and
+            # SHA-256 vectors from hostap_symmetric_bearssl.c instead of mbedTLS. SAE and AES
+            # stay on the SDK's blcrypto_suite (features.py drops hostap_sae_crypto.c).
+            native_settings["CONFIG_WIFI4_EXTERNAL_HASH"] = "y"
+        else:
+            # The fork's CONFIG_WIFI6_EXTERNAL_CRYPTO builds the supplicant without its mbedTLS
+            # adapter; src/platform/crypto/hostap_*.c provide the functions instead.
+            sources.append("platform/crypto/hostap_hash_bearssl.c")
+            native_settings.update(
+                {
+                    "CONFIG_WIFI6_EXTERNAL_CRYPTO": "y",
+                    # BearSSL's P-256 code keeps its work on the stack; libfhost gives the
+                    # supplicant task 1408 words.
+                    "CONFIG_WIFI6_WPA_STACK_DEPTH": "2048",
+                }
+            )
+    # The supplicants' stock crypto backends and HTTPS link mbedTLS; with the BearSSL
+    # backend and no HTTPS nothing in the image does.
+    native_settings["CONFIG_MBEDTLS"] = (
+        "n"
+        if values.get("USE_WIFI_WPA3_BEARSSL", False) and not values.get("USE_WEB_HTTPS", False)
+        else "y"
+    )
     if values.get("USE_WEB_HTTPS", False):
         sources.append("platform/web_tls_socket.cpp")
         native_settings.update(

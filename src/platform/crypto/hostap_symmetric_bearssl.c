@@ -15,10 +15,14 @@
  * CCMP, OMAC1, key wrap and CTR/CBC code stays and calls these. The BearSSL hashes and
  * br_aes_big use the selected hardware providers (USE_CRYPTO_HW_SHA1/SHA256/AES).
  * Single AES blocks run as one-block CBC with a zero IV, which equals ECB.
+ * NEWMOTA_HOSTAP_HASH_ONLY (BL602, whose supplicant keeps its own wpa_aes_* functions)
+ * builds only the hash vectors.
  */
 #include "utils/includes.h"
 #include "utils/common.h"
+#if !(defined(NEWMOTA_HOSTAP_HASH_ONLY) && NEWMOTA_HOSTAP_HASH_ONLY)
 #include "crypto/aes.h"
+#endif
 #include "crypto/crypto.h"
 
 #include <string.h>
@@ -59,6 +63,8 @@ int sha256_vector(size_t num_elem, const u8* addr[], const size_t* len, u8* mac)
     nm_crypto_zero(&ctx, sizeof(ctx));
     return 0;
 }
+
+#if !(defined(NEWMOTA_HOSTAP_HASH_ONLY) && NEWMOTA_HOSTAP_HASH_ONLY)
 
 void* aes_encrypt_init(const u8* key, size_t len) {
     br_aes_big_cbcenc_keys* ctx;
@@ -111,3 +117,4 @@ void aes_decrypt_deinit(void* ctx) {
         os_free(ctx);
     }
 }
+#endif

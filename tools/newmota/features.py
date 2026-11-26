@@ -297,12 +297,14 @@ OPTIONAL_FEATURES = {
     # WPA3-SAE on BearSSL through the ESP-IDF fork's CONFIG_ESP_WIFI_EXTERNAL_CRYPTO, with the
     # supplicant's MD5, SHA-1, SHA-256 and AES on BearSSL too; SAE-PK (P-256 keys) and OWE STA
     # use the backend's EC key and ECDH functions. On Beken the same backend replaces the BDK's
-    # crypto_mbedtls.c under the prebuilt supplicant (plus HMAC, PBKDF2 and SHA-384/512).
+    # crypto_mbedtls.c under the prebuilt supplicant (plus HMAC, PBKDF2 and SHA-384/512), and on
+    # Bouffalo BL616/BL618DG the fork's CONFIG_WIFI6_EXTERNAL_CRYPTO adapter. BL602 moves only the
+    # supplicant's MD5/SHA-1/SHA-256 (CONFIG_WIFI4_EXTERNAL_HASH); SAE stays on blcrypto_suite.
     "USE_WIFI_WPA3_BEARSSL": FeatureSpec(
         ("platform/crypto/hostap_sae_crypto.c", "platform/crypto/hostap_symmetric_bearssl.c"),
         dependencies=("USE_WIFI",),
         roles=("application", "safeboot"),
-        platforms=("esp", "beken"),
+        platforms=("esp", "beken", "bouffalo"),
         crypto=("EC", "ECDSA_VERIFY", "MD5", "SHA1", "SHA224_SHA256", "AES"),
     ),
     "USE_CRYPTO_HW_AES": FeatureSpec((), platforms=("esp", "bouffalo", "amebad"), crypto=("AES",)),
@@ -1185,10 +1187,11 @@ def crypto_selection(
 
         if not links_sdk_mbedtls(environment, values):
             primitives.add("SHA224_SHA256")
-    # The prebuilt Beken supplicant takes HMAC, PBKDF2-SHA1 and SHA-384/512 from its backend
+    # The prebuilt Beken supplicant and the Bouffalo Wi-Fi 6 supplicant built with
+    # CONFIG_WIFI6_EXTERNAL_CRYPTO take HMAC, PBKDF2-SHA1 and SHA-384/512 from their backend
     # (src/platform/crypto/hostap_hash_bearssl.c); ESP-IDF compiles hostap's own.
     if (
-        environment.platform == "beken"
+        environment.platform in {"beken", "bouffalo"}
         and values is not None
         and values.get("USE_WIFI_WPA3_BEARSSL", False)
     ):
@@ -1270,6 +1273,13 @@ def _requirements(
         or values["USE_ADC"]
     ):
         sources.append("app/core/hardware/runtime_pin_claims.cpp")
+    if (
+        environment.platform == "bouffalo"
+        and environment.sdk_target == "bl602"
+        and values["USE_WIFI_WPA3_BEARSSL"]
+    ):
+        # The BL602 supplicant keeps SAE on the SDK's blcrypto_suite; only its hashes move.
+        sources.remove("platform/crypto/hostap_sae_crypto.c")
     if values["USE_SENSORS"] or values["USE_ENERGY"] or values["USE_SWITCHES"]:
         sources.append("app/services/telemetry/measurement_document.cpp")
     if values["USE_SENSORS"]:

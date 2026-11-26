@@ -21,7 +21,6 @@ CONFIG_LWIP=y
 CONFIG_DHCPD=y
 CONFIG_RF=y
 CONFIG_WIFI4=y
-CONFIG_MBEDTLS=y
 # Newmota resolves its LittleFS region and FW boot selection through the
 # native boot2 partition API (verified SDK-owned behavior, not the
 # heap-allocated MTD wrapper whose data operations discard flash errors).

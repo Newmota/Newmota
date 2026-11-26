@@ -224,6 +224,19 @@ foreach(source IN LISTS NEWMOTA_SOURCES)
     set_property(SOURCE "${source}" APPEND PROPERTY COMPILE_OPTIONS -Wno-undef)
   endif()
 endforeach()
+if(NEWMOTA_USE_WIFI_WPA3_BEARSSL AND CHIP STREQUAL "bl602")
+  # Only the hash vectors replace the Wi-Fi 4 supplicant's; its AES stays (wpa_aes_*).
+  set(newmota_wifi4_supplicant "${NEWMOTA_SDK_ROOT}/components/wireless/wifi4/wpa_supplicant")
+  set_property(SOURCE "${NEWMOTA_ROOT}/src/platform/crypto/hostap_symmetric_bearssl.c"
+    APPEND PROPERTY COMPILE_DEFINITIONS NEWMOTA_HOSTAP_HASH_ONLY=1)
+  set_property(SOURCE "${NEWMOTA_ROOT}/src/platform/crypto/hostap_symmetric_bearssl.c"
+    APPEND PROPERTY INCLUDE_DIRECTORIES
+      "${newmota_wifi4_supplicant}/port/include" "${newmota_wifi4_supplicant}/src")
+elseif(NEWMOTA_USE_WIFI_WPA3_BEARSSL)
+  # The Wi-Fi 6 sae.c takes crypto_ec_get_a() as const and does not free it.
+  set_property(SOURCE "${NEWMOTA_ROOT}/src/platform/crypto/hostap_sae_crypto.c"
+    APPEND PROPERTY COMPILE_DEFINITIONS NEWMOTA_HOSTAP_EC_A_BORROWED=1)
+endif()
 if(NEWMOTA_USE_BLE AND NEWMOTA_USE_BERRY)
   target_include_directories(app PRIVATE "${NEWMOTA_ROOT}/src/third_party/berry_mapping/src")
 endif()
