@@ -583,8 +583,9 @@ def native_requirements(
                 {
                     "CONFIG_WIFI6_EXTERNAL_CRYPTO": "y",
                     # BearSSL's P-256 code keeps its work on the stack; libfhost gives the
-                    # supplicant task 1408 words.
-                    "CONFIG_WIFI6_WPA_STACK_DEPTH": "2048",
+                    # supplicant task 1408 words. A WPA2 join used 5268 B; the static SAE
+                    # path adds about 3.6 KB more, so 2048 words would be too tight.
+                    "CONFIG_WIFI6_WPA_STACK_DEPTH": "3072",
                 }
             )
     # The supplicants' stock crypto backends and HTTPS link mbedTLS; with the BearSSL
