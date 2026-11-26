@@ -1499,8 +1499,8 @@ def feature_values(environment: Environment, layout: LayoutFacts | None = None) 
         }
     )
     # ESP Wi-Fi builds (ESP-IDF 5.5 and 6.1) that keep WPA3 run it on BearSSL, with the hardware
-    # SHA-1, SHA-256 and P-256 providers the target has. Both are off elsewhere and can be turned
-    # off per build.
+    # SHA-1, SHA-256 and P-256 providers the target has. Beken Wi-Fi builds run the BDK's
+    # prebuilt supplicant on the same backend. Off elsewhere; each can be turned off per build.
     if (
         use_wifi
         and not use_hosted  # the supplicant runs on the ESP-Hosted companion
@@ -1512,6 +1512,10 @@ def feature_values(environment: Environment, layout: LayoutFacts | None = None) 
         values["USE_WIFI_WPA3_BEARSSL"] = True
         for name in ("USE_CRYPTO_HW_SHA1", "USE_CRYPTO_HW_SHA256", "USE_CRYPTO_HW_P256"):
             values[name] = environment.sdk_target in HARDWARE_CRYPTO_TARGETS[name]
+    if use_wifi and environment.platform == "beken":
+        from newmota.platforms.beken.profile import BEARSSL_SUPPLICANT_TARGETS
+
+        values["USE_WIFI_WPA3_BEARSSL"] = environment.sdk_target in BEARSSL_SUPPLICANT_TARGETS
     overrides = environment.features
     if not isinstance(overrides, dict):
         raise BuildError("features must be a mapping of USE_* names to booleans")

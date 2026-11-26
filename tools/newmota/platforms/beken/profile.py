@@ -156,6 +156,10 @@ TARGET_SPECS = {
 
 # Targets the common BDK wrapper builds; the others are selection facts only.
 BUILD_TARGETS = frozenset({"bk7231n", "bk7231t", "bk7238", "bk7252", "bk7252n"})
+# Targets whose prebuilt supplicant takes its crypto from the source-built crypto_mbedtls.c,
+# which USE_WIFI_WPA3_BEARSSL replaces. The BK7231T (bk7231u) and BK7252 (bk7251) archives
+# carry their own wolfSSL-based crypto (crypto_wolfssl.o, sha1-internal.o, ...).
+BEARSSL_SUPPLICANT_TARGETS = frozenset({"bk7231n", "bk7238", "bk7252n"})
 
 
 def _target_spec(environment: Environment) -> BekenTargetSpec:

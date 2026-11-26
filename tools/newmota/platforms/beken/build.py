@@ -58,7 +58,12 @@ from newmota.platforms.beken.codec import (
 )
 from newmota.platforms.beken.images import package_beken
 from newmota.platforms.beken.images import resolve_layout as resolve_beken_layout
-from newmota.platforms.beken.profile import TARGET_SPECS, BekenTargetProfile, resolve_target_profile
+from newmota.platforms.beken.profile import (
+    BEARSSL_SUPPLICANT_TARGETS,
+    TARGET_SPECS,
+    BekenTargetProfile,
+    resolve_target_profile,
+)
 
 RBL_ENCRYPTION_CODES = {"none": 0, "xor": 1, "aes256": 2}
 RBL_COMPRESSION_CODES = {"none": 0, "gzip": 1}
@@ -617,6 +622,11 @@ def native_requirements(
         # The supplicant's os_get_random() reads the TRNG instead of libc rand().
         sources.append("platform/beken/native/supplicant_random.c")
     if values.get("USE_WIFI_WPA3_BEARSSL", False):
+        if environment.sdk_target not in BEARSSL_SUPPLICANT_TARGETS:
+            raise BuildError(
+                f"USE_WIFI_WPA3_BEARSSL: the {environment.sdk_target} supplicant archive "
+                "carries its own wolfSSL crypto"
+            )
         sources.append("platform/crypto/hostap_hash_bearssl.c")
         # Raises the prebuilt supplicant's 1 KiB PSK thread stack for BearSSL's PBKDF2.
         sources.append("platform/beken/native/supplicant_threads.c")
