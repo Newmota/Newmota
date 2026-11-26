@@ -613,6 +613,9 @@ def native_requirements(
         sources.append("platform/beken/native/ble_disabled.c")
     sdk_requirements: list[str] = []
     native_settings: dict[str, str] = {}
+    if values.get("USE_WIFI", False):
+        # The supplicant's os_get_random() reads the TRNG instead of libc rand().
+        sources.append("platform/beken/native/supplicant_random.c")
     if values.get("USE_PWM", False):
         sources.append("platform/beken/pwm.cpp")
     if values.get("USE_DEEPSLEEP", False):

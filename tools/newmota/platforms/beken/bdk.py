@@ -820,7 +820,11 @@ static inline void (os_printf)(const char *format, ...)
         )
     )
     libraries = " ".join(library_flags)
-    wrapped_symbols = LIBC_HEAP_WRAPS + (("bk_printf",) if sdk_log_level == 0 else ())
+    wrapped_symbols = (
+        LIBC_HEAP_WRAPS
+        + (("bk_printf",) if sdk_log_level == 0 else ())
+        + (("os_get_random",) if context.features.enabled("USE_WIFI") else ())
+    )
     runtime_wraps = " ".join(f"-Wl,--wrap={name}" for name in wrapped_symbols)
     objects_c = [f"$(OBJ_DIR)/{path[:-2]}.o" for path in c_sources]
     objects_cpp = [f"$(OBJ_DIR)/{path[:-4]}.o" for path in _cpp_sources]
