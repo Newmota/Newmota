@@ -616,6 +616,10 @@ def native_requirements(
     if values.get("USE_WIFI", False):
         # The supplicant's os_get_random() reads the TRNG instead of libc rand().
         sources.append("platform/beken/native/supplicant_random.c")
+    if values.get("USE_WIFI_WPA3_BEARSSL", False):
+        sources.append("platform/crypto/hostap_hash_bearssl.c")
+        # Raises the prebuilt supplicant's 1 KiB PSK thread stack for BearSSL's PBKDF2.
+        sources.append("platform/beken/native/supplicant_threads.c")
     if values.get("USE_PWM", False):
         sources.append("platform/beken/pwm.cpp")
     if values.get("USE_DEEPSLEEP", False):

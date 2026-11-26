@@ -143,8 +143,9 @@ test-crypto:
 		-o build/host/crypto-random-test
 	@build/host/crypto-random-test
 	@if [ -f $(HOSTAP)/src/common/sae.c ]; then \
-		$(MAKE) --no-print-directory build/host/hostap-sae-test build/host/hostap-bignum-fuzz && \
-		build/host/hostap-sae-test 200; \
+		$(MAKE) --no-print-directory build/host/hostap-sae-test build/host/hostap-bignum-fuzz \
+			build/host/hostap-hash-test && \
+		build/host/hostap-sae-test 200 && build/host/hostap-hash-test; \
 	elif [ "$(HOSTAP_MODE)" = archive ]; then \
 		echo "hostap SAE test: $(HOSTAP) is missing from the ESP-IDF archive" >&2; exit 1; \
 	else echo "hostap SAE test: skipped (no $(HOSTAP))"; fi
@@ -171,6 +172,10 @@ build/host/hostap/%.o: src/platform/crypto/%.c force-crypto-host
 
 build/host/hostap-sae-test: tools/tests/crypto/hostap_sae_test.c $(HOSTAP_BACKEND_OBJ) $(BEARSSL_OBJ) force-crypto-host
 	@$(HOST_CC) $(HOSTAP_CFLAGS) -w $(HOSTAP_SRC) $< $(HOSTAP_BACKEND_OBJ) $(BEARSSL_OBJ) -o $@
+
+# The Beken-only hash backend; hostap's own md5.c/sha1.c would define the same symbols.
+build/host/hostap-hash-test: tools/tests/crypto/hostap_hash_test.c build/host/hostap/hostap_hash_bearssl.o $(BEARSSL_OBJ) force-crypto-host
+	@$(HOST_CC) $(HOSTAP_CFLAGS) -w $< build/host/hostap/hostap_hash_bearssl.o $(BEARSSL_OBJ) -o $@
 
 build/host/hostap-bignum-fuzz: tools/tests/crypto/hostap_bignum_fuzz.c build/host/hostap/hostap_sae_crypto.o $(BEARSSL_OBJ) force-crypto-host
 	@$(HOST_CC) $(HOSTAP_CFLAGS) -w $< $(HOSTAP)/src/utils/wpabuf.c build/host/hostap/hostap_sae_crypto.o \

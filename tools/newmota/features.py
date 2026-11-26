@@ -296,12 +296,13 @@ OPTIONAL_FEATURES = {
     ),
     # WPA3-SAE on BearSSL through the ESP-IDF fork's CONFIG_ESP_WIFI_EXTERNAL_CRYPTO, with the
     # supplicant's MD5, SHA-1, SHA-256 and AES on BearSSL too; SAE-PK (P-256 keys) and OWE STA
-    # use the backend's EC key and ECDH functions.
+    # use the backend's EC key and ECDH functions. On Beken the same backend replaces the BDK's
+    # crypto_mbedtls.c under the prebuilt supplicant (plus HMAC, PBKDF2 and SHA-384/512).
     "USE_WIFI_WPA3_BEARSSL": FeatureSpec(
         ("platform/crypto/hostap_sae_crypto.c", "platform/crypto/hostap_symmetric_bearssl.c"),
         dependencies=("USE_WIFI",),
         roles=("application", "safeboot"),
-        platforms=("esp",),
+        platforms=("esp", "beken"),
         crypto=("EC", "ECDSA_VERIFY", "MD5", "SHA1", "SHA224_SHA256", "AES"),
     ),
     "USE_CRYPTO_HW_AES": FeatureSpec((), platforms=("esp", "bouffalo", "amebad"), crypto=("AES",)),
@@ -1184,6 +1185,14 @@ def crypto_selection(
 
         if not links_sdk_mbedtls(environment, values):
             primitives.add("SHA224_SHA256")
+    # The prebuilt Beken supplicant takes HMAC, PBKDF2-SHA1 and SHA-384/512 from its backend
+    # (src/platform/crypto/hostap_hash_bearssl.c); ESP-IDF compiles hostap's own.
+    if (
+        environment.platform == "beken"
+        and values is not None
+        and values.get("USE_WIFI_WPA3_BEARSSL", False)
+    ):
+        primitives.update({"HMAC", "SHA384_SHA512"})
     while True:
         expanded = primitives | {
             dep for name in primitives for dep in CRYPTO_PRIMITIVE_DEPENDENCIES.get(name, ())

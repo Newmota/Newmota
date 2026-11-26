@@ -36,7 +36,9 @@
  * 1 <= k < n and a valid point; addition needs two valid points and may return infinity.
  * Deviations, both failing closed: subtraction below zero fails; crypto_ec_point_to_bin()
  * refuses infinity. As in the ESP-IDF adapter, crypto_ec_get_a() returns a copy that the
- * caller frees (sswu() does); the other getters return values owned by the curve.
+ * caller frees (ESP-IDF's sswu() does); with NEWMOTA_HOSTAP_EC_A_BORROWED (Beken, whose
+ * prebuilt upstream sae.o does not free it) it returns the curve's own value, as the other
+ * getters always do.
  *
  * SAE-PK and OWE STA use the EC key and ECDH functions at the end, P-256 only:
  * crypto_ec_key_parse_pub() accepts exactly the DER SubjectPublicKeyInfo of a P-256 key
@@ -756,6 +758,11 @@ const struct crypto_bignum* crypto_ec_get_order(struct crypto_ec* e) {
     return &e->order;
 }
 
+#if defined(NEWMOTA_HOSTAP_EC_A_BORROWED) && NEWMOTA_HOSTAP_EC_A_BORROWED
+const struct crypto_bignum* crypto_ec_get_a(struct crypto_ec* e) {
+    return &e->a;
+}
+#else
 struct crypto_bignum* crypto_ec_get_a(struct crypto_ec* e) {
     struct crypto_bignum* a = crypto_bignum_init();
     if (a != NULL) {
@@ -763,6 +770,7 @@ struct crypto_bignum* crypto_ec_get_a(struct crypto_ec* e) {
     }
     return a;
 }
+#endif
 
 const struct crypto_bignum* crypto_ec_get_b(struct crypto_ec* e) {
     return &e->b;

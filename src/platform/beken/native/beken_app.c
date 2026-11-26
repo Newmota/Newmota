@@ -71,9 +71,18 @@ volatile int32_t bmsg_rx_count = 0;
 extern void net_wlan_initial(void);
 extern void wpas_thread_start(void);
 
+#if defined(NEWMOTA_SUPPLICANT_STACK_SIZE)
+/* Stack size in bytes of the supplicant thread (libsupplicant main_supplicant.o, 4096 by
+ * default); wpas_thread_start() passes its low 16 bits to rtos_create_thread(). */
+extern uint32_t wpas_stack_size;
+#endif
+
 void bk_wlan_app_init(void) {
 #if (!CFG_SUPPORT_RTT)
     net_wlan_initial();
+#endif
+#if defined(NEWMOTA_SUPPLICANT_STACK_SIZE)
+    wpas_stack_size = NEWMOTA_SUPPLICANT_STACK_SIZE;
 #endif
     wpas_thread_start();
 }

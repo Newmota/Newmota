@@ -592,6 +592,17 @@ def generate_makefile(
     overlay_root = overlay / "apps" / "newmota"
     if not overlay_root.is_dir():
         raise BekenBdkBuildError(f"Newmota Beken overlay is missing: {overlay_root}")
+    if context.features.enabled("USE_WIFI_WPA3_BEARSSL"):
+        # The BearSSL backend (src/platform/crypto/hostap_*.c) replaces the supplicant's
+        # mbedTLS adapter; without HTTPS nothing else in the image uses mbedTLS.
+        backend = "beken378/func/wpa_supplicant_2_9/src/crypto/crypto_mbedtls.c"
+        if backend not in c_sources:
+            raise BekenBdkBuildError(f"Beken SDK source list lacks {backend}")
+        c_sources.remove(backend)
+        if not context.features.enabled("USE_WEB_HTTPS"):
+            c_sources = [
+                path for path in c_sources if not path.startswith("beken378/func/mbedtls/")
+            ]
     if context.features.enabled("USE_WEB_HTTPS"):
         server_source = "beken378/func/mbedtls/mbedtls/library/ssl_srv.c"
         if server_source not in c_sources:
@@ -739,6 +750,15 @@ static inline void (os_printf)(const char *format, ...)
 """,
         )
         definitions.append('MBEDTLS_USER_CONFIG_FILE=\\"newmota_beken_mbedtls_web_config.h\\"')
+    if context.features.enabled("USE_WIFI_WPA3_BEARSSL"):
+        definitions.extend(
+            (
+                # The prebuilt (upstream hostap) sae.o does not free crypto_ec_get_a().
+                "NEWMOTA_HOSTAP_EC_A_BORROWED=1",
+                # BearSSL's P-256 code keeps its work on the stack; mbedTLS used the heap.
+                "NEWMOTA_SUPPLICANT_STACK_SIZE=8192",
+            )
+        )
     if context.features.enabled("USE_MQTT"):
         definitions.append("MQTT_DO_NOT_USE_CUSTOM_CONFIG=1")
     if context.features.enabled("USE_MATTER"):
@@ -824,6 +844,11 @@ static inline void (os_printf)(const char *format, ...)
         LIBC_HEAP_WRAPS
         + (("bk_printf",) if sdk_log_level == 0 else ())
         + (("os_get_random",) if context.features.enabled("USE_WIFI") else ())
+        + (
+            ("rtos_create_thread",)
+            if context.features.enabled("USE_WIFI_WPA3_BEARSSL")
+            else ()
+        )
     )
     runtime_wraps = " ".join(f"-Wl,--wrap={name}" for name in wrapped_symbols)
     objects_c = [f"$(OBJ_DIR)/{path[:-2]}.o" for path in c_sources]

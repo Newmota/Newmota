@@ -259,6 +259,15 @@ with this option: with the mbedTLS supplicant they do not fit the 832 KiB recove
 C3, C5 and C6 Safeboot leave out SAE-PK, OWE and WPA3 SoftAP. Set `USE_WIFI_WPA3_BEARSSL: false` in `features` to
 build the SDK's mbedTLS supplicant instead.
 
+On Beken (BK7231N, BK7238) the option is off by default while hardware tests are pending.
+`USE_WIFI_WPA3_BEARSSL: true` replaces the BDK's `crypto_mbedtls.c` under the prebuilt
+supplicant with the same BearSSL backend, plus HMAC, PBKDF2-SHA1 and SHA-384/512; without
+HTTPS the image then links no mbedTLS. SAE uses group 19 only: the mbedTLS backend also
+offered group 20 (P-384). The supplicant thread gets an 8 KiB stack for BearSSL's P-256 code
+and its WPA2 PSK thread 2 KiB instead of 1 KiB for PBKDF2.
+Every Beken Wi-Fi build takes the supplicant's random numbers from the hardware TRNG instead
+of the prebuilt `os_get_random()`, which uses unseeded libc `rand()`.
+
 ## SDK logging
 
 `SDK_LOG_LEVEL` sets the vendor SDK log level for a build: `none`, `error`, `warn` (default),
