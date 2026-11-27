@@ -22,7 +22,7 @@
  */
 #include "newmota_features.h"
 #include "newmota/platform/crypto_hash.h"
-#include "inner.h"
+#include "newmota/platform/bearssl_inner.h"
 #include "newmota_crypto.h"
 #include "bflb_sec_sha.h"
 #include "bflb_sec_mutex.h"

@@ -15,7 +15,7 @@
  * meaning. Every encryption/decryption and key expansion is done by hardware.
  * The software AES translation units are excluded together when this is selected.
  */
-#include "inner.h"
+#include "newmota/platform/bearssl_inner.h"
 #include "newmota/platform/crypto_aes.h"
 #include "newmota_crypto.h"
 #include <stdlib.h>

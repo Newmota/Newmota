@@ -39,7 +39,7 @@
  * SOFTWARE.
  */
 
-#include "inner.h"
+#include "newmota/platform/bearssl_inner.h"
 #include "newmota/platform/crypto_hash.h"
 
 /* see inner.h */

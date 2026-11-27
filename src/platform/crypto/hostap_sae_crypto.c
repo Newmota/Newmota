@@ -60,7 +60,7 @@
    file uses neither. */
 #undef MIN
 #undef MAX
-#include "inner.h"
+#include "newmota/platform/bearssl_inner.h"
 #include "newmota_crypto.h"
 
 #define NM_BN_LIMBS 32

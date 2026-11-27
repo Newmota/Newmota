@@ -15,7 +15,7 @@
  */
 #pragma once
 
-#include "inner.h"
+#include "newmota/platform/bearssl_inner.h"
 #include "newmota_crypto.h"
 
 /**

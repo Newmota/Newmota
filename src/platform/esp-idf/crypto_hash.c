@@ -20,7 +20,7 @@
 #include "newmota/platform/crypto_hash.h"
 #include "newmota_features.h"
 
-#include "inner.h"
+#include "newmota/platform/bearssl_inner.h"
 #include "newmota_crypto.h"
 #include "esp_crypto_lock.h"
 #include "esp_crypto_periph_clk.h"

@@ -39,7 +39,7 @@
  * SOFTWARE.
  */
 
-#include "inner.h"
+#include "newmota/platform/bearssl_inner.h"
 #include "newmota/platform/crypto_hash.h"
 
 static const uint64_t IV384[8] PROGMEM = {0xCBBB9D5DC1059ED8, 0x629A292A367CD507,
