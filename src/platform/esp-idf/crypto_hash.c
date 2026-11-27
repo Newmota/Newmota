@@ -14,8 +14,10 @@
  * Calls esp_security and the SHA HAL directly, as the SDK's own engine driver
  * (mbedtls/port/sha/core) does, so it coexists with that driver when mbedTLS is linked
  * and needs no mbedTLS component when it is not. Unlike that driver it leaves the SHA
- * clock on after a run; see sha_clock_on(). Only resumable engines are supported. The original ESP32 cannot restore an
- * arbitrary chaining state and cannot meet BearSSL's hash contract this way.
+ * clock on after a run and skips the enable while the clock and resets already match what
+ * the pinned SDK's sha_ll_reset_register() leaves; see sha_clock_ready() and sha_clock_on().
+ * Only resumable engines are supported. The original ESP32 cannot restore an arbitrary
+ * chaining state and cannot meet BearSSL's hash contract this way.
  */
 #include "newmota/platform/crypto_hash.h"
 #include "newmota_features.h"
@@ -33,6 +35,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#if CONFIG_IDF_TARGET_ESP32S3
+#include "soc/system_reg.h"
+#elif CONFIG_IDF_TARGET_ESP32P4
+#include "soc/hp_sys_clkrst_reg.h"
+#endif
 
 #if !SOC_SHA_SUPPORT_RESUME
 #error "BearSSL hardware SHA requires arbitrary digest-state restoration"
@@ -51,31 +58,50 @@
 #define SPIN_POLLS 256
 
 /**
- * @brief Whether the SHA clock is on and the module out of reset, read without the RCC lock.
- * Targets without a register read here report false and keep the SDK's per-run
- * enable and reset.
+ * @brief Whether the SHA clock is on and the engine out of reset, read without the RCC lock.
+ * Mirrors the pinned SDK's sha_ll_reset_register(): besides the SHA reset, every reset it
+ * clears because it also holds SHA (DS, HMAC, ECDSA, P4's parent crypto reset) must be clear.
+ * A CPU software reset on the S3 keeps the SHA clock on (the bootloader enabled it) but app
+ * startup asserts the DS and HMAC resets; checking the SHA bits alone then skipped the enable
+ * and the first block stalled. Targets without a register read here report false and keep
+ * the SDK's per-run enable and reset.
  */
 static inline bool sha_clock_ready(void) {
 #if CONFIG_SECURE_ENABLE_TEE
     return false; /* the TEE owns the clock registers */
 #elif CONFIG_IDF_TARGET_ESP32S3
-    return SYSTEM.perip_clk_en1.crypto_sha_clk_en && !SYSTEM.perip_rst_en1.crypto_sha_rst;
-#elif CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32C61 || \
-    CONFIG_IDF_TARGET_ESP32H2
-    return PCR.sha_conf.sha_clk_en && !PCR.sha_conf.sha_rst_en;
+    /* One read of perip_rst_en1 for all three resets. */
+    return SYSTEM.perip_clk_en1.crypto_sha_clk_en &&
+           (SYSTEM.perip_rst_en1.val &
+               (SYSTEM_CRYPTO_SHA_RST | SYSTEM_CRYPTO_DS_RST | SYSTEM_CRYPTO_HMAC_RST)) == 0;
+#elif CONFIG_IDF_TARGET_ESP32C6
+    return PCR.sha_conf.sha_clk_en && !PCR.sha_conf.sha_rst_en && !PCR.ds_conf.ds_rst_en &&
+           !PCR.hmac_conf.hmac_rst_en;
+#elif CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32H2
+    return PCR.sha_conf.sha_clk_en && !PCR.sha_conf.sha_rst_en && !PCR.ds_conf.ds_rst_en &&
+           !PCR.hmac_conf.hmac_rst_en && !PCR.ecdsa_conf.ecdsa_rst_en;
+#elif CONFIG_IDF_TARGET_ESP32C61
+    return PCR.sha_conf.sha_clk_en && !PCR.sha_conf.sha_rst_en && !PCR.ecdsa_conf.ecdsa_rst_en;
 #elif CONFIG_IDF_TARGET_ESP32P4
+    /* One read of hp_rst_en2 for all five resets. */
     return HP_SYS_CLKRST.peri_clk_ctrl25.reg_crypto_sha_clk_en &&
-           !HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_sha && !HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_crypto;
+           (HP_SYS_CLKRST.hp_rst_en2.val &
+               (HP_SYS_CLKRST_REG_RST_EN_SHA | HP_SYS_CLKRST_REG_RST_EN_CRYPTO |
+                   HP_SYS_CLKRST_REG_RST_EN_DS | HP_SYS_CLKRST_REG_RST_EN_HMAC |
+                   HP_SYS_CLKRST_REG_RST_EN_ECDSA)) == 0;
 #else
     return false;
 #endif
 }
 
 /**
- * @brief Turn the SHA clock on (with a module reset) only when it is off.
+ * @brief Turn the SHA clock on (with a module reset) unless sha_clock_ready() says the
+ * engine is clocked and out of every reset that holds it.
  * Called with the SHA lock held. The clock stays on after the run: every other SDK
  * user (the mbedTLS port, esp_hmac, esp_ds) turns it on itself and off again under
  * the same lock, so a later run sees the cleared bit here and turns it on again.
+ * A reset left asserted by startup, such as DS/HMAC after a software reset on the S3,
+ * fails the predicate the same way and takes the SDK enable, which clears it.
  * Every run writes the mode and the full state, so it needs no reset.
  */
 static inline void sha_clock_on(void) {
