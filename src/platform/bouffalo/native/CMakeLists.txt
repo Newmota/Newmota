@@ -232,10 +232,20 @@ if(NEWMOTA_USE_WIFI_WPA3_BEARSSL AND CHIP STREQUAL "bl602")
   set_property(SOURCE "${NEWMOTA_ROOT}/src/platform/crypto/hostap_symmetric_bearssl.c"
     APPEND PROPERTY INCLUDE_DIRECTORIES
       "${newmota_wifi4_supplicant}/port/include" "${newmota_wifi4_supplicant}/src")
+  if(NEWMOTA_USE_CRYPTO_HW_SHA1)
+    # crypto_hash.c's __wrap_pbkdf2_sha1 (midstates, engine held) replaces the SDK's
+    # sha1-pbkdf2-bl.c for every supplicant caller.
+    sdk_add_link_options(-Wl,--wrap=pbkdf2_sha1)
+  endif()
 elseif(NEWMOTA_USE_WIFI_WPA3_BEARSSL)
   # The Wi-Fi 6 sae.c takes crypto_ec_get_a() as const and does not free it.
   set_property(SOURCE "${NEWMOTA_ROOT}/src/platform/crypto/hostap_sae_crypto.c"
     APPEND PROPERTY COMPILE_DEFINITIONS NEWMOTA_HOSTAP_EC_A_BORROWED=1)
+  if(NEWMOTA_USE_CRYPTO_HW_SHA1)
+    # hostap_hash_bearssl.c's pbkdf2_sha1 hands off to crypto_hash.c's engine version.
+    set_property(SOURCE "${NEWMOTA_ROOT}/src/platform/crypto/hostap_hash_bearssl.c"
+      APPEND PROPERTY COMPILE_DEFINITIONS NEWMOTA_HOSTAP_HW_PBKDF2_SHA1=1)
+  endif()
 endif()
 if(NEWMOTA_USE_BLE AND NEWMOTA_USE_BERRY)
   target_include_directories(app PRIVATE "${NEWMOTA_ROOT}/src/third_party/berry_mapping/src")

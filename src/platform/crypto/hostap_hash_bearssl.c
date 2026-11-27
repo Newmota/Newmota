@@ -41,6 +41,10 @@ int hmac_sha512(const u8* key, size_t key_len, const u8* data, size_t data_len, 
 #include "bearssl_hash.h"
 #include "bearssl_hmac.h"
 #include "newmota_crypto.h"
+#if defined(NEWMOTA_HOSTAP_HW_PBKDF2_SHA1)
+#include "newmota_features.h"
+#include "newmota/platform/crypto_hash.h"
+#endif
 
 static int hmac_vector(const br_hash_class* hash, const u8* key, size_t key_len, size_t num_elem,
     const u8* addr[], const size_t* len, u8* mac) {
@@ -135,6 +139,12 @@ int pbkdf2_sha1(const char* passphrase, const u8* ssid, size_t ssid_len, int ite
     if (iterations < 1) {
         return -1;
     }
+#if defined(NEWMOTA_HOSTAP_HW_PBKDF2_SHA1)
+    /* Bouffalo: midstates on the SHA engine, held for 64 iterations (crypto_hash.c). */
+    if (newmota_hw_pbkdf2_sha1(passphrase, ssid, ssid_len, iterations, buf, buflen) == 0) {
+        return 0;
+    }
+#endif
     br_hmac_key_init(&kc, &br_sha1_vtable, passphrase, os_strlen(passphrase));
     while (buflen > 0) {
         size_t take = buflen < SHA1_MAC_LEN ? buflen : SHA1_MAC_LEN;
