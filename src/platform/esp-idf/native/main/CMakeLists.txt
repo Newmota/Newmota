@@ -162,6 +162,11 @@ if(NEWMOTA_USE_WIFI_WPA3_BEARSSL)
     INCLUDE_DIRECTORIES "${newmota_wpa_dir}/src" "${newmota_wpa_dir}/src/utils")
   # wpa_supplicant is linked after main; keep the backend objects in the link.
   target_link_options(${COMPONENT_LIB} INTERFACE "LINKER:-u,crypto_bignum_init" "LINKER:-u,sha1_vector")
+  if(NEWMOTA_USE_CRYPTO_HW_SHA1)
+    # crypto_hash.c's __wrap_pbkdf2_sha1 (midstates, engine held) replaces hostap's
+    # sha1-pbkdf2.c for every supplicant caller.
+    target_link_options(${COMPONENT_LIB} INTERFACE "LINKER:--wrap=pbkdf2_sha1")
+  endif()
 endif()
 if(mbedtls IN_LIST newmota_build_components)
   # The ESP32 hardware AES provider then shares the SDK driver's private engine lock.
