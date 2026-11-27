@@ -1086,15 +1086,21 @@ def native_requirements(
         # internal SHA-1 under CONFIG_MBEDTLS_HARDWARE_SHA, so the setting stays off
         # here even with USE_CRYPTO_HW_SHA*: those providers drive the HAL themselves.
         # mbedTLS, linked on a stock ESP-IDF for the SDK's image hash, then hashes in
-        # software; the fork links no mbedTLS on this path.
+        # software; the fork links no mbedTLS on this path. Without mbedTLS in the build
+        # its options are unknown to Kconfig, so they are set only when it is linked.
         native_settings.update(
             {
                 "CONFIG_ESP_WIFI_MBEDTLS_CRYPTO": "n",
                 "CONFIG_WIFI_RMT_MBEDTLS_CRYPTO": "n",
-                "CONFIG_MBEDTLS_SHA1_C": "n",
-                "CONFIG_MBEDTLS_HARDWARE_SHA": "n",
             }
         )
+        if links_sdk_mbedtls(environment, values):
+            native_settings.update(
+                {
+                    "CONFIG_MBEDTLS_SHA1_C": "n",
+                    "CONFIG_MBEDTLS_HARDWARE_SHA": "n",
+                }
+            )
     if environment.role == "safeboot" and (
         environment.chip in {"esp32c3", "esp32c5", "esp32c6"}
         or (environment.idf_version == "6.1" and environment.chip == "esp32s3")
