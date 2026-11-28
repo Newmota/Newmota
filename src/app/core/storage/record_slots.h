@@ -71,8 +71,8 @@ class RecordSlotReader {
      * @param generation Set to the record's generation when it is valid.
      * @return true when the record is valid.
      */
-    [[nodiscard]] virtual bool check(std::uint8_t slot, const std::uint8_t* bytes,
-        std::size_t size, std::uint32_t& generation) = 0;
+    [[nodiscard]] virtual bool check(std::uint8_t slot, const std::uint8_t* bytes, std::size_t size,
+        std::uint32_t& generation) = 0;
     /**
      * @brief Takes the record of @p slot, the newest valid one read so far.
      *
@@ -93,13 +93,16 @@ struct RecordSlotsLoad final {
     std::uint32_t generation{};
 
     [[nodiscard]] bool loaded() const { return slot != kNoRecordSlot; }
+
     [[nodiscard]] bool any(const RecordSlotState state) const {
         return states[0] == state || states[1] == state;
     }
+
     /** @brief Whether both slots were read: each is valid, invalid or absent. */
     [[nodiscard]] bool readable() const {
         return !any(RecordSlotState::unavailable) && !any(RecordSlotState::failed);
     }
+
     /** @brief Whether nothing but the loaded record (or nothing at all) is stored. */
     [[nodiscard]] bool clean() const {
         for (std::uint8_t index = 0U; index < states.size(); ++index) {
@@ -147,8 +150,7 @@ class RecordSlots final {
      * @brief Removes both slots, the one not holding @p newest first, so a failure in between
      * keeps the newest record.
      */
-    [[nodiscard]] filesystem::MutationResult remove_both(
-        std::uint8_t newest = kNoRecordSlot) const;
+    [[nodiscard]] filesystem::MutationResult remove_both(std::uint8_t newest = kNoRecordSlot) const;
 
   private:
     std::array<const char*, 2> paths_;

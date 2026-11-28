@@ -546,14 +546,13 @@ int MdnsCommit(bvm* vm) {
 }
 
 /** @brief Builds a path inside the store from a name chosen by this firmware. */
-[[nodiscard]] bool store_path(
-    char (&path)[64], const char* const name, const char* const suffix = "") {
-    const int length = std::snprintf(path, sizeof(path), "%.*s/%s%s",
-        static_cast<int>(kStoreDirectory.size()), kStoreDirectory.data(), name, suffix);
+[[nodiscard]] bool store_path(char (&path)[64], const char* const name) {
+    const int length = std::snprintf(path, sizeof(path), "%.*s/%s",
+        static_cast<int>(kStoreDirectory.size()), kStoreDirectory.data(), name);
     return length > 0 && static_cast<std::size_t>(length) < sizeof(path);
 }
 
-/** @brief matter.store_load(name) returns bytes, or nil when absent or above the bound. */
+/** @brief matter.store_load(name) returns bytes, or nil when absent, empty or above the bound. */
 int StoreLoad(bvm* vm) {
     char path[64];
     if (!store_path(path, be_tostring(vm, 1)))
@@ -562,8 +561,9 @@ int StoreLoad(bvm* vm) {
     if (buffer == nullptr)
         be_return_nil(vm);
     std::size_t size = 0;
+    // A power cut while a record is first created can leave it empty: read that as absent.
     const bool loaded =
-        fs::read_file(path, buffer, kMaxStoredFile, size) == fs::ReadResult::succeeded;
+        fs::read_file(path, buffer, kMaxStoredFile, size) == fs::ReadResult::succeeded && size != 0;
     if (loaded)
         be_pushbytes(vm, buffer, size);
     std::free(buffer);
@@ -572,19 +572,16 @@ int StoreLoad(bvm* vm) {
     be_return(vm);
 }
 
-/** @brief matter.store_save(name, bytes) replaces a record through a temporary file. */
+/** @brief matter.store_save(name, bytes) replaces a record; a failed write keeps the old one. */
 int StoreSave(bvm* vm) {
     char path[64];
-    char temporary[64];
     std::size_t size = 0;
     const void* const data = be_tobytes(vm, 2, &size);
     const char* const name = be_tostring(vm, 1);
     const bool saved = data != nullptr && size <= kMaxStoredFile && store_path(path, name) &&
-                       store_path(temporary, name, ".tmp") &&
                        fs::ensure_directory("/.newmota") != fs::MutationResult::failed &&
                        fs::ensure_directory(kStoreDirectory) != fs::MutationResult::failed &&
-                       fs::write_file(temporary, data, size) == fs::MutationResult::succeeded &&
-                       fs::rename(temporary, path) == fs::MutationResult::succeeded;
+                       fs::write_file(path, data, size) == fs::MutationResult::succeeded;
     be_pushbool(vm, saved);
     be_return(vm);
 }

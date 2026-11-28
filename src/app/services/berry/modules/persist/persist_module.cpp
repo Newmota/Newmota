@@ -29,7 +29,6 @@ namespace fs = newmota::filesystem;
 constexpr std::size_t kCapacity = 8192;
 constexpr unsigned kDepth = 16;
 constexpr char kPath[] = "/_persist.json";
-constexpr char kTemporary[] = "/_persist.json.tmp";
 
 struct Buffer {
     char* bytes;
@@ -138,11 +137,9 @@ int Write(bvm* vm) {
         be_raise(vm, "memory_error", "persist buffer allocation failed");
     const int error = be_execprotected(vm, encode_protected, &out);
     bool written = false;
-    if (!error) {
-        written =
-            fs::write_file(kTemporary, out.bytes, out.size) == fs::MutationResult::succeeded &&
-            fs::rename(kTemporary, kPath) == fs::MutationResult::succeeded;
-    }
+    // write_file commits on sync; a failed write leaves an existing file unchanged.
+    if (!error)
+        written = fs::write_file(kPath, out.bytes, out.size) == fs::MutationResult::succeeded;
     std::free(out.bytes);
     if (error)
         be_throw(vm, error);
@@ -177,7 +174,10 @@ int Read(bvm* vm) {
     if (!input.bytes)
         be_raise(vm, "memory_error", "persist buffer allocation failed");
     const auto result = fs::read_file(kPath, input.bytes, kCapacity, input.size);
-    bool valid = result == fs::ReadResult::succeeded;
+    // A power cut while the file is first created can leave it empty: read that as absent.
+    const bool absent =
+        result == fs::ReadResult::not_found || (result == fs::ReadResult::succeeded && !input.size);
+    bool valid = result == fs::ReadResult::succeeded && input.size != 0;
     unsigned depth = 0;
     bool quoted = false, escaped = false;
     for (std::size_t i = 0; valid && i < input.size; ++i) {
@@ -212,7 +212,7 @@ int Read(bvm* vm) {
     std::free(input.bytes);
     if (error)
         be_throw(vm, error);
-    if (result == fs::ReadResult::not_found) {
+    if (absent) {
         be_newobject(vm, "map");
         be_pop(vm, 1);
     } else if (!valid)

@@ -98,7 +98,8 @@ class TestReader final : public newmota::RecordSlotReader {
         return true;
     }
 
-    void keep(const std::uint8_t slot, const std::uint8_t* const bytes, const std::size_t) override {
+    void keep(
+        const std::uint8_t slot, const std::uint8_t* const bytes, const std::size_t) override {
         kept_slot = slot;
         value = bytes[4];
     }
@@ -125,8 +126,7 @@ struct Loaded final {
     const auto stored = load();
     if (!stored.result.readable())
         return false;
-    const auto bytes =
-        record(newmota::next_generation(stored.result.generation), value);
+    const auto bytes = record(newmota::next_generation(stored.result.generation), value);
     return kSlots.write(stored.result.slot, bytes.data(), bytes.size()) ==
            MutationResult::succeeded;
 }
@@ -203,8 +203,8 @@ int main() {
     clear_files();
     auto empty = load();
     expect(!empty.result.loaded() && empty.result.slot == kNoRecordSlot &&
-               empty.result.generation == 0U && empty.result.clean() &&
-               empty.result.readable() && empty.result.states[0] == RecordSlotState::absent &&
+               empty.result.generation == 0U && empty.result.clean() && empty.result.readable() &&
+               empty.result.states[0] == RecordSlotState::absent &&
                empty.result.states[1] == RecordSlotState::absent,
         "two missing slots load nothing", failures);
 
@@ -261,8 +261,8 @@ int main() {
     clear_files();
     store(0U, UINT32_MAX - 1U, 1U);
     store(1U, UINT32_MAX, 2U);
-    expect(load().result.slot == 1U && save(3U) && files[0].writes == 1U, "a save at UINT32_MAX wraps",
-        failures);
+    expect(load().result.slot == 1U && save(3U) && files[0].writes == 1U,
+        "a save at UINT32_MAX wraps", failures);
     auto wrapped = load();
     expect(wrapped.result.slot == 0U && wrapped.result.generation == 1U && wrapped.value == 3U,
         "generation 1 is newer than UINT32_MAX", failures);
