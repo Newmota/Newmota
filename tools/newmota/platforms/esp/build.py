@@ -889,14 +889,17 @@ def native_requirements(
         for name in ("USE_CRYPTO_HW_SHA1", "USE_CRYPTO_HW_SHA256", "USE_CRYPTO_HW_SHA512")
     ):
         # The providers take the SDK's esp_security lock and clock and drive the HAL
-        # directly. When mbedTLS is linked anyway, its SHA uses the same engine owner.
+        # directly. When mbedTLS is linked anyway, its SHA uses the same engine owner; without
+        # it the option is unknown to Kconfig.
         sdk_requirements.extend(("esp_security", "esp_hw_support", "hal"))
-        native_settings["CONFIG_MBEDTLS_HARDWARE_SHA"] = "y"
+        if links_sdk_mbedtls(environment, values):
+            native_settings["CONFIG_MBEDTLS_HARDWARE_SHA"] = "y"
     if values.get("USE_CRYPTO_HW_P256", False):
         sdk_requirements.extend(("esp_security", "esp_hw_support", "hal"))
     if values.get("USE_CRYPTO_HW_AES", False):
         sdk_requirements.extend(("esp_security", "esp_hw_support", "hal"))
-        native_settings["CONFIG_MBEDTLS_HARDWARE_AES"] = "y"
+        if links_sdk_mbedtls(environment, values):
+            native_settings["CONFIG_MBEDTLS_HARDWARE_AES"] = "y"
     if values.get("USE_WEBCAM", False) or values.get("USE_CSI_WEBCAM", False):
         # The stream servers' listener, control and client sockets (three MJPEG viewers) come on
         # top of the main web server's and MQTT's.
