@@ -23,6 +23,7 @@
 #include "drivers/sensors/sensor_service.h"
 #endif
 #include "core/storage/filesystem.h"
+#include "core/storage/record_slots.h"
 #include "gpio_ids.h"
 #include "newmota/log.h"
 #include "newmota/platform/critical_settings.h"
@@ -39,9 +40,11 @@ namespace newmota {
 namespace {
 
 constexpr char kSettingsDirectory[] = "/.newmota";
-constexpr char kActivePath[] = "/.newmota/settings.bin";
-constexpr char kPreviousPath[] = "/.newmota/settings.prev";
-constexpr char kTemporaryPath[] = "/.newmota/settings.tmp";
+/**
+ * The two settings slots. A save rewrites the slot that does not hold the loaded generation,
+ * and load() selects the newest valid generation, so either slot can hold the newer record.
+ */
+constexpr RecordSlots kSlots{"/.newmota/settings.a", "/.newmota/settings.b"};
 constexpr std::array<std::uint8_t, 4> kMagic{'N', 'M', 'S', 'T'};
 constexpr std::uint16_t kFormatVersion = 1;
 constexpr std::uint16_t kHeaderSize = 20;
@@ -120,13 +123,17 @@ constexpr std::uint16_t kLightV2Size = kLightV1Size + kLightV2ExtensionSize;
 constexpr std::uint16_t kLightSize = kLightV2Size;
 #if USE_SENSOR_SETTINGS
 constexpr std::uint16_t kSensorsSize = SensorSettings::kMaximumDriverId / 8;
-constexpr char kSensorPath[] = "/.newmota/sensors.bin";
-constexpr char kSensorTemporaryPath[] = "/.newmota/sensors.tmp";
+constexpr RecordSlots kSensorSlots{"/.newmota/sensors.a", "/.newmota/sensors.b"};
 constexpr std::array<std::uint8_t, 4> kSensorMagic{'N', 'M', 'S', 'P'};
 constexpr std::uint8_t kSensorFileVersion = 1U;
 constexpr std::size_t kSensorPresentationSize = 5;
-constexpr std::size_t kSensorPayloadSize = 1 + kSensorsSize + kSensorPresentationSize;
-constexpr std::size_t kSensorFileSize = 4 + kSensorPayloadSize + 4;
+// Magic (4), version (1), generation (4), disabled bitmap, presentation, CRC-32 (4).
+constexpr std::size_t kSensorVersionOffset = 4;
+constexpr std::size_t kSensorGenerationOffset = kSensorVersionOffset + 1;
+constexpr std::size_t kSensorDisabledOffset = kSensorGenerationOffset + 4;
+constexpr std::size_t kSensorOutputOffset = kSensorDisabledOffset + kSensorsSize;
+constexpr std::size_t kSensorCrcOffset = kSensorOutputOffset + kSensorPresentationSize;
+constexpr std::size_t kSensorFileSize = kSensorCrcOffset + 4;
 #endif
 constexpr std::uint16_t kPowerSize =
     7 + (kMaximumPowerOutputs * 2) + 2 + 2 + 1 + (kMaximumInterlockGroups * 4) + 3 + 3;
@@ -159,21 +166,14 @@ static_assert(kEncodedSizeWithoutWifi < kEncodedSize);
 static_assert(kReadCapacity <= kMaximumSettingsFileSize);
 static_assert(kCriticalEncodedSize <= platform::kCriticalSettingsCapacity);
 
-enum class SlotState : std::uint8_t {
-    absent,
-    valid,
-    invalid,
-    unavailable,
-    failed,
-};
-
 // Settings operations run on small vendor main-task stacks. Keep their fixed
 // transaction and I/O scratch in BSS rather than nesting it with LittleFS's
 // own working buffers. Settings work is serialized on the application task;
 // calls using shared scratch must not overlap or re-enter one another.
 Settings::Data transaction_candidate;
-std::array<std::uint8_t, kEncodedSize> encoded_scratch;
-std::array<std::uint8_t, kReadCapacity> read_scratch;
+// load() reads the slots into this buffer and save() encodes its record in it; save() does
+// not read the record back, so the two uses never overlap.
+std::array<std::uint8_t, kReadCapacity> record_scratch;
 std::array<std::uint8_t, kCriticalEncodedSize> critical_encoded_scratch;
 std::array<std::uint8_t, platform::kCriticalSettingsCapacity> critical_read_scratch;
 
@@ -336,56 +336,65 @@ void write_u32(std::uint8_t* const destination, const std::uint32_t value) {
 }
 
 #if USE_SENSOR_SETTINGS
-constexpr char kSensorPreviousPath[] = "/.newmota/sensors.prev";
-
-enum class SensorFileResult : std::uint8_t { loaded, missing, failed };
-
-/** @brief Reads an app-owned, CRC-protected driver policy file. */
-[[nodiscard]] SensorFileResult read_sensor_settings(const char* path, SensorSettings& settings) {
-    std::array<std::uint8_t, kSensorFileSize> bytes{};
-    std::size_t size = 0;
-    const auto result = filesystem::read_file(path, bytes.data(), bytes.size(), size);
-    if (result == filesystem::ReadResult::not_found)
-        return SensorFileResult::missing;
-    if (result != filesystem::ReadResult::succeeded ||
-        !std::equal(kSensorMagic.begin(), kSensorMagic.end(), bytes.begin()))
-        return SensorFileResult::failed;
-
-    constexpr std::size_t version_offset = 4;
-    constexpr std::size_t disabled_offset = version_offset + 1;
-    constexpr std::size_t output_offset = disabled_offset + kSensorsSize;
-    constexpr std::size_t crc_offset = 4 + kSensorPayloadSize;
-    if (size != kSensorFileSize || bytes[version_offset] != kSensorFileVersion ||
-        read_u32(bytes.data() + crc_offset) !=
+/** @brief Validates one sensor policy record and decodes its generation and fields. */
+[[nodiscard]] bool decode_sensor_settings(const std::uint8_t* const bytes, const std::size_t size,
+    SensorSettings& settings, std::uint32_t& generation) {
+    if (size != kSensorFileSize || !std::equal(kSensorMagic.begin(), kSensorMagic.end(), bytes) ||
+        bytes[kSensorVersionOffset] != kSensorFileVersion ||
+        read_u32(bytes + kSensorCrcOffset) !=
             support::crc32_finalize(
-                support::crc32_update(support::kCrc32InitialState, bytes.data(), crc_offset)))
-        return SensorFileResult::failed;
+                support::crc32_update(support::kCrc32InitialState, bytes, kSensorCrcOffset)))
+        return false;
 
-    const auto temperature_offset = bytes[output_offset + 3];
-    const auto humidity_offset = bytes[output_offset + 4];
+    const auto* const output = bytes + kSensorOutputOffset;
     const auto signed_byte = [](const std::uint8_t value) {
         return static_cast<std::int16_t>(
             value <= 127U ? value : static_cast<std::int16_t>(value) - 256);
     };
-    const auto temperature_offset_value = signed_byte(temperature_offset);
-    const auto humidity_offset_value = signed_byte(humidity_offset);
-    if (bytes[output_offset] > 3U || bytes[output_offset + 1] > 3U ||
-        bytes[output_offset + 2] > 3U || temperature_offset_value < -126 ||
+    const auto temperature_offset_value = signed_byte(output[3]);
+    const auto humidity_offset_value = signed_byte(output[4]);
+    if (output[0] > 3U || output[1] > 3U || output[2] > 3U || temperature_offset_value < -126 ||
         temperature_offset_value > 126 || humidity_offset_value < -100 ||
         humidity_offset_value > 100)
-        return SensorFileResult::failed;
+        return false;
 
-    std::copy_n(bytes.begin() + static_cast<std::ptrdiff_t>(disabled_offset), kSensorsSize,
-        settings.disabled.begin());
-    settings.output.temperature_resolution = bytes[output_offset];
-    settings.output.humidity_resolution = bytes[output_offset + 1];
-    settings.output.pressure_resolution = bytes[output_offset + 2];
+    generation = read_u32(bytes + kSensorGenerationOffset);
+    std::copy_n(bytes + kSensorDisabledOffset, kSensorsSize, settings.disabled.begin());
+    settings.output.temperature_resolution = output[0];
+    settings.output.humidity_resolution = output[1];
+    settings.output.pressure_resolution = output[2];
     settings.output.temperature_offset_tenths = static_cast<std::int8_t>(temperature_offset_value);
     settings.output.humidity_offset_tenths = static_cast<std::int8_t>(humidity_offset_value);
-    return SensorFileResult::loaded;
+    return true;
 }
 
-/** @brief Replaces the sensor policy using a verified temporary and recovery slot. */
+/** @brief Decodes the sensor policy slots and keeps the newest valid one. */
+class SensorSettingsReader final : public RecordSlotReader {
+  public:
+    explicit SensorSettingsReader(SensorSettings& newest) : newest_(newest) {}
+
+    bool check(const std::uint8_t, const std::uint8_t* const bytes, const std::size_t size,
+        std::uint32_t& generation) override {
+        return decode_sensor_settings(bytes, size, parsed_, generation);
+    }
+
+    void keep(const std::uint8_t, const std::uint8_t* const, const std::size_t) override {
+        newest_ = parsed_;
+    }
+
+  private:
+    SensorSettings parsed_{};
+    SensorSettings& newest_;
+};
+
+/** @brief Reads the app-owned, CRC-protected driver policy slots into @p settings. */
+[[nodiscard]] RecordSlotsLoad read_sensor_settings(SensorSettings& settings) {
+    std::array<std::uint8_t, kSensorFileSize> bytes{};
+    SensorSettingsReader reader(settings);
+    return kSensorSlots.load(bytes.data(), bytes.size(), reader);
+}
+
+/** @brief Writes the sensor policy into the slot not holding the newest stored record. */
 [[nodiscard]] bool save_sensor_settings(const SensorSettings& settings) {
     if (settings.output.temperature_resolution > 3U || settings.output.humidity_resolution > 3U ||
         settings.output.pressure_resolution > 3U ||
@@ -394,51 +403,31 @@ enum class SensorFileResult : std::uint8_t { loaded, missing, failed };
         settings.output.humidity_offset_tenths < -100 ||
         settings.output.humidity_offset_tenths > 100)
         return false;
+    if (filesystem::ensure_directory(kSettingsDirectory) != filesystem::MutationResult::succeeded)
+        return false;
+    SensorSettings current{};
+    const auto stored = read_sensor_settings(current);
+    // A slot that could not be read may hold the newest record; never write over it blindly.
+    if (!stored.readable())
+        return false;
 
     std::array<std::uint8_t, kSensorFileSize> bytes{};
     std::copy(kSensorMagic.begin(), kSensorMagic.end(), bytes.begin());
-    bytes[4] = kSensorFileVersion;
-    std::copy(settings.disabled.begin(), settings.disabled.end(), bytes.begin() + 5);
-    constexpr std::size_t output_offset = 5 + kSensorsSize;
-    bytes[output_offset] = settings.output.temperature_resolution;
-    bytes[output_offset + 1] = settings.output.humidity_resolution;
-    bytes[output_offset + 2] = settings.output.pressure_resolution;
-    bytes[output_offset + 3] = static_cast<std::uint8_t>(settings.output.temperature_offset_tenths);
-    bytes[output_offset + 4] = static_cast<std::uint8_t>(settings.output.humidity_offset_tenths);
-    constexpr std::size_t crc_offset = 4 + kSensorPayloadSize;
-    write_u32(bytes.data() + crc_offset,
+    bytes[kSensorVersionOffset] = kSensorFileVersion;
+    write_u32(bytes.data() + kSensorGenerationOffset, next_generation(stored.generation));
+    std::copy(settings.disabled.begin(), settings.disabled.end(),
+        bytes.begin() + static_cast<std::ptrdiff_t>(kSensorDisabledOffset));
+    auto* const output = bytes.data() + kSensorOutputOffset;
+    output[0] = settings.output.temperature_resolution;
+    output[1] = settings.output.humidity_resolution;
+    output[2] = settings.output.pressure_resolution;
+    output[3] = static_cast<std::uint8_t>(settings.output.temperature_offset_tenths);
+    output[4] = static_cast<std::uint8_t>(settings.output.humidity_offset_tenths);
+    write_u32(bytes.data() + kSensorCrcOffset,
         support::crc32_finalize(
-            support::crc32_update(support::kCrc32InitialState, bytes.data(), crc_offset)));
-    if (filesystem::ensure_directory(kSettingsDirectory) != filesystem::MutationResult::succeeded ||
-        filesystem::remove_if_exists(kSensorTemporaryPath) !=
-            filesystem::MutationResult::succeeded ||
-        filesystem::write_file(kSensorTemporaryPath, bytes.data(), bytes.size()) !=
-            filesystem::MutationResult::succeeded)
-        return false;
-    std::array<std::uint8_t, kSensorFileSize> verified{};
-    std::size_t size = 0;
-    if (filesystem::read_file(kSensorTemporaryPath, verified.data(), verified.size(), size) !=
-            filesystem::ReadResult::succeeded ||
-        size != bytes.size() || verified != bytes)
-        return false;
-    SensorSettings current{};
-    const auto active = read_sensor_settings(kSensorPath, current);
-    if (active == SensorFileResult::loaded) {
-        if (filesystem::remove_if_exists(kSensorPreviousPath) !=
-                filesystem::MutationResult::succeeded ||
-            filesystem::rename(kSensorPath, kSensorPreviousPath) !=
-                filesystem::MutationResult::succeeded)
-            return false;
-    }
-    if (active == SensorFileResult::failed &&
-        filesystem::remove_if_exists(kSensorPath) != filesystem::MutationResult::succeeded)
-        return false;
-    if (filesystem::rename(kSensorTemporaryPath, kSensorPath) ==
-        filesystem::MutationResult::succeeded)
-        return true;
-    if (active == SensorFileResult::loaded)
-        (void)filesystem::rename(kSensorPreviousPath, kSensorPath);
-    return false;
+            support::crc32_update(support::kCrc32InitialState, bytes.data(), kSensorCrcOffset)));
+    return kSensorSlots.write(stored.slot, bytes.data(), bytes.size()) ==
+           filesystem::MutationResult::succeeded;
 }
 #endif
 
@@ -490,8 +479,9 @@ enum class SensorFileResult : std::uint8_t { loaded, missing, failed };
  * @brief Serializes a settings record into the versioned tagged format.
  */
 [[nodiscard]] std::size_t encode(const Settings::Data& data, const std::uint32_t generation,
-    const bool include_wifi, std::array<std::uint8_t, kEncodedSize>& output) {
-    output = {};
+    const bool include_wifi, std::array<std::uint8_t, kReadCapacity>& output) {
+    // Zero only the bytes a record can use; the rest of the shared buffer is never written.
+    std::fill_n(output.begin(), kEncodedSize, std::uint8_t{0});
     for (std::size_t index = 0; index < kMagic.size(); ++index) {
         output[index] = kMagic[index];
     }
@@ -1952,56 +1942,36 @@ void canonicalize_hardware(HardwareConfiguration& configuration) {
 }
 
 /**
- * @brief Reads and validates one active or recovery settings slot.
- * @return The physical and logical state of the slot.
+ * @brief Decodes settings slots into the transaction buffer and keeps the newest record.
  */
-[[nodiscard]] SlotState load_slot(const char* const path, Settings::Data& data,
-    std::uint32_t& generation, bool& present, bool& writable, bool& wifi_present) {
-    writable = false;
-    wifi_present = false;
-    auto& buffer = read_scratch;
-    std::size_t size = 0;
-    const auto result = filesystem::read_file(path, buffer.data(), buffer.size(), size);
-    switch (result) {
-    case filesystem::ReadResult::not_found:
-        present = false;
-        writable = true;
-        return SlotState::absent;
-    case filesystem::ReadResult::unavailable:
-        present = false;
-        return SlotState::unavailable;
-    case filesystem::ReadResult::too_large:
-        present = true;
-        return SlotState::invalid;
-    case filesystem::ReadResult::succeeded:
-        present = true;
-        return decode(buffer.data(), size, data, generation, writable, wifi_present)
-                   ? SlotState::valid
-                   : SlotState::invalid;
-    case filesystem::ReadResult::invalid_path:
-    case filesystem::ReadResult::failed:
-        present = true;
-        return SlotState::failed;
-    }
-    return SlotState::failed;
-}
+class SettingsRecordReader final : public RecordSlotReader {
+  public:
+    SettingsRecordReader(Settings::Data& candidate, Settings::Data& newest)
+        : candidate_(candidate), newest_(newest) {}
 
-/** @brief Reads a temporary file back and compares every encoded byte. */
-[[nodiscard]] bool verify_encoded(const char* const path,
-    const std::array<std::uint8_t, kEncodedSize>& expected, const std::size_t expected_size) {
-    auto& actual = read_scratch;
-    std::size_t size = 0;
-    if (filesystem::read_file(path, actual.data(), actual.size(), size) !=
-            filesystem::ReadResult::succeeded ||
-        size != expected_size) {
-        return false;
+    bool check(const std::uint8_t slot, const std::uint8_t* const bytes, const std::size_t size,
+        std::uint32_t& generation) override {
+        return decode(bytes, size, candidate_, generation, writable_[slot], wifi_present_[slot]);
     }
-    for (std::size_t index = 0; index < expected_size; ++index) {
-        if (actual[index] != expected[index])
-            return false;
+
+    void keep(const std::uint8_t slot, const std::uint8_t* const, const std::size_t) override {
+        newest_ = candidate_;
+        newest_wifi_present_ = wifi_present_[slot];
     }
-    return true;
-}
+
+    /** @brief Whether a decoded slot holds only fields this image knows. */
+    [[nodiscard]] bool writable(const std::uint8_t slot) const { return writable_[slot]; }
+
+    /** @brief Whether the kept record carried Wi-Fi fields. */
+    [[nodiscard]] bool newest_wifi_present() const { return newest_wifi_present_; }
+
+  private:
+    Settings::Data& candidate_;
+    Settings::Data& newest_;
+    std::array<bool, 2> writable_{};
+    std::array<bool, 2> wifi_present_{};
+    bool newest_wifi_present_{false};
+};
 
 /** @brief Reads back and validates the exact critical record just written. */
 [[nodiscard]] bool verify_critical_encoded(
@@ -2029,7 +1999,7 @@ Settings::Settings() {
 }
 
 /**
- * @brief Loads the newest usable settings record, preferring the active slot.
+ * @brief Loads the valid settings slot with the newest generation.
  */
 SettingsLoadResult Settings::load() {
     initialize_default_data(data_);
@@ -2042,45 +2012,28 @@ SettingsLoadResult Settings::load() {
     critical_read_only_ = false;
     suppress_power_save_until_restart_ = false;
 
-    auto& candidate = transaction_candidate;
-    initialize_default_data(candidate);
-    std::uint32_t active_generation = 0;
-    bool active_writable = false;
-    bool active_wifi_present = false;
-    const auto active_state = load_slot(kActivePath, candidate, active_generation, active_present_,
-        active_writable, active_wifi_present);
-    active_valid_ = active_state == SlotState::valid;
-    if (active_valid_) {
-        data_ = candidate;
-        generation_ = active_generation;
-    }
-
-    initialize_default_data(candidate);
-    std::uint32_t previous_generation = 0;
-    bool previous_writable = false;
-    bool previous_wifi_present = false;
-    const auto previous_state = load_slot(kPreviousPath, candidate, previous_generation,
-        previous_present_, previous_writable, previous_wifi_present);
-    previous_valid_ = previous_state == SlotState::valid;
+    SettingsRecordReader reader(transaction_candidate, data_);
+    const auto stored = kSlots.load(record_scratch.data(), record_scratch.size(), reader);
+    active_slot_ = stored.slot;
+    generation_ = stored.generation;
     // Never replace an unreadable newer generation with recovered/default data.
     // Protect both slots: either may contain fields introduced by another image.
-    read_only_ = !active_writable || !previous_writable;
+    read_only_ = false;
+    for (std::uint8_t slot = 0U; slot < stored.states.size(); ++slot) {
+        if (stored.states[slot] != RecordSlotState::absent && !reader.writable(slot))
+            read_only_ = true;
+    }
+    const bool selected_wifi_present = reader.newest_wifi_present();
 
     SettingsLoadResult result = SettingsLoadResult::defaults;
-    bool selected_wifi_present = false;
-    if (active_valid_) {
-        result = SettingsLoadResult::loaded;
-        selected_wifi_present = active_wifi_present;
-    } else if (previous_valid_) {
-        data_ = candidate;
-        generation_ = previous_generation;
-        result = SettingsLoadResult::recovered;
-        selected_wifi_present = previous_wifi_present;
-    } else if (active_state == SlotState::unavailable || previous_state == SlotState::unavailable) {
+    if (stored.loaded()) {
+        // An unreadable other slot may hold a newer generation than the one loaded.
+        result = stored.clean() ? SettingsLoadResult::loaded : SettingsLoadResult::recovered;
+    } else if (stored.any(RecordSlotState::unavailable)) {
         result = SettingsLoadResult::unavailable;
-    } else if (active_state == SlotState::failed || previous_state == SlotState::failed) {
+    } else if (stored.any(RecordSlotState::failed)) {
         result = SettingsLoadResult::failed;
-    } else if (active_state == SlotState::invalid || previous_state == SlotState::invalid) {
+    } else if (stored.any(RecordSlotState::invalid)) {
         result = SettingsLoadResult::corrupt;
     }
 
@@ -2125,17 +2078,10 @@ SettingsLoadResult Settings::load() {
 
 #if USE_SENSOR_SETTINGS
     SensorSettings sensor_policy{};
-    auto sensor_result = read_sensor_settings(kSensorPath, sensor_policy);
-    if (sensor_result != SensorFileResult::loaded) {
-        const auto backup_result = read_sensor_settings(kSensorPreviousPath, sensor_policy);
-        if (backup_result == SensorFileResult::loaded)
-            sensor_result = backup_result;
-        else if (sensor_result == SensorFileResult::missing)
-            sensor_result = backup_result;
-    }
-    if (sensor_result == SensorFileResult::loaded) {
+    const auto sensor_result = read_sensor_settings(sensor_policy);
+    if (sensor_result.loaded()) {
         data_.sensors = sensor_policy;
-    } else if (sensor_result == SensorFileResult::failed) {
+    } else if (!sensor_result.clean()) {
         // A corrupt policy must not resume probes on a potentially conflicting address.
         data_.sensors.disabled.fill(0xffU);
     }
@@ -3318,16 +3264,12 @@ SettingsUpdateResult Settings::reset_to_defaults(const bool preserve_wifi, const
     }
 
     if (erase_first) {
-        if (filesystem::remove_if_exists(kTemporaryPath) != filesystem::MutationResult::succeeded ||
-            filesystem::remove_if_exists(kPreviousPath) != filesystem::MutationResult::succeeded ||
-            filesystem::remove_if_exists(kActivePath) != filesystem::MutationResult::succeeded) {
+        // The older slot goes first, so a power cut in between keeps the newest record.
+        if (kSlots.remove_both(active_slot_) != filesystem::MutationResult::succeeded) {
             (void)load();
             return SettingsUpdateResult::failed;
         }
-        active_present_ = false;
-        active_valid_ = false;
-        previous_present_ = false;
-        previous_valid_ = false;
+        active_slot_ = kNoRecordSlot;
         generation_ = 0;
     }
 
@@ -3341,26 +3283,24 @@ SettingsUpdateResult Settings::reset_to_defaults(const bool preserve_wifi, const
     data_ = candidate;
     save_data_counter_ = data_.power.save_data_seconds;
 
+    // Keep only the reset record. The slot holding the replaced settings goes first, so a
+    // failure while removing the sensor policy cannot leave it behind.
+    if (kSlots.remove(RecordSlots::target(active_slot_)) != filesystem::MutationResult::succeeded)
+        return SettingsUpdateResult::failed;
 #if USE_SENSOR_SETTINGS
-    if (filesystem::remove_if_exists(kSensorPath) != filesystem::MutationResult::succeeded ||
-        filesystem::remove_if_exists(kSensorPreviousPath) !=
-            filesystem::MutationResult::succeeded ||
-        filesystem::remove_if_exists(kSensorTemporaryPath) != filesystem::MutationResult::succeeded)
+    if (kSensorSlots.remove_both() != filesystem::MutationResult::succeeded)
         return SettingsUpdateResult::failed;
 #endif
-
-    if (filesystem::remove_if_exists(kPreviousPath) != filesystem::MutationResult::succeeded ||
-        filesystem::remove_if_exists(kTemporaryPath) != filesystem::MutationResult::succeeded) {
-        return SettingsUpdateResult::failed;
-    }
-    previous_present_ = false;
-    previous_valid_ = false;
     suppress_power_save_until_restart_ = true;
     return SettingsUpdateResult::saved;
 }
 
 /**
- * @brief Writes, verifies, and rotates a candidate settings record.
+ * @brief Writes a candidate settings record into the slot not holding the loaded generation.
+ *
+ * That slot holds the older generation, or is absent or invalid. LittleFS commits the whole
+ * file on sync and validates every program, so the loaded record stays intact until the new
+ * one is complete, and neither a temporary file nor a read-back is needed.
  * @return true when the candidate became active.
  */
 bool Settings::save(const Data& candidate, const bool explicit_reset) {
@@ -3370,10 +3310,10 @@ bool Settings::save(const Data& candidate, const bool explicit_reset) {
         return false;
     }
 
-    const std::uint32_t next_generation = generation_ == UINT32_MAX ? 1 : generation_ + 1;
-    auto& encoded = encoded_scratch;
+    const std::uint32_t generation = next_generation(generation_);
+    auto& encoded = record_scratch;
     const auto encoded_size =
-        encode(candidate, next_generation, !platform::critical_settings_store_enabled(), encoded);
+        encode(candidate, generation, !platform::critical_settings_store_enabled(), encoded);
     const auto expected_size =
         (platform::critical_settings_store_enabled() ? kEncodedSizeWithoutWifi : kEncodedSize) -
         (kLightSize - light_encoded_size(candidate.light))
@@ -3385,60 +3325,14 @@ bool Settings::save(const Data& candidate, const bool explicit_reset) {
         return false;
     }
 
-    if (filesystem::remove_if_exists(kTemporaryPath) != filesystem::MutationResult::succeeded ||
-        filesystem::write_file(kTemporaryPath, encoded.data(), encoded_size) !=
-            filesystem::MutationResult::succeeded) {
+    if (kSlots.write(active_slot_, encoded.data(), encoded_size) !=
+        filesystem::MutationResult::succeeded) {
+        // The target holds its old content or the complete candidate; the loaded slot is
+        // untouched either way, and the next save rewrites the same target.
         return false;
     }
-
-    if (!verify_encoded(kTemporaryPath, encoded, encoded_size)) {
-        return false;
-    }
-
-    if (!active_valid_) {
-        if (active_present_ &&
-            filesystem::remove_if_exists(kActivePath) != filesystem::MutationResult::succeeded) {
-            return false;
-        }
-        active_present_ = false;
-        if (filesystem::rename(kTemporaryPath, kActivePath) !=
-            filesystem::MutationResult::succeeded) {
-            return false;
-        }
-        active_present_ = true;
-        active_valid_ = true;
-        generation_ = next_generation;
-        read_only_ = false;
-        light_dirty_ = false;
-        return true;
-    }
-
-    if (filesystem::remove_if_exists(kPreviousPath) != filesystem::MutationResult::succeeded) {
-        return false;
-    }
-    previous_present_ = false;
-    previous_valid_ = false;
-    if (filesystem::rename(kActivePath, kPreviousPath) != filesystem::MutationResult::succeeded) {
-        return false;
-    }
-    active_present_ = false;
-    active_valid_ = false;
-    previous_present_ = true;
-    previous_valid_ = true;
-
-    if (filesystem::rename(kTemporaryPath, kActivePath) != filesystem::MutationResult::succeeded) {
-        if (filesystem::rename(kPreviousPath, kActivePath) ==
-            filesystem::MutationResult::succeeded) {
-            active_present_ = true;
-            active_valid_ = true;
-            previous_present_ = false;
-            previous_valid_ = false;
-        }
-        return false;
-    }
-    active_present_ = true;
-    active_valid_ = true;
-    generation_ = next_generation;
+    active_slot_ = RecordSlots::target(active_slot_);
+    generation_ = generation;
     read_only_ = false;
     light_dirty_ = false;
     return true;
@@ -3449,16 +3343,15 @@ bool Settings::save_critical_wifi(const Data& candidate, const bool explicit_res
     if (!platform::critical_settings_store_enabled() || (critical_read_only_ && !explicit_reset)) {
         return false;
     }
-    const std::uint32_t next_generation =
-        critical_generation_ == UINT32_MAX ? 1U : critical_generation_ + 1U;
+    const std::uint32_t generation = next_generation(critical_generation_);
     auto& encoded = critical_encoded_scratch;
-    encode_critical_wifi(candidate, next_generation, encoded);
+    encode_critical_wifi(candidate, generation, encoded);
     if (platform::replace_critical_settings(encoded.data(), encoded.size()) !=
             platform::CriticalSettingsResult::succeeded ||
         !verify_critical_encoded(encoded)) {
         return false;
     }
-    critical_generation_ = next_generation;
+    critical_generation_ = generation;
     critical_read_only_ = false;
     return true;
 }

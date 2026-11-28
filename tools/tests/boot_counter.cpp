@@ -29,17 +29,25 @@ struct FileSlot final {
     bool present{};
 };
 
-std::array<FileSlot, 3> files{};
+std::array<FileSlot, 2> files{};
 
 /** @brief Finds one boot-counter fixture path. */
 [[nodiscard]] FileSlot* file_for(const std::string_view path) {
-    if (path == "/.newmota/boot.bin")
+    if (path == "/.newmota/boot.a")
         return &files[0];
-    if (path == "/.newmota/boot.prev")
+    if (path == "/.newmota/boot.b")
         return &files[1];
-    if (path == "/.newmota/boot.tmp")
-        return &files[2];
     return nullptr;
+}
+
+/** @brief Returns the count stored in a slot, or UINT32_MAX for a missing slot. */
+[[nodiscard]] std::uint32_t count_of(const FileSlot& file) {
+    if (!file.present || file.size < 12U)
+        return UINT32_MAX;
+    std::uint32_t value = 0U;
+    for (unsigned byte = 0U; byte < 4U; ++byte)
+        value |= static_cast<std::uint32_t>(file.bytes[8U + byte]) << (8U * byte);
+    return value;
 }
 
 /** @brief Clears the fixed filesystem fixture. */
@@ -102,18 +110,6 @@ MutationResult remove_if_exists(const std::string_view path) {
     return MutationResult::succeeded;
 }
 
-MutationResult rename(const std::string_view source, const std::string_view destination) {
-    FileSlot* const source_file = file_for(source);
-    FileSlot* const destination_file = file_for(destination);
-    if (source_file == nullptr || destination_file == nullptr || !source_file->present ||
-        destination_file->present) {
-        return MutationResult::failed;
-    }
-    *destination_file = *source_file;
-    *source_file = {};
-    return MutationResult::succeeded;
-}
-
 } // namespace newmota::filesystem
 
 int main() {
@@ -122,22 +118,49 @@ int main() {
 
     clear_files();
     BootCounter first;
-    expect(first.initialize() && first.status().available && first.status().count == 1U,
-        "first boot creates count one", failures);
+    expect(first.initialize() && first.status().available && first.status().count == 1U &&
+               count_of(files[0]) == 1U && !files[1].present,
+        "first boot creates count one in slot A", failures);
 
     BootCounter second;
-    expect(second.initialize() && second.status().count == 2U,
-        "second boot rotates and increments the record", failures);
+    expect(second.initialize() && second.status().count == 2U && count_of(files[0]) == 1U &&
+               count_of(files[1]) == 2U,
+        "second boot writes the incremented count into slot B", failures);
 
     BootCounter third;
-    expect(third.initialize() && third.status().count == 3U, "previous record remains recoverable",
-        failures);
+    expect(third.initialize() && third.status().count == 3U && count_of(files[0]) == 3U &&
+               count_of(files[1]) == 2U,
+        "third boot replaces the older slot A and keeps the previous count in B", failures);
 
-    expect(third.reset() && third.status().available && third.status().count == 0U,
-        "explicit reset persists zero", failures);
+    BootCounter peek;
+    expect(peek.initialize(false) && peek.status().count == 3U && count_of(files[0]) == 3U &&
+               count_of(files[1]) == 2U,
+        "a load without increment reads the newest count and writes nothing", failures);
+
+    expect(third.reset() && third.status().available && third.status().count == 0U &&
+               count_of(files[0]) == 0U && !files[1].present,
+        "explicit reset removes both slots and persists zero in slot A", failures);
     BootCounter after_reset;
-    expect(after_reset.initialize() && after_reset.status().count == 1U,
+    expect(after_reset.initialize() && after_reset.status().count == 1U && count_of(files[1]) == 1U,
         "next boot starts at one after reset", failures);
+
+    clear_files();
+    BootCounter newer_corrupt;
+    expect(newer_corrupt.initialize() && newer_corrupt.initialize(),
+        "fallback fixture has two records", failures);
+    files[1].bytes[0] ^= 0x01U;
+    BootCounter fell_back;
+    expect(fell_back.initialize() && fell_back.status().count == 2U && count_of(files[1]) == 2U,
+        "a corrupt newer slot falls back to the older count and is replaced", failures);
+
+    clear_files();
+    BootCounter empty_slot;
+    expect(empty_slot.initialize(), "0-byte fixture has an initial record", failures);
+    files[1].present = true;
+    files[1].size = 0U;
+    BootCounter after_empty;
+    expect(after_empty.initialize() && after_empty.status().count == 2U && count_of(files[1]) == 2U,
+        "a 0-byte slot counts as absent", failures);
 
     clear_files();
     BootCounter corrupted;

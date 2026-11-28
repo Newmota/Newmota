@@ -73,7 +73,7 @@ and `WcStream 1` exclude each other.
 
 ## Commands
 
-Settings are stored in `/.newmota/webcam.bin`, outside the shared settings record, and applied
+Settings are stored in `/.newmota/webcam.a`/`.b`, outside the shared settings record, and applied
 at every start. Changing one while streaming applies it at once.
 
 | Command | Payload | Meaning |

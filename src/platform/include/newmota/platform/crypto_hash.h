@@ -31,7 +31,7 @@ void newmota_sha1_blocks(const unsigned char* buf, size_t num, uint32_t* val);
 void newmota_sha256_blocks(const unsigned char* buf, size_t num, uint32_t* val);
 /** @brief Compress @p num consecutive SHA-384/512 blocks through hardware. */
 void newmota_sha512_blocks(const unsigned char* buf, size_t num, uint64_t* val);
-#if (defined(BL602) || defined(BL616) || defined(BL618DG)) && defined(USE_CRYPTO_HW_SHA1) && \
+#if (defined(BL602) || defined(BL616) || defined(BL618DG)) && defined(USE_CRYPTO_HW_SHA1) &&       \
     USE_CRYPTO_HW_SHA1 && defined(USE_WIFI_WPA3_BEARSSL) && USE_WIFI_WPA3_BEARSSL
 /** @brief Bouffalo PBKDF2-HMAC-SHA1 (hostap pbkdf2_sha1()) on the engine with HMAC midstates.
  * Returns 0 with @p buf filled, or 1 without touching it when the arguments need the

@@ -49,10 +49,12 @@ static void aes_acquire(void) {
     esp_crypto_dma_lock_acquire();
     esp_crypto_aes_enable_periph_clk(true);
 }
+
 static void aes_release(void) {
     esp_crypto_aes_enable_periph_clk(false);
     esp_crypto_dma_lock_release();
 }
+
 #define AES_ACQUIRE() aes_acquire()
 #define AES_RELEASE() aes_release()
 #else
@@ -60,10 +62,12 @@ static void aes_acquire(void) {
     esp_crypto_sha_aes_lock_acquire();
     esp_crypto_aes_enable_periph_clk(true);
 }
+
 static void aes_release(void) {
     esp_crypto_aes_enable_periph_clk(false);
     esp_crypto_sha_aes_lock_release();
 }
+
 #define AES_ACQUIRE() aes_acquire()
 #define AES_RELEASE() aes_release()
 #endif

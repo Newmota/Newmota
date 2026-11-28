@@ -18,8 +18,8 @@ Every native platform provides digital input, output with a defined initial leve
 write. Normal applications also support `GPIO_PWM1` and `GPIO_PWM1_INV`. Interrupts and other
 peripherals are provided by their drivers.
 
-The selected module, user template, and pin overrides are stored in
-`/.newmota/settings.bin`. A change is validated before it is written; an invalid change
+The selected module, user template, and pin overrides are stored in the settings slots
+`/.newmota/settings.a` and `/.newmota/settings.b`. A change is validated before it is written; an invalid change
 leaves the running and stored configuration unchanged. Stored assignments for another
 architecture or an unknown function remain visible and are used again by firmware that
 supports them.

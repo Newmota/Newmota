@@ -81,7 +81,7 @@ inline constexpr std::size_t kQualitySetting = kSettings.size() - 1U;
 inline constexpr std::size_t kMirrorSetting = 0;
 inline constexpr std::size_t kFlipSetting = 1;
 
-/** @brief Stored camera choices in `/.newmota/webcam.bin`, applied on every start. */
+/** @brief Stored camera choices in `/.newmota/webcam.a`/`.b`, applied on every start. */
 struct Stored final {
     std::uint8_t resolution{kDefaultResolution};
     bool stream{};

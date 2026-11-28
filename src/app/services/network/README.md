@@ -56,5 +56,5 @@ S31 take their board default.
 | `EthIPAddress`, `EthGateway`, `EthSubnetmask`, `EthDNSServer<1\|2> [a.b.c.d]` | Static IPv4, applied at once; `EthIPAddress 0.0.0.0` returns to DHCP. Configured DNS servers also replace those of a DHCP lease |
 
 The interface counts as online only while its link is up and it has an address.
-Settings live in `/.newmota/ethernet.bin`. StatusNET carries an `Ethernet` block while the
+Settings live in the two slots `/.newmota/ethernet.a` and `ethernet.b`. StatusNET carries an `Ethernet` block while the
 interface runs.

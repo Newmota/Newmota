@@ -34,6 +34,7 @@
 #endif
 
 #include "core/hardware/hardware.h"
+#include "core/storage/record_slots.h"
 #include "services/mqtt/mqtt_settings.h"
 #include "services/power/power_settings.h"
 #include "services/telemetry/telemetry_settings.h"
@@ -644,7 +645,7 @@ class Settings final {
     std::uint32_t switch_retain_clear_generation_{};
 #endif
     /**
-     * @brief Writes and verifies a candidate settings record transactionally.
+     * @brief Writes a candidate settings record into the slot not holding generation_.
      * @return true when the candidate became the active record.
      */
     [[nodiscard]] bool save(const Data& candidate, bool explicit_reset = false);
@@ -660,10 +661,8 @@ class Settings final {
     std::uint32_t generation_{0};
     std::uint32_t critical_generation_{0};
     std::uint16_t save_data_counter_{1};
-    bool active_present_{false};
-    bool active_valid_{false};
-    bool previous_present_{false};
-    bool previous_valid_{false};
+    /** @brief Index of the settings slot holding generation_, or kNoRecordSlot. */
+    std::uint8_t active_slot_{kNoRecordSlot};
     bool read_only_{false};
     bool critical_read_only_{false};
     bool suppress_power_save_until_restart_{false};

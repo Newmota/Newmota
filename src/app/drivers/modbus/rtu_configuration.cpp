@@ -10,10 +10,11 @@
 */
 
 /** @file rtu_configuration.cpp
- * @brief Verified fixed-size bus storage, recovery and native restoration.
+ * @brief Fixed-size bus storage in two A/B slots, and native restoration.
  */
 #include "drivers/modbus/rtu_service.h"
 #include "core/storage/filesystem.h"
+#include "core/storage/record_slots.h"
 #include "newmota/log.h"
 #include <array>
 #include <cstring>
@@ -31,11 +32,13 @@ struct Retained {
 
 std::array<Retained, kMaximumBuses> retained{};
 bool initialized{}, storage_fault{};
-constexpr const char* path = "/.newmota/modbus.bin";
-constexpr const char* previous = "/.newmota/modbus.prev";
-constexpr const char* temporary = "/.newmota/modbus.tmp";
-// NMRB, version, slot count, four fixed 16-byte records, CRC16 little endian.
-using File = std::array<std::uint8_t, 6 + kMaximumBuses * 16 + 2>;
+constexpr RecordSlots record_slots{"/.newmota/modbus.a", "/.newmota/modbus.b"};
+/** @brief The slot holding the loaded record and its generation. */
+std::uint8_t loaded_slot{kNoRecordSlot};
+std::uint32_t loaded_generation{};
+// NMRB, version, slot count, generation (4), four fixed 16-byte records, CRC16 little endian.
+constexpr std::size_t kFileSize = 10 + kMaximumBuses * 16 + 2;
+using File = std::array<std::uint8_t, kFileSize>;
 
 void put(std::uint8_t*& p, std::uint32_t value, unsigned count) {
     while (count--) {
@@ -66,13 +69,14 @@ bool valid(const BusConfiguration& c) {
     return true;
 }
 
-File encode() {
+File encode(const std::uint32_t generation) {
     File file{};
     auto* p = file.data();
     std::memcpy(p, "NMRB", 4);
     p += 4;
     *p++ = 1;
     *p++ = kMaximumBuses;
+    put(p, generation, 4);
     for (const auto& slot : retained) {
         const auto& c = slot.configuration;
         put(p, c.uart.rx.value(), 2);
@@ -89,11 +93,13 @@ File encode() {
     return file;
 }
 
-bool decode(const File& file, std::size_t size, std::array<Retained, kMaximumBuses>& slots) {
-    if (size != file.size() || std::memcmp(file.data(), "NMRB", 4) || file[4] != 1 ||
-        file[5] != kMaximumBuses || crc16(file.data(), file.size()) != 0)
+bool decode(const std::uint8_t* file, std::size_t size, std::array<Retained, kMaximumBuses>& slots,
+    std::uint32_t& generation) {
+    if (size != kFileSize || std::memcmp(file, "NMRB", 4) || file[4] != 1 ||
+        file[5] != kMaximumBuses || crc16(file, size) != 0)
         return false;
-    const auto* p = file.data() + 6;
+    const auto* p = file + 6;
+    generation = get(p, 4);
     for (auto& slot : slots) {
         auto& c = slot.configuration;
         c.uart.rx = PinId{std::uint16_t(get(p, 2))};
@@ -114,29 +120,37 @@ bool decode(const File& file, std::size_t size, std::array<Retained, kMaximumBus
     return true;
 }
 
-/** @brief Synchronizes and verifies a replacement before rotating the last valid active copy. */
+/** @brief Decodes bus records and keeps the newest one. */
+class BusRecordReader final : public RecordSlotReader {
+  public:
+    bool check(const std::uint8_t, const std::uint8_t* const bytes, const std::size_t size,
+        std::uint32_t& generation) override {
+        return decode(bytes, size, parsed_, generation);
+    }
+
+    void keep(const std::uint8_t, const std::uint8_t* const, const std::size_t) override {
+        newest = parsed_;
+    }
+
+    std::array<Retained, kMaximumBuses> newest{};
+
+  private:
+    std::array<Retained, kMaximumBuses> parsed_{};
+};
+
+/** @brief Writes the retained configuration into the slot not holding the loaded record. */
 bool save() {
     if (storage_fault)
         return false;
-    const auto file = encode();
-    File verify{};
-    std::array<Retained, kMaximumBuses> decoded{};
-    std::size_t size{};
+    const auto generation = next_generation(loaded_generation);
+    const auto file = encode(generation);
     using M = filesystem::MutationResult;
-    using R = filesystem::ReadResult;
     if (filesystem::ensure_directory("/.newmota") != M::succeeded ||
-        filesystem::write_file(temporary, file.data(), file.size()) != M::succeeded ||
-        filesystem::read_file(temporary, verify.data(), verify.size(), size) != R::succeeded ||
-        verify != file || !decode(verify, size, decoded))
+        record_slots.write(loaded_slot, file.data(), file.size()) != M::succeeded)
         return false;
-    const auto active = filesystem::read_file(path, verify.data(), verify.size(), size);
-    if (active == R::succeeded && decode(verify, size, decoded)) {
-        if (filesystem::remove_if_exists(previous) != M::succeeded ||
-            filesystem::rename(path, previous) != M::succeeded)
-            return false;
-    } else if (active != R::not_found && filesystem::remove_if_exists(path) != M::succeeded)
-        return false;
-    return filesystem::rename(temporary, path) == M::succeeded;
+    loaded_slot = RecordSlots::target(loaded_slot);
+    loaded_generation = generation;
+    return true;
 }
 } // namespace
 
@@ -145,21 +159,14 @@ void initialize() {
         return;
     initialized = true;
     File file{};
-    std::size_t size{};
-    using R = filesystem::ReadResult;
-    const auto active = filesystem::read_file(path, file.data(), file.size(), size);
-    bool loaded = active == R::succeeded && decode(file, size, retained);
-    if (!loaded) {
-        std::array<Retained, kMaximumBuses> recovered{};
-        const auto backup = filesystem::read_file(previous, file.data(), file.size(), size);
-        loaded = backup == R::succeeded && decode(file, size, recovered);
-        if (loaded)
-            retained = recovered;
-        else {
-            retained = {};
-            storage_fault = !(active == R::not_found && backup == R::not_found);
-        }
-    }
+    BusRecordReader reader;
+    const auto stored = record_slots.load(file.data(), file.size(), reader);
+    const bool loaded = stored.loaded();
+    loaded_slot = stored.slot;
+    loaded_generation = stored.generation;
+    retained = reader.newest;
+    // Without a valid record, anything but two absent slots may be unreadable newer intent.
+    storage_fault = !loaded && !stored.clean();
     if (storage_fault)
         AddLog(LogLevel::error, "MBS: invalid or unreadable bus storage; writes blocked");
     if (loaded)

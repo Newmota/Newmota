@@ -254,8 +254,8 @@ void newmota_sha512_blocks(const unsigned char* buf, size_t num, uint64_t* val) 
 
 /** @brief One SHA-1 block continued from @p mid; the first @p len message bytes are
  * replaced by @p head. Engine held in SHA-1 link mode. */
-static void sha1_block_from(struct bflb_device_s* dev, const uint32_t* mid, const void* head,
-    size_t len, uint32_t* out) {
+static void sha1_block_from(
+    struct bflb_device_s* dev, const uint32_t* mid, const void* head, size_t len, uint32_t* out) {
     memcpy(descriptor.result, mid, 20);
     memcpy(message, head, len);
     engine_run(dev, 1);
@@ -274,8 +274,7 @@ int newmota_hw_pbkdf2_sha1(const char* passphrase, const unsigned char* ssid, si
     int iterations, unsigned char* buf, size_t buflen) {
     if (iterations < 1 || ssid_len > PBKDF2_MAX_SSID)
         return 1;
-    static const uint32_t sha1_iv[5] = {
-        0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0};
+    static const uint32_t sha1_iv[5] = {0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0};
     uint32_t key[16] = {0}, iv[5], ipad[5], opad[5], block[16], u[5], t[5];
     size_t key_len = strlen(passphrase);
     if (key_len > sizeof key) {
@@ -352,6 +351,7 @@ int __real_pbkdf2_sha1(const char* passphrase, const char* ssid, size_t ssid_len
     uint8_t* buf, size_t buflen);
 int __wrap_pbkdf2_sha1(const char* passphrase, const char* ssid, size_t ssid_len, int iterations,
     uint8_t* buf, size_t buflen);
+
 int __wrap_pbkdf2_sha1(const char* passphrase, const char* ssid, size_t ssid_len, int iterations,
     uint8_t* buf, size_t buflen) {
     if (newmota_hw_pbkdf2_sha1(

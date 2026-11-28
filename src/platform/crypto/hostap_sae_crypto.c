@@ -155,8 +155,8 @@ static int bn_is_one(const struct crypto_bignum* x) {
     return x->n == 1 && x->v[0] == 1;
 }
 
-static int bn_add(const struct crypto_bignum* a, const struct crypto_bignum* b,
-    struct crypto_bignum* c) {
+static int bn_add(
+    const struct crypto_bignum* a, const struct crypto_bignum* b, struct crypto_bignum* c) {
     uint32_t t[NM_BN_LIMBS + 1];
     size_t n = a->n > b->n ? a->n : b->n;
     uint64_t carry = 0;
@@ -169,8 +169,8 @@ static int bn_add(const struct crypto_bignum* a, const struct crypto_bignum* b,
     return bn_set(c, t, n + 1);
 }
 
-static int bn_sub(const struct crypto_bignum* a, const struct crypto_bignum* b,
-    struct crypto_bignum* c) {
+static int bn_sub(
+    const struct crypto_bignum* a, const struct crypto_bignum* b, struct crypto_bignum* c) {
     uint32_t t[NM_BN_LIMBS];
     uint64_t borrow = 0;
     if (bn_cmp(a, b) < 0) {
@@ -389,8 +389,7 @@ static void nm_add(uint16_t* a, const uint16_t* b, const struct nm_mod* md) {
     br_i15_sub(a, md->m, carry | NOT(br_i15_sub(a, md->m, 0)));
 }
 
-static int ct_mod(const struct crypto_bignum* a, const struct nm_mod* md,
-    struct crypto_bignum* d) {
+static int ct_mod(const struct crypto_bignum* a, const struct nm_mod* md, struct crypto_bignum* d) {
     uint16_t x[NM_I15_WORDS];
     int ret;
     nm_load(x, md, a);
@@ -449,8 +448,8 @@ static int nm_pow(uint16_t* x, const struct crypto_bignum* e, const struct nm_mo
 }
 
 /** out = x^3 + a x + b mod p for the curve; out may alias x. */
-static int bn_y_sqr(const struct crypto_ec* e, const struct crypto_bignum* x,
-    struct crypto_bignum* out) {
+static int bn_y_sqr(
+    const struct crypto_ec* e, const struct crypto_bignum* x, struct crypto_bignum* out) {
     struct nm_mod md;
     uint16_t xx[NM_I15_WORDS], t[NM_I15_WORDS], u[NM_I15_WORDS];
     int ret = -1;
@@ -544,13 +543,13 @@ int crypto_bignum_rand(struct crypto_bignum* r, const struct crypto_bignum* m) {
     return ret;
 }
 
-int crypto_bignum_add(const struct crypto_bignum* a, const struct crypto_bignum* b,
-    struct crypto_bignum* c) {
+int crypto_bignum_add(
+    const struct crypto_bignum* a, const struct crypto_bignum* b, struct crypto_bignum* c) {
     return bn_add(a, b, c);
 }
 
-int crypto_bignum_mod(const struct crypto_bignum* a, const struct crypto_bignum* b,
-    struct crypto_bignum* c) {
+int crypto_bignum_mod(
+    const struct crypto_bignum* a, const struct crypto_bignum* b, struct crypto_bignum* c) {
     struct nm_mod md;
     if (nm_mod_init(&md, b) == 0) {
         return ct_mod(a, &md, c);
@@ -574,8 +573,8 @@ int crypto_bignum_exptmod(const struct crypto_bignum* a, const struct crypto_big
     return ret;
 }
 
-int crypto_bignum_inverse(const struct crypto_bignum* a, const struct crypto_bignum* b,
-    struct crypto_bignum* c) {
+int crypto_bignum_inverse(
+    const struct crypto_bignum* a, const struct crypto_bignum* b, struct crypto_bignum* c) {
     /* c = 1 / a mod b by BearSSL's constant-time binary GCD; fails if a is not invertible. */
     struct nm_mod md;
     uint16_t x[NM_I15_WORDS], y[NM_I15_WORDS], t[3 * NM_I15_WORDS];
@@ -595,13 +594,13 @@ int crypto_bignum_inverse(const struct crypto_bignum* a, const struct crypto_big
     return ret;
 }
 
-int crypto_bignum_sub(const struct crypto_bignum* a, const struct crypto_bignum* b,
-    struct crypto_bignum* c) {
+int crypto_bignum_sub(
+    const struct crypto_bignum* a, const struct crypto_bignum* b, struct crypto_bignum* c) {
     return bn_sub(a, b, c);
 }
 
-int crypto_bignum_div(const struct crypto_bignum* a, const struct crypto_bignum* b,
-    struct crypto_bignum* c) {
+int crypto_bignum_div(
+    const struct crypto_bignum* a, const struct crypto_bignum* b, struct crypto_bignum* c) {
     return bn_divmod(a->v, a->n, b, c, NULL);
 }
 
@@ -629,8 +628,8 @@ int crypto_bignum_mulmod(const struct crypto_bignum* a, const struct crypto_bign
     return bn_mulmod(a, b, c, d);
 }
 
-int crypto_bignum_sqrmod(const struct crypto_bignum* a, const struct crypto_bignum* b,
-    struct crypto_bignum* c) {
+int crypto_bignum_sqrmod(
+    const struct crypto_bignum* a, const struct crypto_bignum* b, struct crypto_bignum* c) {
     return crypto_bignum_mulmod(a, a, b, c);
 }
 
@@ -698,15 +697,15 @@ int crypto_bignum_legendre(const struct crypto_bignum* a, const struct crypto_bi
 
 /* ---- P-256 -------------------------------------------------------------------------- */
 
-static const u8 P256_P[NM_P256_LEN] = {
-    0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-static const u8 P256_N[NM_P256_LEN] = {
-    0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xBC, 0xE6, 0xFA, 0xAD, 0xA7, 0x17, 0x9E, 0x84, 0xF3, 0xB9, 0xCA, 0xC2, 0xFC, 0x63, 0x25, 0x51};
-static const u8 P256_B[NM_P256_LEN] = {
-    0x5A, 0xC6, 0x35, 0xD8, 0xAA, 0x3A, 0x93, 0xE7, 0xB3, 0xEB, 0xBD, 0x55, 0x76, 0x98, 0x86, 0xBC,
-    0x65, 0x1D, 0x06, 0xB0, 0xCC, 0x53, 0xB0, 0xF6, 0x3B, 0xCE, 0x3C, 0x3E, 0x27, 0xD2, 0x60, 0x4B};
+static const u8 P256_P[NM_P256_LEN] = {0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+static const u8 P256_N[NM_P256_LEN] = {0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xBC, 0xE6, 0xFA, 0xAD, 0xA7, 0x17, 0x9E, 0x84, 0xF3, 0xB9,
+    0xCA, 0xC2, 0xFC, 0x63, 0x25, 0x51};
+static const u8 P256_B[NM_P256_LEN] = {0x5A, 0xC6, 0x35, 0xD8, 0xAA, 0x3A, 0x93, 0xE7, 0xB3, 0xEB,
+    0xBD, 0x55, 0x76, 0x98, 0x86, 0xBC, 0x65, 0x1D, 0x06, 0xB0, 0xCC, 0x53, 0xB0, 0xF6, 0x3B, 0xCE,
+    0x3C, 0x3E, 0x27, 0xD2, 0x60, 0x4B};
 
 static int p256_load(struct crypto_ec* e) {
     struct crypto_bignum three;
@@ -820,8 +819,8 @@ struct crypto_ec_point* crypto_ec_point_from_bin(struct crypto_ec* e, const u8* 
     return p;
 }
 
-struct crypto_bignum* crypto_ec_point_compute_y_sqr(struct crypto_ec* e,
-    const struct crypto_bignum* x) {
+struct crypto_bignum* crypto_ec_point_compute_y_sqr(
+    struct crypto_ec* e, const struct crypto_bignum* x) {
     struct crypto_bignum* y2 = crypto_bignum_init();
     if (y2 != NULL && bn_y_sqr(e, x, y2) < 0) {
         crypto_bignum_deinit(y2, 1);
@@ -853,8 +852,8 @@ int crypto_ec_point_is_on_curve(struct crypto_ec* e, const struct crypto_ec_poin
     return ok;
 }
 
-int crypto_ec_point_cmp(const struct crypto_ec* e, const struct crypto_ec_point* a,
-    const struct crypto_ec_point* b) {
+int crypto_ec_point_cmp(
+    const struct crypto_ec* e, const struct crypto_ec_point* a, const struct crypto_ec_point* b) {
     (void)e;
     if (a->infinity || b->infinity) {
         return !(a->infinity && b->infinity);
@@ -871,8 +870,8 @@ int crypto_ec_point_invert(struct crypto_ec* e, struct crypto_ec_point* p) {
     if (bn_cmp(&y, &e->prime) >= 0) {
         return -1;
     }
-    if (y.n != 0 && (bn_sub(&e->prime, &y, &y) < 0 ||
-                        crypto_bignum_to_bin(&y, p->xy + NM_P256_LEN, NM_P256_LEN, NM_P256_LEN) < 0)) {
+    if (y.n != 0 && (bn_sub(&e->prime, &y, &y) < 0 || crypto_bignum_to_bin(&y, p->xy + NM_P256_LEN,
+                                                          NM_P256_LEN, NM_P256_LEN) < 0)) {
         return -1;
     }
     return 0;
@@ -944,8 +943,8 @@ struct crypto_ecdh {
 };
 
 /* SEQUENCE { OID id-ecPublicKey, OID prime256v1 }, the AlgorithmIdentifier of a P-256 key. */
-static const u8 P256_SPKI_ALG[] = {0x30, 0x13, 0x06, 0x07, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02,
-    0x01, 0x06, 0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07};
+static const u8 P256_SPKI_ALG[] = {0x30, 0x13, 0x06, 0x07, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02, 0x01,
+    0x06, 0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07};
 
 /** 1 if xy (big-endian x || y) is a point on P-256 with coordinates below p. */
 static int p256_valid_xy(const u8* xy) {
@@ -1035,8 +1034,8 @@ void crypto_ec_key_deinit(struct crypto_ec_key* key) {
     os_free(key);
 }
 
-int crypto_ec_key_verify_signature(struct crypto_ec_key* key, const u8* data, size_t len,
-    const u8* sig, size_t sig_len) {
+int crypto_ec_key_verify_signature(
+    struct crypto_ec_key* key, const u8* data, size_t len, const u8* sig, size_t sig_len) {
     br_ec_public_key pk;
     if (key == NULL || data == NULL || sig == NULL) {
         return -1;
@@ -1094,8 +1093,8 @@ struct wpabuf* crypto_ecdh_get_pubkey(struct crypto_ecdh* ecdh, int y) {
     return wpabuf_alloc_copy(ecdh->q + 1, y ? 2 * NM_P256_LEN : NM_P256_LEN);
 }
 
-struct wpabuf* crypto_ecdh_set_peerkey(struct crypto_ecdh* ecdh, int inc_y, const u8* key,
-    size_t len) {
+struct wpabuf* crypto_ecdh_set_peerkey(
+    struct crypto_ecdh* ecdh, int inc_y, const u8* key, size_t len) {
     u8 point[1 + 2 * NM_P256_LEN];
     struct wpabuf* secret = NULL;
     if (ecdh == NULL || key == NULL) {

@@ -15,7 +15,7 @@
  * After each TelePeriod the device counts down four seconds (64 after a boot that was not a
  * deep-sleep wake) and sleeps until the next multiple of DeepSleepTime, correcting the timer
  * slip between cycles. A low GPIO_DEEPSLEEP pin keeps it awake. The "Wakeup" rule is absent
- * because Newmota has no Rules. The value lives in `/.newmota/deepsleep.bin`.
+ * because Newmota has no Rules. The value lives in `/.newmota/deepsleep.a`/`.b`.
  */
 
 #pragma once

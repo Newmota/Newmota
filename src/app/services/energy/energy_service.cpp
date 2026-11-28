@@ -22,6 +22,7 @@
 #include "newmota/platform/platform.h"
 #include "core/command/command.h"
 #include "core/storage/filesystem.h"
+#include "core/storage/record_slots.h"
 #include "newmota/log.h"
 #include "newmota_features.h"
 #include "core/hardware/runtime_pin_claims.h"
@@ -52,28 +53,48 @@ constexpr std::size_t kMaximumChannels = Service::kMaximumChannels;
 using namespace storage;
 constexpr std::size_t kFileCapacity = kHeaderSize + 4 + 50 + 14 + 69 + 5 +
                                       Configuration::kMaximumModbusProfile + 402 * kMaximumChannels;
-constexpr char kPath[] = "/.newmota/energy.bin";
-constexpr char kPrevious[] = "/.newmota/energy.prev";
-constexpr char kTemporary[] = "/.newmota/energy.tmp";
+constexpr RecordSlots kSlots{"/.newmota/energy.a", "/.newmota/energy.b"};
 #if USE_MODBUS_ENERGY
 constexpr char kModbusMapPath[] = "/modbus.json";
 #endif
 
-/** @brief Allocates only the actual bounded file length; sparse configurations do not reserve max
- * state. */
-filesystem::ReadResult read_record(
-    const char* path, std::unique_ptr<std::uint8_t[]>& bytes, std::size_t& size) {
-    filesystem::EntryType type{};
-    std::uint32_t length{};
-    const auto result = filesystem::stat(path, type, length);
-    if (result != filesystem::ReadResult::succeeded)
-        return result;
-    if (type != filesystem::EntryType::file || length < 10 || length > kFileCapacity)
-        return filesystem::ReadResult::failed;
-    bytes.reset(new (std::nothrow) std::uint8_t[length]);
-    if (!bytes)
-        return filesystem::ReadResult::failed;
-    return filesystem::read_file(path, bytes.get(), length, size);
+/** @brief Validates energy records and notes the ones written in another record format. */
+class EnergyRecordReader final : public RecordSlotReader {
+  public:
+    bool check(const std::uint8_t slot, const std::uint8_t* const bytes, const std::size_t size,
+        std::uint32_t& generation) override {
+        last_checked = slot;
+        foreign[slot] = has_magic(bytes, size) && bytes[4] != kFormat;
+        if (!validate(bytes, size))
+            return false;
+        const auto* cursor = bytes + kGenerationOffset;
+        generation = static_cast<std::uint32_t>(get(cursor, 4));
+        return true;
+    }
+
+    void keep(const std::uint8_t, const std::uint8_t* const, const std::size_t size) override {
+        newest_size = size;
+    }
+
+    std::array<bool, 2> foreign{};
+    /** @brief The slot whose bytes the load buffer holds, or kNoRecordSlot. */
+    std::uint8_t last_checked{kNoRecordSlot};
+    std::size_t newest_size{};
+};
+
+/** @brief The larger stored slot length, bounded by the record capacity; sparse configurations
+ * do not reserve the maximum state. */
+std::size_t stored_capacity() {
+    std::size_t capacity{};
+    for (std::uint8_t slot = 0; slot < 2; ++slot) {
+        filesystem::EntryType type{};
+        std::uint32_t length{};
+        if (filesystem::stat(kSlots.path(slot), type, length) ==
+                filesystem::ReadResult::succeeded &&
+            type == filesystem::EntryType::file)
+            capacity = std::max(capacity, std::min<std::size_t>(length, kFileCapacity));
+    }
+    return capacity;
 }
 
 } // namespace
@@ -95,31 +116,43 @@ void Service::initialize(std::uint32_t now) {
     primary_invalid_retry_at_ = now;
 #endif
     now_ = checkpoint_ = now;
-    std::unique_ptr<std::uint8_t[]> bytes;
-    std::size_t size{};
-    auto result = read_record(kPath, bytes, size);
-    bool loaded = result == filesystem::ReadResult::succeeded && validate(bytes.get(), size);
-    const bool active_missing = result == filesystem::ReadResult::not_found;
-    const bool active_foreign = result == filesystem::ReadResult::succeeded &&
-                                has_magic(bytes.get(), size) && bytes[4] != kFormat;
-    if (!loaded) {
-        result = read_record(kPrevious, bytes, size);
-        loaded = result == filesystem::ReadResult::succeeded && validate(bytes.get(), size);
-    }
-    if (!loaded) {
-        const bool previous_missing = result == filesystem::ReadResult::not_found;
-        const bool previous_foreign = result == filesystem::ReadResult::succeeded &&
-                                      has_magic(bytes.get(), size) && bytes[4] != kFormat;
-        // Another record format is not energy data for this firmware; start empty.
-        if ((active_missing || active_foreign) && (previous_missing || previous_foreign)) {
-            if (active_foreign || previous_foreign)
-                AddLog(LogLevel::info, "NRG: unsupported energy record format; starting empty");
-            return;
-        }
+    const auto fault = [this] {
         storage_fault_ = true;
         AddLog(LogLevel::error, "NRG: invalid or unreadable energy storage; writes blocked");
+    };
+    const auto capacity = stored_capacity();
+    std::unique_ptr<std::uint8_t[]> bytes;
+    if (capacity) {
+        bytes.reset(new (std::nothrow) std::uint8_t[capacity]);
+        if (!bytes)
+            return fault();
+    }
+    EnergyRecordReader reader;
+    const auto stored = kSlots.load(bytes.get(), capacity, reader);
+    record_slot_ = stored.slot;
+    record_generation_ = stored.generation;
+    if (!stored.loaded()) {
+        // Another record format is not energy data for this firmware; start empty.
+        bool foreign = false, unusable = false;
+        for (std::uint8_t slot = 0; slot < 2; ++slot) {
+            if (stored.states[slot] == RecordSlotState::invalid && reader.foreign[slot])
+                foreign = true;
+            else if (stored.states[slot] != RecordSlotState::absent)
+                unusable = true;
+        }
+        if (unusable)
+            return fault();
+        if (foreign)
+            AddLog(LogLevel::info, "NRG: unsupported energy record format; starting empty");
         return;
     }
+    auto size = reader.newest_size;
+    // The other slot was read after the selected one; read the selected record again.
+    if (reader.last_checked != stored.slot &&
+        (filesystem::read_file(kSlots.path(stored.slot), bytes.get(), capacity, size) !=
+                filesystem::ReadResult::succeeded ||
+            !validate(bytes.get(), size)))
+        return fault();
     const auto* cursor = bytes.get() + kHeaderSize;
     const auto* end = bytes.get() + size - 4;
     auto& instance = provider_;
@@ -271,13 +304,14 @@ bool Service::save() {
     if (capacity > kFileCapacity)
         return false;
     auto bytes = std::unique_ptr<std::uint8_t[]>(new (std::nothrow) std::uint8_t[capacity]);
-    auto verified = std::unique_ptr<std::uint8_t[]>(new (std::nothrow) std::uint8_t[capacity]);
-    if (!bytes || !verified)
+    if (!bytes)
         return false;
+    const auto generation = next_generation(record_generation_);
     auto* cursor = bytes.get();
     std::memcpy(cursor, "NMEG", 4);
     cursor += 4;
     put(cursor, kFormat, 1);
+    put(cursor, generation, 4);
     {
         const auto& instance = provider_;
         const auto& config = instance.configuration;
@@ -399,31 +433,12 @@ bool Service::save() {
     put(cursor, crc(bytes.get(), payload), 4);
     const auto size = std::size_t(cursor - bytes.get());
     using M = filesystem::MutationResult;
+    // The loaded slot stays intact; the write replaces the older, unusable or absent one.
     if (filesystem::ensure_directory("/.newmota") != M::succeeded ||
-        filesystem::write_file(kTemporary, bytes.get(), size) != M::succeeded)
+        kSlots.write(record_slot_, bytes.get(), size) != M::succeeded)
         return false;
-    std::size_t read_size{};
-    if (filesystem::read_file(kTemporary, verified.get(), capacity, read_size) !=
-            filesystem::ReadResult::succeeded ||
-        read_size != size || std::memcmp(bytes.get(), verified.get(), size) ||
-        !validate(verified.get(), size))
-        return false;
-    // Preserve an existing verified recovery copy when the active file is corrupt.
-    std::size_t active_size{};
-    const auto active = read_record(kPath, verified, active_size);
-    if (active != filesystem::ReadResult::succeeded && active != filesystem::ReadResult::not_found)
-        return false;
-    const bool active_valid =
-        active == filesystem::ReadResult::succeeded && validate(verified.get(), active_size);
-    if (active_valid) {
-        if (filesystem::remove_if_exists(kPrevious) != M::succeeded ||
-            filesystem::rename(kPath, kPrevious) != M::succeeded)
-            return false;
-    } else if (active != filesystem::ReadResult::not_found &&
-               filesystem::remove_if_exists(kPath) != M::succeeded)
-        return false;
-    if (filesystem::rename(kTemporary, kPath) != M::succeeded)
-        return false;
+    record_slot_ = RecordSlots::target(record_slot_);
+    record_generation_ = generation;
 #if USE_ENERGY_LIVE_DAILY
     if (!calendar_valid_) {
         auto& instance = provider_;

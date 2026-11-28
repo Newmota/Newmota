@@ -40,6 +40,7 @@ void signed_energy(
 /** @brief Writes one configured BL0942 provider with one channel. */
 std::vector<std::uint8_t> fixture() {
     std::vector<std::uint8_t> bytes{'N', 'M', 'E', 'G', storage::kFormat};
+    field(bytes, 7, 4);  // A/B slot generation
     field(bytes, 42, 2); // Stable BL0942 ID, even when the driver is excluded.
     field(bytes, 0, 1);
     field(bytes, 8, 1);
@@ -106,6 +107,11 @@ void checksum(std::vector<std::uint8_t>& bytes) {
 int main() {
     auto record = fixture();
     assert(storage::validate(record.data(), record.size()));
+    const auto* generation = record.data() + storage::kGenerationOffset;
+    assert(storage::get(generation, 4) == 7);
+    record[storage::kGenerationOffset] ^= 1;
+    assert(!storage::validate(record.data(), record.size()));
+    record = fixture();
     const auto* cursor = record.data() + storage::kHeaderSize;
     Configuration config{};
     assert(storage::read_configuration(cursor, record.data() + record.size() - 4, config));

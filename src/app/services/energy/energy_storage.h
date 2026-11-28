@@ -19,7 +19,8 @@
 namespace newmota::energy::storage {
 /** @brief Record format byte; a file with any other value is not an energy record. */
 inline constexpr std::uint8_t kFormat = 27;
-inline constexpr std::size_t kHeaderSize = 5, kMaximumChannels = 32;
+/** @brief Header: magic (4), format (1), A/B slot generation (4). */
+inline constexpr std::size_t kGenerationOffset = 5, kHeaderSize = 9, kMaximumChannels = 32;
 
 /** @brief Reports whether bytes carry the energy magic, independently of format and checksum. */
 bool has_magic(const std::uint8_t* bytes, std::size_t size);

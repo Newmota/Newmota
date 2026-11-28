@@ -12,6 +12,7 @@
 #include "core/system/boot_counter.h"
 
 #include "core/storage/filesystem.h"
+#include "core/storage/record_slots.h"
 #include "newmota/log.h"
 #include "support/crc32.h"
 
@@ -23,20 +24,15 @@ namespace newmota {
 namespace {
 
 constexpr char kSettingsDirectory[] = "/.newmota";
-constexpr char kActivePath[] = "/.newmota/boot.bin";
-constexpr char kPreviousPath[] = "/.newmota/boot.prev";
-constexpr char kTemporaryPath[] = "/.newmota/boot.tmp";
+/**
+ * The two boot-count slots. The count is the record's generation: a boot writes the highest
+ * stored count plus one into the other slot, and a reset removes both slots before it writes 0.
+ */
+constexpr RecordSlots kSlots{"/.newmota/boot.a", "/.newmota/boot.b"};
 constexpr std::array<std::uint8_t, 4> kMagic{'N', 'M', 'B', 'C'};
 constexpr std::uint16_t kFormatVersion = 1U;
 constexpr std::size_t kCrcOffset = 12U;
 constexpr std::size_t kRecordSize = 16U;
-
-enum class RecordState : std::uint8_t {
-    absent,
-    valid,
-    invalid,
-    failed,
-};
 
 /** @brief Writes one little-endian 16-bit field into a record. */
 void write_u16(std::uint8_t* const destination, const std::uint16_t value) {
@@ -81,99 +77,46 @@ void write_u32(std::uint8_t* const destination, const std::uint32_t value) {
 }
 
 /** @brief Validates one record and extracts its boot count. */
-[[nodiscard]] bool decode_record(
-    const std::array<std::uint8_t, kRecordSize>& record, std::uint32_t& count) {
+[[nodiscard]] bool decode_record(const std::uint8_t* const record, std::uint32_t& count) {
     for (std::size_t index = 0; index < kMagic.size(); ++index) {
         if (record[index] != kMagic[index]) {
             return false;
         }
     }
-    if (read_u16(record.data() + 4U) != kFormatVersion || read_u16(record.data() + 6U) != 0U) {
+    if (read_u16(record + 4U) != kFormatVersion || read_u16(record + 6U) != 0U) {
         return false;
     }
-    const auto raw = support::crc32_update(support::kCrc32InitialState, record.data(), kCrcOffset);
-    if (support::crc32_finalize(raw) != read_u32(record.data() + kCrcOffset)) {
+    const auto raw = support::crc32_update(support::kCrc32InitialState, record, kCrcOffset);
+    if (support::crc32_finalize(raw) != read_u32(record + kCrcOffset)) {
         return false;
     }
-    count = read_u32(record.data() + 8U);
+    count = read_u32(record + 8U);
     return true;
 }
 
-/** @brief Reads one optional record from the filesystem. */
-[[nodiscard]] RecordState read_record(const char* const path, std::uint32_t& count) {
-    std::array<std::uint8_t, kRecordSize> record{};
-    std::size_t size = 0U;
-    const auto result = filesystem::read_file(path, record.data(), record.size(), size);
-    if (result == filesystem::ReadResult::not_found) {
-        return RecordState::absent;
+/** @brief Accepts valid boot-count records; the count is the generation. */
+class BootRecordReader final : public RecordSlotReader {
+  public:
+    bool check(const std::uint8_t, const std::uint8_t* const bytes, const std::size_t size,
+        std::uint32_t& generation) override {
+        return size == kRecordSize && decode_record(bytes, generation);
     }
-    if (result != filesystem::ReadResult::succeeded) {
-        return RecordState::failed;
-    }
-    if (size != record.size() || !decode_record(record, count)) {
-        return RecordState::invalid;
-    }
-    return RecordState::valid;
+
+    void keep(const std::uint8_t, const std::uint8_t* const, const std::size_t) override {}
+};
+
+/** @brief Reads both slots; the result's generation is the newest stored count. */
+[[nodiscard]] RecordSlotsLoad read_records() {
+    std::array<std::uint8_t, kRecordSize> buffer{};
+    BootRecordReader reader;
+    return kSlots.load(buffer.data(), buffer.size(), reader);
 }
 
-/** @brief Writes and reads back one temporary record. */
-[[nodiscard]] bool write_temporary_record(const std::uint32_t count) {
+/** @brief Writes @p count into the slot not holding @p loaded. */
+[[nodiscard]] bool write_record(const std::uint8_t loaded, const std::uint32_t count) {
     const auto record = encode_record(count);
-    if (filesystem::write_file(kTemporaryPath, record.data(), record.size()) !=
-        filesystem::MutationResult::succeeded) {
-        return false;
-    }
-    std::uint32_t verified_count = 0U;
-    return read_record(kTemporaryPath, verified_count) == RecordState::valid &&
-           verified_count == count;
-}
-
-/**
- * @brief Commits a new count while retaining one recoverable previous record.
- * @param count Value to make active.
- * @param clear_history Whether an explicit reset should discard old counts.
- */
-[[nodiscard]] bool commit_record(
-    const std::uint32_t count, const bool clear_history, const RecordState active_state) {
-    if (filesystem::remove_if_exists(kTemporaryPath) != filesystem::MutationResult::succeeded) {
-        return false;
-    }
-    if (!write_temporary_record(count)) {
-        (void)filesystem::remove_if_exists(kTemporaryPath);
-        return false;
-    }
-
-    bool moved_active = false;
-    if (clear_history) {
-        if (filesystem::remove_if_exists(kPreviousPath) != filesystem::MutationResult::succeeded ||
-            filesystem::remove_if_exists(kActivePath) != filesystem::MutationResult::succeeded) {
-            (void)filesystem::remove_if_exists(kTemporaryPath);
-            return false;
-        }
-    } else if (active_state == RecordState::valid) {
-        if (filesystem::remove_if_exists(kPreviousPath) != filesystem::MutationResult::succeeded ||
-            filesystem::rename(kActivePath, kPreviousPath) !=
-                filesystem::MutationResult::succeeded) {
-            (void)filesystem::remove_if_exists(kTemporaryPath);
-            return false;
-        }
-        moved_active = true;
-    } else if (active_state == RecordState::invalid &&
-               filesystem::remove_if_exists(kActivePath) != filesystem::MutationResult::succeeded) {
-        (void)filesystem::remove_if_exists(kTemporaryPath);
-        return false;
-    }
-
-    if (filesystem::rename(kTemporaryPath, kActivePath) == filesystem::MutationResult::succeeded) {
-        return true;
-    }
-
-    (void)filesystem::remove_if_exists(kTemporaryPath);
-    if (moved_active) {
-        (void)filesystem::remove_if_exists(kActivePath);
-        (void)filesystem::rename(kPreviousPath, kActivePath);
-    }
-    return false;
+    return kSlots.write(loaded, record.data(), record.size()) ==
+           filesystem::MutationResult::succeeded;
 }
 
 } // namespace
@@ -189,32 +132,19 @@ bool BootCounter::initialize(const bool increment) {
         return false;
     }
 
-    std::uint32_t active_count = 0U;
-    std::uint32_t previous_count = 0U;
-    const auto active_state = read_record(kActivePath, active_count);
-    const auto previous_state = read_record(kPreviousPath, previous_count);
-    if (active_state == RecordState::failed || previous_state == RecordState::failed ||
-        (active_state == RecordState::invalid && previous_state != RecordState::valid) ||
-        (previous_state == RecordState::invalid && active_state != RecordState::valid)) {
+    const auto stored = read_records();
+    // Never count on from a guess: a slot that could not be read may hold the highest count, and
+    // an invalid record without a valid one leaves no count at all.
+    if (!stored.readable() || (!stored.loaded() && stored.any(RecordSlotState::invalid))) {
         return false;
     }
-
-    std::uint32_t previous_highest = 0U;
-    if (active_state == RecordState::valid) {
-        previous_highest = active_count;
-    }
-    if (previous_state == RecordState::valid &&
-        (active_state != RecordState::valid || previous_count > previous_highest)) {
-        previous_highest = previous_count;
-    }
-    if (!increment &&
-        (active_state == RecordState::valid || previous_state == RecordState::valid)) {
-        count_ = previous_highest;
+    if (!increment && stored.loaded()) {
+        count_ = stored.generation;
         available_ = true;
         return true;
     }
-    const auto next_count = previous_highest == UINT32_MAX ? UINT32_MAX : previous_highest + 1U;
-    if (!commit_record(next_count, false, active_state)) {
+    const auto next_count = stored.generation == UINT32_MAX ? UINT32_MAX : stored.generation + 1U;
+    if (!write_record(stored.slot, next_count)) {
         return false;
     }
     count_ = next_count;
@@ -224,8 +154,13 @@ bool BootCounter::initialize(const bool increment) {
 
 bool BootCounter::reset() {
     if (!filesystem::is_mounted() ||
-        filesystem::ensure_directory(kSettingsDirectory) != filesystem::MutationResult::succeeded ||
-        !commit_record(0U, true, RecordState::absent)) {
+        filesystem::ensure_directory(kSettingsDirectory) != filesystem::MutationResult::succeeded) {
+        return false;
+    }
+    // A stored count would win over a new 0, so both slots go first, the older one before the
+    // newest; a failure in between keeps the newest count.
+    if (kSlots.remove_both(read_records().slot) != filesystem::MutationResult::succeeded ||
+        !write_record(kNoRecordSlot, 0U)) {
         return false;
     }
     count_ = 0U;

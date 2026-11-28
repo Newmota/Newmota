@@ -47,8 +47,8 @@ bool valid_payload(const std::uint8_t* payload) {
            payload[3] <= 3U;
 }
 
-constexpr DriverSettingsSpec kSpec{"/.newmota/ethernet.bin", "/.newmota/ethernet.tmp",
-    "/.newmota/ethernet.prev", {'N', 'M', 'E', 'T'}, 1, kPayloadSize, valid_payload};
+constexpr DriverSettingsSpec kSpec{{"/.newmota/ethernet.a", "/.newmota/ethernet.b"},
+    {'N', 'M', 'E', 'T'}, 1, kPayloadSize, valid_payload};
 
 std::array<std::uint8_t, kPayloadSize> encode(const Stored& value) {
     std::array<std::uint8_t, kPayloadSize> payload{};

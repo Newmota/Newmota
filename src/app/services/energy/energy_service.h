@@ -19,6 +19,7 @@
 
 #pragma once
 #include "newmota_features.h"
+#include "core/storage/record_slots.h"
 #include "services/energy/energy_presentation.h"
 #include "services/energy/energy_types.h"
 #include <array>
@@ -1314,6 +1315,9 @@ class Service {
     void flush_power_delta();
 #endif
     std::uint32_t now_{}, checkpoint_{}, generation_{};
+    /** @brief The energy slot holding the loaded record, and that record's generation. */
+    std::uint8_t record_slot_{kNoRecordSlot};
+    std::uint32_t record_generation_{};
     bool dirty_{}, storage_fault_{};
 };
 

@@ -123,10 +123,10 @@ above.
 
 A change is staged, checked against the portable limits and this SoC's capabilities,
 saved, and only then applied, so a rejected command changes nothing. The profiles live in
-the driver's own file, `/.newmota/audio.bin`, not in the shared settings record, so
-Safeboot never reads them. The driver looks for the file at startup and writes one with
-the defaults when it is missing; an unusable file falls back to its previous generation
-(`audio.prev`) or to the defaults. The file holds wire fields and gains, never pins; pins
+the driver's own two slots, `/.newmota/audio.a` and `audio.b`, not in the shared settings
+record, so Safeboot never reads them. The driver loads the newest valid slot at startup and
+writes the defaults when neither slot is valid; a save writes the slot not holding the newest
+record, so an unusable newer slot falls back to the older one. The file holds wire fields and gains, never pins; pins
 always come from the hardware template, and `reset` returns to template-derived defaults
 and unity gains. The profiles are the starting point for command sessions, Berry
 `audio.Session` maps, the level meter and spectrum analyzer, and the WebRTC camera

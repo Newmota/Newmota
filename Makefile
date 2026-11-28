@@ -124,8 +124,9 @@ test-host:
 	@$(call host_test,pico-ble-bond,-fsanitize=address$(COMMA)undefined -fno-omit-frame-pointer -Isrc/platform/pico-sdk tools/tests/pico_ble_bond.cpp)
 	@$(call host_test,amebad-ble-bond,-fsanitize=address$(COMMA)undefined -fno-omit-frame-pointer -Isrc/platform/amebad tools/tests/amebad_ble_bond.cpp)
 	@$(call host_test,matter-wire,-fsanitize=address$(COMMA)undefined -fno-omit-frame-pointer -Isrc/app src/app/services/matter/matter_wire.cpp src/app/services/matter/matter_dns_sd.cpp src/app/services/matter/matter_btp.cpp src/app/services/matter/matter_cert.cpp tools/tests/matter_wire.cpp)
-	@$(call host_test,critical-settings,-DNEWMOTA_CRITICAL_SETTINGS_STORE=1 $(HOST_APP_INC) -Itools/tests/hardware src/app/core/hardware/hardware.cpp src/app/services/settings/settings.cpp src/app/services/mqtt/mqtt_settings.cpp src/app/support/crc32_portable.cpp tools/tests/critical_settings.cpp)
-	@$(call host_test,boot-counter,$(HOST_APP_INC) -Itools/tests/hardware src/app/core/system/boot_counter.cpp src/app/support/crc32_portable.cpp tools/tests/boot_counter.cpp)
+	@$(call host_test,critical-settings,-DNEWMOTA_CRITICAL_SETTINGS_STORE=1 $(HOST_APP_INC) -Itools/tests/hardware src/app/core/hardware/hardware.cpp src/app/services/settings/settings.cpp src/app/core/storage/record_slots.cpp src/app/services/mqtt/mqtt_settings.cpp src/app/support/crc32_portable.cpp tools/tests/critical_settings.cpp)
+	@$(call host_test,boot-counter,$(HOST_APP_INC) -Itools/tests/hardware src/app/core/system/boot_counter.cpp src/app/core/storage/record_slots.cpp src/app/support/crc32_portable.cpp tools/tests/boot_counter.cpp)
+	@$(call host_test,record-slots,-fsanitize=address$(COMMA)undefined -fno-omit-frame-pointer $(HOST_APP_INC) src/app/core/storage/record_slots.cpp tools/tests/record_slots.cpp)
 	@$(call host_test,mqtt-wire,$(HOST_APP_INC) src/app/services/mqtt/mqtt_wire.cpp tools/tests/mqtt_wire.cpp)
 	@$(HOST_CC) -std=c11 -DMQTT_DO_NOT_USE_CUSTOM_CONFIG=1 -Wall -Wextra -Wconversion -Werror \
 		-I$(COREMQTT)/include -I$(COREMQTT)/interface \

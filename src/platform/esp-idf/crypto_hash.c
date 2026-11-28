@@ -267,8 +267,7 @@ int __wrap_pbkdf2_sha1(const char* passphrase, const unsigned char* ssid, size_t
     if (iterations < 1 || ssid_len > PBKDF2_MAX_SSID) {
         return __real_pbkdf2_sha1(passphrase, ssid, ssid_len, iterations, buf, buflen);
     }
-    static const uint32_t sha1_iv[5] = {
-        0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0};
+    static const uint32_t sha1_iv[5] = {0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0};
     uint32_t key[16] = {0}, iv[5], ipad[5], opad[5], block[16], u[5], t[5];
     size_t key_len = strlen(passphrase);
     if (key_len > sizeof key) {

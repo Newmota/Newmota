@@ -32,23 +32,23 @@ Payload `0` closes an idle bus after all clients detach. Reapplying identical
 configuration succeeds; replacing an existing configuration requires explicit close.
 Overlapping-pin reconfiguration with rollback remains unfinished.
 
-Successful configuration and removal commands persist to `/.newmota/modbus.bin`.
+Successful configuration and removal commands persist to `/.newmota/modbus.a`/`.b`.
 Boot restores buses and their exclusive pin claims after hardware initialization,
 before persisted energy instances attach clients. Native restore failure retains the
 configuration, logs the bus/result and reports `Available:false`; reapplying its
 identical configuration retries opening it. Faulted native leases require explicit
-close and cleanup first. Invalid/unreadable active and recovery files block writes,
-reported by `StorageAvailable:false`. Safeboot and builds without this feature do
+close and cleanup first. Without a valid slot, an invalid or unreadable slot blocks
+writes, reported by `StorageAvailable:false`. Safeboot and builds without this feature do
 not modify the sidecar.
 
 The fixed, little-endian version-1 sidecar contains `NMRB`, version, four-slot count,
-four 16-byte records and a Modbus CRC16. Each record stores RX/TX/DE/RE as 16-bit pin
+a 32-bit slot generation, four 16-byte records and a Modbus CRC16. Each record stores RX/TX/DE/RE as 16-bit pin
 IDs, 32-bit baud, parity, stop bits, RE active level and enabled flag as bytes.
-Eight data bits, non-inverted UART and the native RX capacity are enforced. A
-replacement is synchronized and read-verified before the valid active copy rotates
-to `modbus.prev`; startup falls back to that copy. Failed saves report storage error,
-retain the previous intent and roll back native opening/closing where possible;
-failed native cleanup retains its reservation. `modbus.tmp` is never restored.
+Eight data bits, non-inverted UART and the native RX capacity are enforced. A save
+writes the whole record in one atomic LittleFS write into the slot not holding the loaded
+record; startup takes the newest valid slot, so an unusable newer slot falls back to the
+older one. Failed saves report storage error, retain the previous intent and roll back
+native opening/closing where possible; failed native cleanup retains its reservation.
 This transport feature alone selects no meter; `USE_PZEM_AC` and `USE_PZEM_DC`
 select their independent energy devices.
 The full energy-driver inventory remains committed; TuyaMCU follows its shared owner.

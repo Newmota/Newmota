@@ -25,9 +25,8 @@
 #include "bearssl_hash.h"
 #include "newmota_crypto.h"
 
-bootloader_sha256_handle_t bootloader_sha256_start(void)
-{
-    br_sha256_context *ctx = malloc(sizeof(*ctx));
+bootloader_sha256_handle_t bootloader_sha256_start(void) {
+    br_sha256_context* ctx = malloc(sizeof(*ctx));
     if (ctx == NULL) {
         return NULL;
     }
@@ -35,16 +34,14 @@ bootloader_sha256_handle_t bootloader_sha256_start(void)
     return ctx;
 }
 
-void bootloader_sha256_data(bootloader_sha256_handle_t handle, const void *data, size_t data_len)
-{
+void bootloader_sha256_data(bootloader_sha256_handle_t handle, const void* data, size_t data_len) {
     assert(handle != NULL);
-    br_sha256_update((br_sha256_context *)handle, data, data_len);
+    br_sha256_update((br_sha256_context*)handle, data, data_len);
 }
 
-void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest)
-{
+void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t* digest) {
     assert(handle != NULL);
-    br_sha256_context *ctx = (br_sha256_context *)handle;
+    br_sha256_context* ctx = (br_sha256_context*)handle;
     if (digest != NULL) {
         br_sha256_out(ctx, digest);
     }

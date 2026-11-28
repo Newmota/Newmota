@@ -97,7 +97,7 @@ requests by seconds. Beken, Bouffalo and AmebaD keep their SDK defaults.
 ## Deep sleep
 
 With `USE_DEEPSLEEP`, `DeepSleepTime 0` or `11..316223999` seconds (just under ten years) is saved in
-`/.newmota/deepsleep.bin`; other values only report the current one. A nonzero value forces
+`/.newmota/deepsleep.a`/`.b`; other values only report the current one. A nonzero value forces
 `TelePeriod 300` if telemetry was off. As in Tasmota, the device counts down four seconds after
 each TelePeriod, 64 after a start that was not a deep-sleep wake (so a freshly powered device
 stays reachable), and then sleeps until the next whole multiple of `DeepSleepTime` on the local

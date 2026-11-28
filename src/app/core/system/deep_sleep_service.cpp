@@ -49,8 +49,8 @@ constexpr std::uint32_t kTelePeriodIdle = 9999U; // Tasmota: waiting for the net
 
 constexpr std::size_t kPayloadSize = 4U;
 
-constexpr DriverSettingsSpec kSpec{"/.newmota/deepsleep.bin", "/.newmota/deepsleep.tmp",
-    "/.newmota/deepsleep.prev", {'N', 'M', 'D', 'S'}, 1, kPayloadSize, nullptr};
+constexpr DriverSettingsSpec kSpec{{"/.newmota/deepsleep.a", "/.newmota/deepsleep.b"},
+    {'N', 'M', 'D', 'S'}, 1, kPayloadSize, nullptr};
 
 std::uint32_t deepsleep{}; // Settings->deepsleep
 retained::Retained rtc{};  // RtcSettings.nextwakeup, deepsleep_slip, ultradeepsleep

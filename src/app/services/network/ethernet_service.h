@@ -14,7 +14,7 @@
  * The template's ETH MDC, MDIO and power pins, and for SPI controllers the SPI bus whose
  * MDC instance is used, select the hardware. Ethernet, EthType, EthAddress and EthClockMode
  * restart the device as in Tasmota; EthIPAddress, EthGateway, EthSubnetmask and
- * EthDNSServer1/2 apply at once. The settings live in `/.newmota/ethernet.bin`.
+ * EthDNSServer1/2 apply at once. The settings live in `/.newmota/ethernet.a`/`.b`.
  */
 #pragma once
 #include "core/command/command.h"

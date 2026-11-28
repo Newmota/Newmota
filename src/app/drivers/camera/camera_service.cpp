@@ -40,8 +40,8 @@ constexpr std::size_t kPayloadSize = 3U + kSettings.size() * 2U;
 static_assert(kPayloadSize <= kDriverSettingsMaximumPayload);
 
 bool valid_payload(const std::uint8_t* payload);
-constexpr DriverSettingsSpec kSpec{"/.newmota/webcam.bin", "/.newmota/webcam.tmp",
-    "/.newmota/webcam.prev", {'N', 'M', 'W', 'C'}, 2, kPayloadSize, valid_payload};
+constexpr DriverSettingsSpec kSpec{{"/.newmota/webcam.a", "/.newmota/webcam.b"},
+    {'N', 'M', 'W', 'C'}, 2, kPayloadSize, valid_payload};
 
 Status state{};
 Stored saved{};

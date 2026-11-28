@@ -130,7 +130,8 @@ Software protection and reported relay intent do not establish physical cutoff.
 
 ## Retained data
 
-Energy data lives in `/.newmota/energy.bin`, separate from ordinary settings. It holds the
+Energy data lives in the two slots `/.newmota/energy.a` and `energy.b`, separate from
+ordinary settings; a save writes the slot not holding the loaded record. It holds the
 selected provider's identity, calibration, options, accounts and calendar state. As in
 Tasmota, a template that names another meter keeps the stored totals, calendar, tariff and
 limit settings; calibration and options return to the new driver's defaults. The same driver

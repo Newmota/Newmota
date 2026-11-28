@@ -88,8 +88,8 @@ bool valid_payload(const std::uint8_t* payload) {
     return decode(payload, scratch);
 }
 
-constexpr DriverSettingsSpec kSpec{"/.newmota/audio.bin", "/.newmota/audio.tmp",
-    "/.newmota/audio.prev", {'N', 'M', 'A', 'U'}, 2, AudioSettings::kRecordSize, valid_payload};
+constexpr DriverSettingsSpec kSpec{{"/.newmota/audio.a", "/.newmota/audio.b"}, {'N', 'M', 'A', 'U'},
+    2, AudioSettings::kRecordSize, valid_payload};
 
 Payload encode(const AudioSettings& settings) {
     Payload payload{};

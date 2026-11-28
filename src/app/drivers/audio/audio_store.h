@@ -9,7 +9,7 @@
   (at your option) any later version.
 */
 /** @file audio_store.h
- * @brief Loads or creates `/.newmota/audio.bin` and saves the profiles to it.
+ * @brief Loads or creates `/.newmota/audio.a`/`.b` and saves the profiles to it.
  *
  * The audio driver keeps its settings out of the shared settings record, so Safeboot never
  * sees them. Pins are never stored; they always come from the hardware template.

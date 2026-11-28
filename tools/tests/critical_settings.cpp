@@ -10,6 +10,7 @@
 */
 
 #include "core/storage/filesystem.h"
+#include "core/storage/record_slots.h"
 #include "newmota/log.h"
 #include "newmota/platform/critical_settings.h"
 #include "services/settings/settings.h"
@@ -41,7 +42,7 @@ struct FileSlot final {
     bool present{};
 };
 
-std::array<FileSlot, 3> files{};
+std::array<FileSlot, 2> files{};
 bool filesystem_available = true;
 std::array<std::uint8_t, newmota::platform::kCriticalSettingsCapacity> critical_record{};
 std::size_t critical_size = 0U;
@@ -50,12 +51,10 @@ bool critical_replace_failure = false;
 bool critical_read_mismatch = false;
 
 [[nodiscard]] FileSlot* file_for(const std::string_view path) {
-    if (path == "/.newmota/settings.bin")
+    if (path == "/.newmota/settings.a")
         return &files[0];
-    if (path == "/.newmota/settings.prev")
+    if (path == "/.newmota/settings.b")
         return &files[1];
-    if (path == "/.newmota/settings.tmp")
-        return &files[2];
     return nullptr;
 }
 
@@ -92,6 +91,41 @@ void clear_state() {
 void write_u16(std::uint8_t* const target, const std::uint16_t value) {
     target[0] = static_cast<std::uint8_t>(value);
     target[1] = static_cast<std::uint8_t>(value >> 8U);
+}
+
+/** @brief Returns the generation stored in a slot's header, or 0 for an empty slot. */
+[[nodiscard]] std::uint32_t generation_of(const FileSlot& file) {
+    if (!file.present || file.size < kHeaderSize)
+        return 0U;
+    std::uint32_t value = 0U;
+    for (unsigned byte = 0U; byte < 4U; ++byte)
+        value |= static_cast<std::uint32_t>(file.bytes[8U + byte]) << (8U * byte);
+    return value;
+}
+
+/** @brief Returns the other settings slot. */
+[[nodiscard]] FileSlot& other_slot(const FileSlot& file) {
+    return &file == &files[0] ? files[1] : files[0];
+}
+
+/** @brief How often only_newest() found the newest record in slot A and in slot B. */
+std::array<unsigned, 2> newest_edits{};
+
+/**
+ * @brief Returns the slot holding the newest saved record and empties the other one, so a
+ * fixture edits the only record in its real slot.
+ *
+ * Generations compare in the device's serial order and equal ones pick slot A, as load() does.
+ */
+FileSlot& only_newest() {
+    const std::size_t newest =
+        !files[0].present || (files[1].present && newmota::newer_generation(generation_of(files[1]),
+                                                      generation_of(files[0])))
+            ? 1U
+            : 0U;
+    other_slot(files[newest]) = {};
+    ++newest_edits[newest];
+    return files[newest];
 }
 
 /** @brief Seals a deliberately edited settings fixture as a structurally intact record. */
@@ -141,7 +175,7 @@ bool drop_power_tail(FileSlot& file, const std::uint16_t dropped) {
             crc = newmota::support::crc32_finalize(crc);
             for (unsigned byte = 0U; byte < 4U; ++byte)
                 file.bytes[16U + byte] = static_cast<std::uint8_t>(crc >> (8U * byte));
-            files[1] = {};
+            other_slot(file) = {};
             return true;
         }
         position += 4U + size;
@@ -212,19 +246,6 @@ MutationResult remove_if_exists(const std::string_view path) {
     return MutationResult::succeeded;
 }
 
-MutationResult rename(const std::string_view source, const std::string_view destination) {
-    if (!filesystem_available)
-        return MutationResult::unavailable;
-    auto* const from = file_for(source);
-    auto* const to = file_for(destination);
-    if (from == nullptr || to == nullptr || !from->present) {
-        return MutationResult::failed;
-    }
-    *to = *from;
-    *from = {};
-    return MutationResult::succeeded;
-}
-
 } // namespace newmota::filesystem
 
 namespace newmota::platform {
@@ -283,8 +304,8 @@ int main() {
                settings.preferred_wifi_slot() == 1U,
         "preferred Wi-Fi slot commits through the critical store", failures);
     expect(critical_present && critical_size != 0U, "critical record exists", failures);
-    expect(settings.set_option(1U, 1U) == SettingsUpdateResult::saved && files[0].present &&
-               !has_tag(files[0], kWifiTag),
+    expect(settings.set_option(1U, 1U) == SettingsUpdateResult::saved &&
+               !has_tag(only_newest(), kWifiTag),
         "ordinary file excludes critical Wi-Fi fields", failures);
 
     filesystem_available = false;
@@ -375,17 +396,18 @@ int main() {
     expect(ntp_maximum.load() == SettingsLoadResult::loaded &&
                ntp_maximum.ntp_server(0U).size() == Settings::kNtpServerCapacity,
         "a maximum-length NTP address reloads without a terminator", failures);
-    const FileSlot saved_ntp_file = files[0];
+    auto& ntp_file = only_newest();
+    const FileSlot saved_ntp_file = ntp_file;
     const auto ntp_position = record_position(saved_ntp_file, kNtpServersTag);
     expect(ntp_position < saved_ntp_file.size, "NTP settings have a separate tag", failures);
     if (ntp_position < saved_ntp_file.size) {
         const auto ntp_size = 4U + read_u16(saved_ntp_file.bytes.data() + ntp_position + 2U);
-        std::memmove(files[0].bytes.data() + ntp_position,
-            files[0].bytes.data() + ntp_position + ntp_size,
-            files[0].size - ntp_position - ntp_size);
-        files[0].size -= ntp_size;
-        seal_file(files[0]);
-        files[1] = {};
+        std::memmove(ntp_file.bytes.data() + ntp_position,
+            ntp_file.bytes.data() + ntp_position + ntp_size,
+            ntp_file.size - ntp_position - ntp_size);
+        ntp_file.size -= ntp_size;
+        seal_file(ntp_file);
+        other_slot(ntp_file) = {};
         Settings before_ntp;
         expect(before_ntp.load() == SettingsLoadResult::loaded && !before_ntp.read_only() &&
                    before_ntp.time_format() == 2U &&
@@ -395,22 +417,22 @@ int main() {
             "older settings without NTP tag retain time fields and use per-slot defaults",
             failures);
         for (unsigned corruption = 0; corruption < 4; ++corruption) {
-            files[0] = saved_ntp_file;
-            files[1] = {};
+            ntp_file = saved_ntp_file;
+            other_slot(ntp_file) = {};
             if (corruption == 0) {
-                files[0].bytes[ntp_position + 4U] =
+                ntp_file.bytes[ntp_position + 4U] =
                     static_cast<std::uint8_t>(Settings::kNtpServerCapacity + 1U);
             } else if (corruption == 1) {
-                files[0].bytes[ntp_position + 5U] = 0U;
+                ntp_file.bytes[ntp_position + 5U] = 0U;
             } else if (corruption == 2) {
-                std::memcpy(files[0].bytes.data() + files[0].size,
+                std::memcpy(ntp_file.bytes.data() + ntp_file.size,
                     saved_ntp_file.bytes.data() + ntp_position, ntp_size);
-                files[0].size += ntp_size;
+                ntp_file.size += ntp_size;
             } else {
-                write_u16(files[0].bytes.data() + ntp_position + 2U,
+                write_u16(ntp_file.bytes.data() + ntp_position + 2U,
                     static_cast<std::uint16_t>(ntp_size - 5U));
             }
-            seal_file(files[0]);
+            seal_file(ntp_file);
             Settings malformed_ntp;
             expect(malformed_ntp.load() == SettingsLoadResult::corrupt &&
                        malformed_ntp.read_only() &&
@@ -436,35 +458,36 @@ int main() {
     expect(buttons_reloaded.load() == SettingsLoadResult::loaded &&
                buttons_reloaded.button_debounce() == 53U && buttons_reloaded.time_format() == 2U,
         "ButtonDebounce survives reload without changing unrelated fields", failures);
-    const FileSlot saved_button_file = files[0];
+    auto& button_file = only_newest();
+    const FileSlot saved_button_file = button_file;
     const auto button_position = record_position(saved_button_file, kButtonDebounceTag);
     expect(button_position < saved_button_file.size, "ButtonDebounce has a separate tag", failures);
     if (button_position < saved_button_file.size) {
         constexpr std::size_t kButtonRecordSize = 6U;
-        std::memmove(files[0].bytes.data() + button_position,
-            files[0].bytes.data() + button_position + kButtonRecordSize,
-            files[0].size - button_position - kButtonRecordSize);
-        files[0].size -= kButtonRecordSize;
-        files[1] = {};
-        seal_file(files[0]);
+        std::memmove(button_file.bytes.data() + button_position,
+            button_file.bytes.data() + button_position + kButtonRecordSize,
+            button_file.size - button_position - kButtonRecordSize);
+        button_file.size -= kButtonRecordSize;
+        other_slot(button_file) = {};
+        seal_file(button_file);
         Settings before_buttons;
         expect(before_buttons.load() == SettingsLoadResult::loaded && !before_buttons.read_only() &&
                    before_buttons.button_debounce() == 50U && before_buttons.time_format() == 2U,
             "older files without ButtonDebounce retain unrelated settings and use default 50",
             failures);
         for (unsigned corruption = 0U; corruption < 3U; ++corruption) {
-            files[0] = saved_button_file;
-            files[1] = {};
+            button_file = saved_button_file;
+            other_slot(button_file) = {};
             if (corruption == 0U) {
-                write_u16(files[0].bytes.data() + button_position + 4U, 49U);
+                write_u16(button_file.bytes.data() + button_position + 4U, 49U);
             } else if (corruption == 1U) {
-                write_u16(files[0].bytes.data() + button_position + 2U, 1U);
+                write_u16(button_file.bytes.data() + button_position + 2U, 1U);
             } else {
-                std::memcpy(files[0].bytes.data() + files[0].size,
+                std::memcpy(button_file.bytes.data() + button_file.size,
                     saved_button_file.bytes.data() + button_position, kButtonRecordSize);
-                files[0].size += kButtonRecordSize;
+                button_file.size += kButtonRecordSize;
             }
-            seal_file(files[0]);
+            seal_file(button_file);
             Settings malformed_buttons;
             expect(malformed_buttons.load() == SettingsLoadResult::corrupt &&
                        malformed_buttons.read_only() &&
@@ -506,16 +529,17 @@ int main() {
                switches_reloaded.set_switch_text(2U, "a\"b") == SettingsUpdateResult::invalid &&
                switches_reloaded.set_switch_text(2U, "a\\b") == SettingsUpdateResult::invalid,
         "SwitchText saves bounded printable text without spaces, quotes or backslashes", failures);
-    const auto switch_mqtt_position = record_position(files[0], kSwitchMqttTag);
-    expect(switch_mqtt_position < files[0].size, "switch MQTT has a separate tag", failures);
-    if (switch_mqtt_position < files[0].size) {
+    auto& switch_file = only_newest();
+    const auto switch_mqtt_position = record_position(switch_file, kSwitchMqttTag);
+    expect(switch_mqtt_position < switch_file.size, "switch MQTT has a separate tag", failures);
+    if (switch_mqtt_position < switch_file.size) {
         constexpr std::string_view kRemote = "walls";
-        files[0].bytes[switch_mqtt_position + 4U] = static_cast<std::uint8_t>(kRemote.size());
-        files[0].bytes[switch_mqtt_position + 5U] = 1U;
+        switch_file.bytes[switch_mqtt_position + 4U] = static_cast<std::uint8_t>(kRemote.size());
+        switch_file.bytes[switch_mqtt_position + 5U] = 1U;
         std::memcpy(
-            files[0].bytes.data() + switch_mqtt_position + 6U, kRemote.data(), kRemote.size());
-        seal_file(files[0]);
-        files[1] = {};
+            switch_file.bytes.data() + switch_mqtt_position + 6U, kRemote.data(), kRemote.size());
+        seal_file(switch_file);
+        other_slot(switch_file) = {};
     }
     Settings switch_texts;
     expect(switch_texts.load() == SettingsLoadResult::loaded &&
@@ -548,18 +572,20 @@ int main() {
     (void)button_mqtt_source.load();
     expect(button_mqtt_source.set_time_format(2U) == SettingsUpdateResult::saved,
         "button MQTT persistence fixture is written", failures);
-    const auto button_mqtt_position = record_position(files[0], kButtonMqttTag);
-    expect(
-        button_mqtt_position < files[0].size, "button MQTT has a separate retained tag", failures);
-    if (button_mqtt_position < files[0].size) {
+    auto& button_mqtt_file = only_newest();
+    const auto button_mqtt_position = record_position(button_mqtt_file, kButtonMqttTag);
+    expect(button_mqtt_position < button_mqtt_file.size, "button MQTT has a separate retained tag",
+        failures);
+    if (button_mqtt_position < button_mqtt_file.size) {
         constexpr std::string_view kRemote = "remote_%06X";
         constexpr std::size_t kRecordSize = 4U + 2U + MqttSettings::kTopicCapacity;
-        files[0].bytes[button_mqtt_position + 4U] = static_cast<std::uint8_t>(kRemote.size());
-        files[0].bytes[button_mqtt_position + 5U] = 1U;
-        std::memcpy(
-            files[0].bytes.data() + button_mqtt_position + 6U, kRemote.data(), kRemote.size());
-        seal_file(files[0]);
-        files[1] = {};
+        button_mqtt_file.bytes[button_mqtt_position + 4U] =
+            static_cast<std::uint8_t>(kRemote.size());
+        button_mqtt_file.bytes[button_mqtt_position + 5U] = 1U;
+        std::memcpy(button_mqtt_file.bytes.data() + button_mqtt_position + 6U, kRemote.data(),
+            kRemote.size());
+        seal_file(button_mqtt_file);
+        other_slot(button_mqtt_file) = {};
         Settings button_mqtt;
         expect(button_mqtt.load() == SettingsLoadResult::loaded &&
                    button_mqtt.mqtt_settings().button_topic() == kRemote &&
@@ -572,13 +598,15 @@ int main() {
                    button_mqtt_again.mqtt_settings().button_topic() == kRemote &&
                    button_mqtt_again.mqtt_settings().button_retain,
             "retained button MQTT settings survive round-trip", failures);
-        const auto saved = files[0];
-        std::memmove(files[0].bytes.data() + button_mqtt_position,
-            files[0].bytes.data() + button_mqtt_position + kRecordSize,
-            files[0].size - button_mqtt_position - kRecordSize);
-        files[0].size -= kRecordSize;
-        seal_file(files[0]);
-        files[1] = {};
+        // The unrelated save above wrote the other slot; edit that newer record.
+        auto& resaved = only_newest();
+        const auto saved = resaved;
+        std::memmove(resaved.bytes.data() + button_mqtt_position,
+            resaved.bytes.data() + button_mqtt_position + kRecordSize,
+            resaved.size - button_mqtt_position - kRecordSize);
+        resaved.size -= kRecordSize;
+        seal_file(resaved);
+        other_slot(resaved) = {};
         Settings old_buttons;
         std::uint8_t hold{};
         expect(old_buttons.load() == SettingsLoadResult::loaded && !old_buttons.read_only() &&
@@ -587,19 +615,19 @@ int main() {
                    hold == 40U && old_buttons.time_format() == 3U,
             "a file without the button record defaults button routing off", failures);
         for (unsigned corruption = 0U; corruption < 4U; ++corruption) {
-            files[0] = saved;
-            files[1] = {};
+            resaved = saved;
+            other_slot(resaved) = {};
             if (corruption == 0U)
-                files[0].bytes[button_mqtt_position + 5U] = 2U;
+                resaved.bytes[button_mqtt_position + 5U] = 2U;
             else if (corruption == 1U)
-                write_u16(files[0].bytes.data() + button_mqtt_position + 2U, 1U);
+                write_u16(resaved.bytes.data() + button_mqtt_position + 2U, 1U);
             else if (corruption == 2U) {
-                std::memcpy(files[0].bytes.data() + files[0].size,
+                std::memcpy(resaved.bytes.data() + resaved.size,
                     saved.bytes.data() + button_mqtt_position, kRecordSize);
-                files[0].size += kRecordSize;
+                resaved.size += kRecordSize;
             } else
-                write_u16(files[0].bytes.data() + button_mqtt_position, 0x7FFFU);
-            seal_file(files[0]);
+                write_u16(resaved.bytes.data() + button_mqtt_position, 0x7FFFU);
+            seal_file(resaved);
             Settings invalid_button_mqtt;
             const auto loaded = invalid_button_mqtt.load();
             expect((corruption == 3U ? loaded == SettingsLoadResult::loaded
@@ -630,7 +658,8 @@ int main() {
                leds_reloaded.power_settings().led_pwm_off == 10U &&
                leds_reloaded.power_settings().blink_time == 25U,
         "LED policy survives a reload", failures);
-    expect(drop_power_tail(files[0], kLedPwmFieldsSize), "power record is shortened", failures);
+    expect(
+        drop_power_tail(only_newest(), kLedPwmFieldsSize), "power record is shortened", failures);
     Settings other_size;
     expect(other_size.load() == SettingsLoadResult::loaded && !other_size.read_only() &&
                other_size.power_settings().blink_time != 25U &&
@@ -641,6 +670,72 @@ int main() {
     expect(other_size.set_led_state(9U) == SettingsUpdateResult::invalid &&
                other_size.set_led_pwm(0x10U, 255U, 0U) == SettingsUpdateResult::invalid,
         "LedState above 8 and LedPwmMode beyond four LEDs are rejected", failures);
+
+    clear_state();
+    Settings slots;
+    (void)slots.load();
+    expect(slots.set_time_format(1U) == SettingsUpdateResult::saved &&
+               generation_of(files[0]) == 1U && !files[1].present &&
+               slots.set_time_format(2U) == SettingsUpdateResult::saved &&
+               generation_of(files[0]) == 1U && generation_of(files[1]) == 2U &&
+               slots.set_time_format(3U) == SettingsUpdateResult::saved &&
+               generation_of(files[0]) == 3U && generation_of(files[1]) == 2U,
+        "saves alternate between the two slots and overwrite the older one", failures);
+    Settings slots_reloaded;
+    expect(slots_reloaded.load() == SettingsLoadResult::loaded && !slots_reloaded.read_only() &&
+               slots_reloaded.generation() == 3U && slots_reloaded.time_format() == 3U,
+        "the newest generation wins whichever slot holds it", failures);
+
+    files[0].bytes[files[0].size - 1U] ^= 0x01U;
+    const FileSlot bad_newest = files[0];
+    Settings fallback;
+    expect(fallback.load() == SettingsLoadResult::recovered && fallback.read_only() &&
+               fallback.generation() == 2U && fallback.time_format() == 2U &&
+               fallback.set_time_format(1U) == SettingsUpdateResult::failed &&
+               std::memcmp(files[0].bytes.data(), bad_newest.bytes.data(), bad_newest.size) == 0 &&
+               generation_of(files[1]) == 2U,
+        "a bad newer slot falls back to the other one and locks writes", failures);
+    expect(fallback.reset_to_defaults(false, false) == SettingsUpdateResult::saved &&
+               !fallback.read_only() && generation_of(files[0]) == 3U && !files[1].present,
+        "an explicit reset replaces the bad slot and keeps only the reset record", failures);
+    expect(fallback.set_time_format(2U) == SettingsUpdateResult::saved &&
+               generation_of(files[1]) == 4U &&
+               fallback.reset_to_defaults(false, true) == SettingsUpdateResult::saved &&
+               generation_of(files[0]) == 1U && !files[1].present,
+        "an erasing reset removes both slots and writes slot A", failures);
+
+    clear_state();
+    Settings empty_slot;
+    (void)empty_slot.load();
+    (void)empty_slot.set_time_format(2U);
+    files[1].present = true;
+    files[1].size = 0U;
+    Settings after_empty;
+    expect(after_empty.load() == SettingsLoadResult::loaded && !after_empty.read_only() &&
+               after_empty.generation() == 1U &&
+               after_empty.set_time_format(3U) == SettingsUpdateResult::saved &&
+               generation_of(files[1]) == 2U,
+        "a 0-byte slot counts as absent and is written next", failures);
+
+    write_u16(files[0].bytes.data() + 8U, 0xFFFFU);
+    write_u16(files[0].bytes.data() + 10U, 0xFFFFU);
+    seal_file(files[0]);
+    files[1] = {};
+    Settings wrap;
+    expect(wrap.load() == SettingsLoadResult::loaded && wrap.generation() == UINT32_MAX &&
+               wrap.set_time_format(1U) == SettingsUpdateResult::saved &&
+               generation_of(files[1]) == 1U,
+        "the generation after UINT32_MAX is 1", failures);
+    Settings wrapped;
+    expect(wrapped.load() == SettingsLoadResult::loaded && wrapped.generation() == 1U &&
+               wrapped.time_format() == 1U &&
+               wrapped.set_time_format(3U) == SettingsUpdateResult::saved &&
+               generation_of(files[0]) == 2U,
+        "generation 1 is newer than UINT32_MAX and the next save replaces the older slot",
+        failures);
+
+    expect(newest_edits[0] != 0U && newest_edits[1] != 0U,
+        "fixture edits and reloads ran with the newest record in slot A and in slot B", failures);
 
     if (failures == 0) {
         std::puts("Critical settings tests passed");

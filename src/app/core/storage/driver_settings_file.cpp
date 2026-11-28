@@ -9,7 +9,7 @@
   (at your option) any later version.
 */
 /** @file driver_settings_file.cpp
- * @brief Verified temporary-then-rename replacement with one recovery generation.
+ * @brief Fixed-size driver records kept in two A/B slots.
  */
 #include "core/storage/driver_settings_file.h"
 #include "core/storage/filesystem.h"
@@ -20,14 +20,27 @@
 namespace newmota {
 namespace {
 constexpr std::string_view kDirectory = "/.newmota";
-constexpr std::size_t kHeaderBytes = 5;
+constexpr std::size_t kVersionOffset = 4;
+constexpr std::size_t kGenerationOffset = kVersionOffset + 1;
+constexpr std::size_t kHeaderBytes = kGenerationOffset + 4;
 constexpr std::size_t kCrcBytes = 4;
 constexpr std::size_t kMaximumFileBytes = kHeaderBytes + kDriverSettingsMaximumPayload + kCrcBytes;
-
-enum class Read : std::uint8_t { valid, missing, unusable };
+using FileBytes = std::array<std::uint8_t, kMaximumFileBytes>;
 
 std::uint32_t checksum(const std::uint8_t* bytes, std::size_t size) {
     return support::crc32_finalize(support::crc32_update(support::kCrc32InitialState, bytes, size));
+}
+
+std::uint32_t read_u32(const std::uint8_t* bytes) {
+    std::uint32_t value{};
+    for (std::size_t i = 0; i < 4; ++i)
+        value |= static_cast<std::uint32_t>(bytes[i]) << (8U * i);
+    return value;
+}
+
+void write_u32(std::uint8_t* bytes, std::uint32_t value) {
+    for (std::size_t i = 0; i < 4; ++i)
+        bytes[i] = static_cast<std::uint8_t>(value >> (8U * i));
 }
 
 bool sized(const DriverSettingsSpec& spec) {
@@ -38,84 +51,82 @@ std::size_t file_bytes(const DriverSettingsSpec& spec) {
     return kHeaderBytes + spec.payload_size + kCrcBytes;
 }
 
-Read read_payload(const DriverSettingsSpec& spec, const char* path, std::uint8_t* payload) {
-    std::array<std::uint8_t, kMaximumFileBytes> bytes{};
-    std::size_t size{};
-    const auto result = filesystem::read_file(path, bytes.data(), bytes.size(), size);
-    if (result == filesystem::ReadResult::not_found)
-        return Read::missing;
+/** @brief Validates driver records and copies the newest payload to the caller. */
+class PayloadReader final : public RecordSlotReader {
+  public:
+    PayloadReader(const DriverSettingsSpec& spec, std::uint8_t* newest)
+        : spec_(spec), newest_(newest) {}
+
+    bool check(const std::uint8_t, const std::uint8_t* const bytes, const std::size_t size,
+        std::uint32_t& generation) override {
+        const auto crc_offset = kHeaderBytes + spec_.payload_size;
+        if (size != file_bytes(spec_) ||
+            !std::equal(spec_.magic.begin(), spec_.magic.end(), bytes) ||
+            bytes[kVersionOffset] != spec_.version ||
+            read_u32(bytes + crc_offset) != checksum(bytes, crc_offset) ||
+            (spec_.valid && !spec_.valid(bytes + kHeaderBytes)))
+            return false;
+        generation = read_u32(bytes + kGenerationOffset);
+        return true;
+    }
+
+    void keep(const std::uint8_t, const std::uint8_t* const bytes, const std::size_t) override {
+        if (newest_)
+            std::copy_n(bytes + kHeaderBytes, spec_.payload_size, newest_);
+    }
+
+  private:
+    const DriverSettingsSpec& spec_;
+    std::uint8_t* newest_;
+};
+
+/** @brief Reads both slots, copying the newest valid payload into @p newest when it is set. */
+RecordSlotsLoad read_slots(const DriverSettingsSpec& spec, FileBytes& bytes, std::uint8_t* newest) {
+    PayloadReader reader(spec, newest);
+    return spec.slots.load(bytes.data(), bytes.size(), reader);
+}
+
+/** @brief Writes @p payload after the newest record that @p stored found, reusing @p bytes. */
+bool write_payload(const DriverSettingsSpec& spec, const RecordSlotsLoad& stored, FileBytes& bytes,
+    const std::uint8_t* payload) {
+    // A slot that could not be read may hold the newest record; never write over it blindly.
+    if ((spec.valid && !spec.valid(payload)) || !stored.readable())
+        return false;
+    bytes = {};
+    std::copy(spec.magic.begin(), spec.magic.end(), bytes.begin());
+    bytes[kVersionOffset] = spec.version;
+    write_u32(bytes.data() + kGenerationOffset, next_generation(stored.generation));
+    std::copy_n(payload, spec.payload_size, bytes.begin() + kHeaderBytes);
     const auto crc_offset = kHeaderBytes + spec.payload_size;
-    if (result != filesystem::ReadResult::succeeded || size != file_bytes(spec) ||
-        !std::equal(spec.magic.begin(), spec.magic.end(), bytes.begin()) ||
-        bytes[spec.magic.size()] != spec.version)
-        return Read::unusable;
-    std::uint32_t stored{};
-    for (std::size_t i = 0; i < kCrcBytes; ++i)
-        stored |= static_cast<std::uint32_t>(bytes[crc_offset + i]) << (8U * i);
-    if (stored != checksum(bytes.data(), crc_offset) ||
-        (spec.valid && !spec.valid(bytes.data() + kHeaderBytes)))
-        return Read::unusable;
-    std::copy_n(bytes.begin() + kHeaderBytes, spec.payload_size, payload);
-    return Read::valid;
+    write_u32(bytes.data() + crc_offset, checksum(bytes.data(), crc_offset));
+    namespace fs = filesystem;
+    return fs::ensure_directory(kDirectory) == fs::MutationResult::succeeded &&
+           spec.slots.write(stored.slot, bytes.data(), file_bytes(spec)) ==
+               fs::MutationResult::succeeded;
 }
 } // namespace
 
 bool save_driver_settings(const DriverSettingsSpec& spec, const std::uint8_t* payload) {
-    if (!sized(spec) || (spec.valid && !spec.valid(payload)))
+    if (!sized(spec))
         return false;
-    std::array<std::uint8_t, kMaximumFileBytes> bytes{};
-    std::copy(spec.magic.begin(), spec.magic.end(), bytes.begin());
-    bytes[spec.magic.size()] = spec.version;
-    std::copy_n(payload, spec.payload_size, bytes.begin() + kHeaderBytes);
-    const auto crc_offset = kHeaderBytes + spec.payload_size;
-    const auto crc = checksum(bytes.data(), crc_offset);
-    for (std::size_t i = 0; i < kCrcBytes; ++i)
-        bytes[crc_offset + i] = static_cast<std::uint8_t>(crc >> (8U * i));
-    const auto size = file_bytes(spec);
-    namespace fs = filesystem;
-    if (fs::ensure_directory(kDirectory) != fs::MutationResult::succeeded ||
-        fs::remove_if_exists(spec.temporary) != fs::MutationResult::succeeded ||
-        fs::write_file(spec.temporary, bytes.data(), size) != fs::MutationResult::succeeded)
-        return false;
-    std::array<std::uint8_t, kMaximumFileBytes> verified{};
-    std::size_t read_size{};
-    if (fs::read_file(spec.temporary, verified.data(), verified.size(), read_size) !=
-            fs::ReadResult::succeeded ||
-        read_size != size || !std::equal(bytes.begin(), bytes.begin() + size, verified.begin()))
-        return false;
-    std::array<std::uint8_t, kDriverSettingsMaximumPayload> current{};
-    const auto active = read_payload(spec, spec.path, current.data());
-    if (active == Read::valid) {
-        if (fs::remove_if_exists(spec.previous) != fs::MutationResult::succeeded ||
-            fs::rename(spec.path, spec.previous) != fs::MutationResult::succeeded)
-            return false;
-    } else if (active == Read::unusable &&
-               fs::remove_if_exists(spec.path) != fs::MutationResult::succeeded)
-        return false;
-    if (fs::rename(spec.temporary, spec.path) == fs::MutationResult::succeeded)
-        return true;
-    if (active == Read::valid)
-        (void)fs::rename(spec.previous, spec.path);
-    return false;
+    FileBytes bytes{};
+    const auto stored = read_slots(spec, bytes, nullptr);
+    return write_payload(spec, stored, bytes, payload);
 }
 
 DriverSettingsState load_driver_settings(const DriverSettingsSpec& spec, std::uint8_t* payload) {
     if (!sized(spec))
         return DriverSettingsState::failed;
-    std::array<std::uint8_t, kDriverSettingsMaximumPayload> stored{};
-    const auto active = read_payload(spec, spec.path, stored.data());
-    if (active == Read::valid) {
-        std::copy_n(stored.begin(), spec.payload_size, payload);
-        return DriverSettingsState::loaded;
-    }
-    if (active == Read::unusable &&
-        read_payload(spec, spec.previous, stored.data()) == Read::valid) {
-        std::copy_n(stored.begin(), spec.payload_size, payload);
-        return DriverSettingsState::recovered;
-    }
-    // Missing, or corrupt without a recovery generation: the incoming defaults become the file.
-    if (!save_driver_settings(spec, payload))
+    FileBytes bytes{};
+    const auto stored = read_slots(spec, bytes, payload);
+    if (stored.loaded())
+        return stored.clean() ? DriverSettingsState::loaded : DriverSettingsState::recovered;
+    // Missing, or no valid slot: the incoming defaults become the record.
+    if (!write_payload(spec, stored, bytes, payload))
         return DriverSettingsState::failed;
-    return active == Read::missing ? DriverSettingsState::created : DriverSettingsState::defaulted;
+    return stored.states[0] == RecordSlotState::absent &&
+                   stored.states[1] == RecordSlotState::absent
+               ? DriverSettingsState::created
+               : DriverSettingsState::defaulted;
 }
 } // namespace newmota

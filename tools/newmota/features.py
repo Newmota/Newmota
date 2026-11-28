@@ -44,6 +44,7 @@ CORE_SOURCES = (
     "app/core/scheduler.cpp",
     "app/core/storage/filesystem.cpp",
     "app/core/storage/filesystem_commands.cpp",
+    "app/core/storage/record_slots.cpp",
     "app/core/update/update_session.cpp",
     "app/core/system/boot_counter.cpp",
     "app/core/system/boot_guard.cpp",
